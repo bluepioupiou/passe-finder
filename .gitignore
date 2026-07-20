@@ -1,0 +1,19 @@
+# Réglages Claude Code locaux (permissions propres à la machine)
+.claude/
+
+# Outillage BMAD réinstallable — les skills vivent globalement dans
+# ~/.claude/skills/, et scripts/catalogue se réinstallent via `npx bmad-method`.
+# Seuls la config projet et les livrables ci-dessous sont suivis.
+_bmad/scripts/
+_bmad/core/
+_bmad/_config/
+_bmad/config.toml
+_bmad/config.user.toml
+_bmad/bmm/*.csv
+_bmad/custom/.gitignore
+_bmad/custom/*.user.toml
+
+# Suivis volontairement (NE PAS ignorer) :
+#   _bmad-output/            — livrables BMAD (brief, PRD, architecture…)
+#   _bmad/bmm/config.yaml    — config projet
+#   _bmad/custom/config.toml — overrides (langue = French)
