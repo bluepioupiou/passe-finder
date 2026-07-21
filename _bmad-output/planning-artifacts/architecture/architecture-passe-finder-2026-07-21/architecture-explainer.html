@@ -1,0 +1,386 @@
+<title>Passe Finder v2 — Pourquoi cette architecture</title>
+<style>
+  :root {
+    --bg: #FAFAFC;
+    --surface: #FFFFFF;
+    --ink: #1A1B2E;
+    --muted: #5B5D74;
+    --line: #E6E6EF;
+    --indigo: #5457E6;
+    --indigo-soft: #EDEDFB;
+    --amber: #B4741A;
+    --amber-soft: #F8EFDC;
+    --good: #2E7D57;
+    --diagram-bg: #FBFBFD;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101228;
+      --surface: #1A1C36;
+      --ink: #ECEDF7;
+      --muted: #A7AAC9;
+      --line: #2B2E52;
+      --indigo: #9092F8;
+      --indigo-soft: #22254C;
+      --amber: #E7B25E;
+      --amber-soft: #322616;
+      --good: #6FD0A0;
+      --diagram-bg: #F4F4F8;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #FAFAFC; --surface: #FFFFFF; --ink: #1A1B2E; --muted: #5B5D74;
+    --line: #E6E6EF; --indigo: #5457E6; --indigo-soft: #EDEDFB; --amber: #B4741A;
+    --amber-soft: #F8EFDC; --good: #2E7D57; --diagram-bg: #FBFBFD;
+  }
+  :root[data-theme="dark"] {
+    --bg: #101228; --surface: #1A1C36; --ink: #ECEDF7; --muted: #A7AAC9;
+    --line: #2B2E52; --indigo: #9092F8; --indigo-soft: #22254C; --amber: #E7B25E;
+    --amber-soft: #322616; --good: #6FD0A0; --diagram-bg: #F4F4F8;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  .wide { max-width: 940px; margin: 0 auto; padding: 0 24px; }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; text-wrap: balance; line-height: 1.15; }
+  p { max-width: 65ch; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--indigo); margin: 0 0 14px;
+  }
+
+  /* Hero */
+  header.hero {
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(120% 80% at 85% -10%, var(--indigo-soft) 0%, transparent 55%),
+      var(--surface);
+    padding: 84px 0 64px;
+  }
+  header.hero h1 { font-size: clamp(2.2rem, 5.5vw, 3.4rem); margin: 0 0 18px; letter-spacing: -.01em; }
+  header.hero .thesis {
+    font-family: var(--serif); font-size: clamp(1.15rem, 2.4vw, 1.4rem);
+    color: var(--ink); font-style: italic; margin: 0 0 8px;
+  }
+  header.hero .sub { color: var(--muted); font-size: 1.02rem; }
+
+  section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+  section h2 { font-size: clamp(1.5rem, 3.2vw, 2rem); margin: 0 0 6px; }
+  section .lead { color: var(--muted); margin: 0 0 28px; font-size: 1.05rem; }
+  section p { margin: 0 0 16px; }
+  strong { color: var(--ink); font-weight: 650; }
+
+  /* Tension trio */
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 8px 0 28px; }
+  .pull {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px 18px;
+  }
+  .pull .k { font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--amber); }
+  .pull h3 { font-size: 1.05rem; margin: 8px 0 6px; font-family: var(--sans); font-weight: 650; }
+  .pull p { font-size: .92rem; color: var(--muted); margin: 0; max-width: none; }
+
+  .callout {
+    background: var(--amber-soft); border-left: 3px solid var(--amber);
+    border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 24px 0;
+  }
+  .callout p { margin: 0; max-width: none; }
+  .callout .tag { font-family: var(--mono); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--amber); display: block; margin-bottom: 6px; }
+
+  /* Decision cards */
+  .decisions { display: flex; flex-direction: column; gap: 20px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    padding: 26px 26px 22px; position: relative; overflow: hidden;
+  }
+  .card .num {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .1em;
+    color: var(--indigo); text-transform: uppercase;
+  }
+  .card h3 { font-size: 1.3rem; margin: 6px 0 16px; }
+  .card .rows { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: baseline; }
+  .card .rk {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); white-space: nowrap; padding-top: 3px;
+  }
+  .card .rv { margin: 0; max-width: none; }
+  .card .rv.win { color: var(--ink); }
+  .card .rv.cut { color: var(--muted); }
+  .card .rv.cut s { text-decoration-color: var(--amber); }
+
+  /* Figure / diagrams */
+  figure {
+    margin: 26px 0; background: var(--diagram-bg); border: 1px solid var(--line);
+    border-radius: 16px; padding: 22px; overflow-x: auto;
+  }
+  figure .mermaid { display: flex; justify-content: center; min-width: 0; }
+  figcaption { font-size: .88rem; color: var(--muted); margin-top: 12px; text-align: center; font-family: var(--sans); }
+
+  .analogy {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 22px 0;
+  }
+  .analogy .box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .analogy .box h4 { margin: 0 0 8px; font-family: var(--mono); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--indigo); }
+  .analogy .box p { margin: 0; font-size: .95rem; max-width: none; }
+
+  /* Cost table */
+  table.cost { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-variant-numeric: tabular-nums; }
+  table.cost td, table.cost th { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+  table.cost th { font-family: var(--mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  table.cost td.amt { text-align: right; font-family: var(--mono); }
+  table.cost tr.total td { font-weight: 700; color: var(--ink); border-bottom: none; border-top: 2px solid var(--line); }
+
+  /* Deferred list */
+  .deferred { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+  .deferred li { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: baseline; }
+  .deferred .chip {
+    font-family: var(--mono); font-size: .66rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+  }
+  .deferred p { margin: 0; max-width: none; font-size: .95rem; }
+
+  code { font-family: var(--mono); font-size: .88em; background: var(--indigo-soft); padding: 1px 6px; border-radius: 5px; color: var(--ink); }
+
+  footer { padding: 40px 0 64px; color: var(--muted); font-size: .9rem; }
+  footer p { max-width: none; }
+
+  @media (max-width: 680px) {
+    .trio { grid-template-columns: 1fr; }
+    .analogy { grid-template-columns: 1fr; }
+    .card .rows { grid-template-columns: 1fr; gap: 2px 0; }
+    .card .rk { padding-top: 10px; }
+  }
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Passe Finder v2 · Architecture expliquée</p>
+    <h1>Un outil qui doit survivre à sa propre maintenance</h1>
+    <p class="thesis">La meilleure techno n'est pas la plus impressionnante — c'est celle que tu peux encore maintenir seul dans deux ans.</p>
+    <p class="sub">Pourquoi chaque choix technique a été fait, pour qui apprend le stack et AWS en chemin.</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Le point de départ</p>
+    <h2>Une tension à trois</h2>
+    <p class="lead">Trois exigences légitimes qui tirent dans des directions différentes.</p>
+    <div class="trio">
+      <div class="pull">
+        <span class="k">Contrainte 1</span>
+        <h3>Un modèle relationnel</h3>
+        <p>Position ↔ Passe ↔ Enchaînement, c'est un graphe de relations. Ça réclame une vraie base SQL.</p>
+      </div>
+      <div class="pull">
+        <span class="k">Contrainte 2</span>
+        <h3>~50 €/an</h3>
+        <p>Projet bénévole. La référence, c'est ce que coûtait l'ancien hébergement OVH.</p>
+      </div>
+      <div class="pull">
+        <span class="k">Contrainte 3</span>
+        <h3>Apprendre AWS</h3>
+        <p>Le projet est aussi une occasion d'apprendre un stack moderne et le déploiement cloud.</p>
+      </div>
+    </div>
+    <p>Une base SQL classique sur AWS (RDS) coûte ~19 $/mois — hors budget. Le « moins cher » pousse vers du serverless ou du NoSQL, mais le NoSQL colle mal à un graphe relationnel. Et « apprendre AWS » peut pousser vers un empilement de services… qui est justement le piège.</p>
+    <div class="callout">
+      <span class="tag">L'insight qui tranche tout</span>
+      <p>Les deux versions précédentes ne sont pas mortes d'un mauvais choix de techno. Elles sont mortes parce que <strong>maintenir l'outil seul est devenu plus lourd que le problème résolu</strong>. Le vrai risque n'est donc pas technique : c'est la complexité de maintenance. L'architecture doit biaiser, partout, vers ce qu'un seul humain peut tenir.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wide">
+    <p class="eyebrow">Le parcours</p>
+    <h2>Cinq décisions, et ce qu'on a écarté</h2>
+    <p class="lead">Chaque fork est arbitré par la même boussole : simplicité de maintenance d'abord, coût ensuite, apprentissage utile — jamais un système distribué pour le plaisir.</p>
+    <div class="decisions">
+
+      <div class="card">
+        <span class="num">Décision 1 · Paradigme</span>
+        <h3>Un monolithe, pas un nuage de services</h3>
+        <div class="rows">
+          <span class="rk">Le choix</span>
+          <p class="rv win">Une seule base de code, un seul programme déployé en un bloc. Tout se comprend d'un seul tenant.</p>
+          <span class="rk">Pourquoi</span>
+          <p class="rv">C'est l'antidote direct au risque n°1. Un monolithe se débogue, se déploie et se raisonne comme un tout.</p>
+          <span class="rk">Écarté</span>
+          <p class="rv cut"><s>Serverless (Lambda + Aurora + Cognito + CloudFront…)</s> — génial à apprendre, mais 5-6 services à câbler et maintenir seul. Le profil de risque des v1/v2.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="num">Décision 2 · Stack</span>
+        <h3>Next.js + Payload, tout en TypeScript</h3>
+        <div class="rows">
+          <span class="rk">Le choix</span>
+          <p class="rv win">Next.js (React) pour les pages et le compositeur interactif ; Payload monté dans la même app pour l'admin, l'auth et les données. Un seul langage : TS.</p>
+          <span class="rk">Pourquoi</span>
+          <p class="rv">TS est ta compétence la plus forte. Payload génère gratuitement le back-office du catalogue — l'équivalent de l'admin Django, en TS. Ça tourne en local en une commande et se teste avec Playwright.</p>
+          <span class="rk">Écarté</span>
+          <p class="rv cut"><s>Django + React en SPA séparée</s> — deux bases de code, deux langages, plus de maintenance. <s>PHP/Laravel</s> — pas ta tasse de thé. <s>SvelteKit</s> — moins « batteries incluses », plus à assembler.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="num">Décision 3 · Données & hébergement</span>
+        <h3>SQLite sur une petite instance</h3>
+        <div class="rows">
+          <span class="rk">Le choix</span>
+          <p class="rv win">La base est un simple fichier SQLite sur une instance Lightsail, sauvegardé en continu vers S3. Prix fixe et prévisible.</p>
+          <span class="rk">Pourquoi</span>
+          <p class="rv">Pour toi + ~50 élèves, SQLite suffit largement. Aucun service de base à gérer ni à payer, sauvegarde = un flux vers S3. Le maximum de simplicité pour le minimum de coût.</p>
+          <span class="rk">Écarté</span>
+          <p class="rv cut"><s>Aurora Serverless</s> — moins cher au repos mais cold start ~15 s et plus de pièces. <s>RDS classique</s> — hors budget (~19 $/mois).</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="num">Décision 4 · Authentification</span>
+        <h3>Celle de Payload, intégrée</h3>
+        <div class="rows">
+          <span class="rk">Le choix</span>
+          <p class="rv win">Comptes, sessions et réinitialisation reposent sur l'auth livrée avec Payload (email + mot de passe).</p>
+          <span class="rk">Pourquoi</span>
+          <p class="rv">Zéro système d'auth en plus. C'était une question ouverte du PRD (Cognito ou maison ?) — elle se résout d'elle-même : aucun des deux.</p>
+          <span class="rk">Écarté</span>
+          <p class="rv cut"><s>AWS Cognito</s> — un service externe de plus. <s>Auth maison</s> — de la sécurité à porter soi-même.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="num">Décision 5 · Images & sauvegarde</span>
+        <h3>Tout ce qui doit survivre va dans S3</h3>
+        <div class="rows">
+          <span class="rk">Le choix</span>
+          <p class="rv win">Images de positions et sauvegarde de la base stockées dans S3, découplées de l'instance.</p>
+          <span class="rk">Pourquoi</span>
+          <p class="rv">Si l'instance est remplacée, rien n'est perdu : ni les images, ni les enchaînements. Une position sans image utilise le placeholder <code>no_position</code> — la création n'est jamais bloquée.</p>
+          <span class="rk">Écarté</span>
+          <p class="rv cut"><s>Images sur le disque de l'instance</s> — simple au départ, mais un point de fragilité à chaque redéploiement.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Sous le capot</p>
+    <h2>Le modèle de données</h2>
+    <p class="lead">Six entités, et une règle d'or sur qui a le droit d'écrire.</p>
+  </div>
+  <div class="wide">
+    <figure>
+      <pre class="mermaid">
+erDiagram
+    Danse ||--o{ Position : regroupe
+    Position ||--o{ Passe : depart
+    Position ||--o{ Passe : arrivee
+    User ||--o{ Enchainement : auteur
+    Enchainement }o--o{ Passe : passes_ordonnees
+    User ||--o{ Favori : possede
+    Favori }o--|| Enchainement : "vers (partagé, d'autrui)"
+      </pre>
+      <figcaption>Le graphe du catalogue : une Passe relie deux Positions ; un Enchaînement est une suite ordonnée de Passes ; un Favori pointe vers l'enchaînement partagé de quelqu'un d'autre.</figcaption>
+    </figure>
+  </div>
+  <div class="wrap">
+    <h3 style="font-size:1.15rem;margin:26px 0 8px;">Drizzle vs Payload — la question que tu as posée</h3>
+    <p>Deux couches empilées, pas deux concurrents. C'est le genre de « pourquoi » qui mérite d'être clair :</p>
+    <div class="analogy">
+      <div class="box">
+        <h4>Drizzle · le moteur</h4>
+        <p>L'outil bas niveau qui parle à SQLite : il traduit ton TypeScript en SQL et gère les tables. Il ne connaît rien de ton app — ni admin, ni auth, ni règles d'accès.</p>
+      </div>
+      <div class="box">
+        <h4>Payload · la voiture</h4>
+        <p>Le framework construit autour du moteur. Tu déclares tes collections, il te donne l'admin, l'auth, les API et les types. Sous le capot, il utilise Drizzle pour écrire.</p>
+      </div>
+    </div>
+    <p>La plupart du temps tu <strong>conduis la voiture</strong> (tu utilises Payload). De temps en temps, pour une requête très performante — typiquement le <strong>moteur de composition</strong> (« quelles passes depuis la position courante ? ») — tu <strong>ouvres le capot</strong> et tu lis directement avec Drizzle.</p>
+    <div class="callout">
+      <span class="tag">La règle d'or — un seul scribe</span>
+      <p>Toutes les <strong>écritures</strong> passent par Payload (donc validation, permissions et types tiennent toujours). Les <strong>lectures</strong> peuvent ouvrir le capot Drizzle. Jamais l'inverse. C'est ce qui empêche deux bouts de code de corrompre la même donnée chacun à sa façon.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">De ton clavier à tes élèves</p>
+    <h2>Comment ça tourne</h2>
+    <p class="lead">En local, une commande. En production, un <code>git push</code> — et rien à faire à la main.</p>
+  </div>
+  <div class="wide">
+    <figure>
+      <pre class="mermaid">
+graph LR
+    Dev["git push (branche main)"] --> GA["GitHub Actions<br/>build + tests Playwright"]
+    GA --> GHCR["Image Docker<br/>(ghcr.io)"]
+    GHCR --> LS["Instance Lightsail<br/>conteneur Next + Payload"]
+    LS --> Vol[("Fichier SQLite<br/>disque persistant")]
+    Vol -->|flux continu| S3B[("Sauvegarde S3")]
+    LS --> S3U[("Images S3")]
+    Browser["Navigateur élève"] --> LS
+      </pre>
+      <figcaption>Le pipeline « commit → production » : tu pousses ton code, la CI le teste, le déploie, et l'instance sert l'app. La base est sauvegardée en continu, hors de l'instance.</figcaption>
+    </figure>
+  </div>
+  <div class="wrap">
+    <p>Le filet de sécurité, ce sont les <strong>tests Playwright</strong> : ils rejouent le geste central (composer et publier un enchaînement) à chaque déploiement. Si ça casse, ça ne part pas en production. Pas d'environnement de staging séparé en v1 — c'est un choix de simplicité assumé, pas un oubli.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">La facture</p>
+    <h2>Rester autour de 50 €/an</h2>
+    <p class="lead">Prévisible, sans mauvaise surprise de facturation à l'usage.</p>
+    <table class="cost">
+      <thead><tr><th>Poste</th><th>Rôle</th><th class="amt">Ordre de grandeur</th></tr></thead>
+      <tbody>
+        <tr><td>Instance Lightsail</td><td>fait tourner l'app + la base</td><td class="amt">~5 $/mois</td></tr>
+        <tr><td>S3</td><td>images + sauvegarde de la base</td><td class="amt">négligeable</td></tr>
+        <tr><td>GitHub Actions · ghcr.io</td><td>build & déploiement</td><td class="amt">gratuit</td></tr>
+        <tr><td>Cloudflare Web Analytics</td><td>compteur de visites</td><td class="amt">gratuit</td></tr>
+        <tr class="total"><td>Total hébergement</td><td>hors nom de domaine</td><td class="amt">~55–60 €/an</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px;color:var(--muted);font-size:.92rem;">Le nom de domaine reste un poste à part, à ta main. Les stats de visite se consultent dans une console externe (Cloudflare) — pas d'écran de stats à construire dans le site.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">L'autre moitié du contrat</p>
+    <h2>Ce qu'on n'a délibérément pas fait</h2>
+    <p class="lead">Une bonne architecture dit aussi ce qu'elle laisse de côté, et pourquoi ça peut attendre.</p>
+    <ul class="deferred">
+      <li><span class="chip">Plus tard</span><p><strong>Scaling horizontal.</strong> SQLite lie la base à une seule instance. Largement suffisant à ton échelle ; à rouvrir seulement si le multi-écoles (Vision) arrive.</p></li>
+      <li><span class="chip">Plus tard</span><p><strong>Connexion Google &amp; co.</strong> L'auth Payload suffit en v1. On rouvrira si des écoles tierces rejoignent.</p></li>
+      <li><span class="chip">Modèle prêt</span><p><strong>Plusieurs danses.</strong> Le champ « danse » existe déjà dans le modèle, mais l'interface v1 est mono-danse (rock 6 temps). Activer 4 temps / salsa plus tard ne demandera pas de migration douloureuse.</p></li>
+      <li><span class="chip">Vision</span><p><strong>Lecteur vidéo chapitré.</strong> En v1, une passe renvoie vers les vidéos des enchaînements qui l'utilisent — pas de lecteur intégré au bon timestamp.</p></li>
+      <li><span class="chip">À ta main</span><p><strong>Nom de domaine.</strong> Choix opérationnel (registrar, coût), hors architecture.</p></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Passe Finder v2 · Colonne vertébrale d'architecture (15 invariants, AD-1 → AD-15). Ce document explique le raisonnement ; le contrat technique complet vit dans <code>ARCHITECTURE-SPINE.md</code>. Prochaine étape : le découpage en épics et stories.</p>
+  </div>
+</footer>

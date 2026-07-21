@@ -76,9 +76,9 @@ Dépendance structurante : **Position → Passe → Enchaînement**. Une passe n
 
 ### F1 — Catalogue (Positions, Passes, Danse)
 
-- **FR-1.** L'admin peut **créer, éditer et supprimer une Position** : description, image, danse de rattachement.
+- **FR-1.** L'admin peut **créer, éditer et supprimer une Position** : **nom**, description, image, danse de rattachement.
 - **FR-2.** L'image d'une position est **non bloquante** : à défaut, un placeholder `no_position` est utilisé, et l'image reste **éditable ultérieurement** sans invalider la position.
-- **FR-3.** L'admin peut **créer, éditer et supprimer une Passe** : position de départ, position d'arrivée, description (comment exécuter la passe), danse, difficulté (optionnelle).
+- **FR-3.** L'admin peut **créer, éditer et supprimer une Passe** : **nom**, position de départ, position d'arrivée, description (comment exécuter la passe), danse, difficulté (optionnelle).
 - **FR-4.** Une passe ne peut être créée qu'en **sélectionnant des positions existantes** ; pas de création de position à la volée depuis l'écran de passe.
 - **FR-5.** Une passe et ses positions de départ/arrivée **appartiennent à la même danse** (une passe ne mélange jamais deux danses).
 - **FR-6.** La **danse** est une dimension de premier ordre du modèle (Position et Passe en portent une). En v1, le catalogue ne contient qu'une seule danse : **« rock 6 temps »**. Le modèle doit permettre d'en ajouter d'autres (4 temps, salsa…) **sans migration structurelle**.
