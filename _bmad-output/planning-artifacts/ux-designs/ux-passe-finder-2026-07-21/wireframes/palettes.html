@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Passe Finder — palettes</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:#eceef1; color:#1b2030; padding:28px; line-height:1.5; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  .intro { color:#5c6474; margin:0 0 26px; font-size:.94rem; max-width:70ch; }
+  .palette { background:#fff; border:1px solid #e3e6ea; border-radius:16px; padding:20px 22px; margin-bottom:22px; }
+  .phead { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
+  .pname { font-weight:700; font-size:1.15rem; }
+  .preg { color:#6b7280; font-size:.88rem; }
+  .prefs { font-size:.82rem; color:#8a92a0; margin:2px 0 16px; }
+  .prefs b { color:#5c6474; font-weight:600; }
+
+  .swatches { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .sw { width:104px; }
+  .sw .box { height:56px; border-radius:9px; border:1px solid rgba(0,0,0,.10); }
+  .sw .role { font-size:.66rem; letter-spacing:.05em; text-transform:uppercase; color:#9aa1ac; margin-top:6px; }
+  .sw .hex { font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:.72rem; color:#3a4150; }
+
+  .previews { display:flex; gap:14px; flex-wrap:wrap; }
+  .card { border-radius:12px; padding:14px; border:1px solid; width:240px; }
+  .card .t { font-weight:700; font-size:.92rem; }
+  .card .d { font-size:.76rem; margin:2px 0 12px; }
+  .flow { display:flex; align-items:center; gap:7px; }
+  .pos { width:36px; height:36px; border-radius:50%; flex:0 0 auto; }
+  .arrow { flex:1; text-align:center; font-size:.62rem; }
+  .arrow i { display:block; height:2px; border-radius:2px; margin-top:3px; }
+  .btn { margin-top:12px; display:inline-block; padding:7px 14px; border-radius:8px; font-size:.78rem; font-weight:600; border:none; }
+  .lead { background:#a9c7e6; } .follow { background:#f2b5cf; }
+  .mtag { font-size:.64rem; letter-spacing:.09em; text-transform:uppercase; color:#9aa1ac; margin-bottom:7px; }
+</style>
+</head>
+<body>
+  <h1>Passe Finder v2 — 4 palettes, en grand</h1>
+  <p class="intro">Vraies pastilles avec codes hex, aperçu clair + sombre, et des sites connus qui ont cette ambiance. Décor neutre dans les quatre, pour laisser tes images colorées ressortir.</p>
+
+  <!-- A -->
+  <div class="palette">
+    <div class="phead"><span class="pname">A · Ardoise &amp; Indigo</span><span class="preg">Moderne, calme, un peu « tech ». L'accent indigo ne crie pas.</span></div>
+    <div class="prefs"><b>Dans l'esprit de :</b> Linear, le tableau de bord Vercel, Notion — neutres soignés avec un indigo/violet retenu.</div>
+    <div class="swatches">
+      <div class="sw"><div class="box" style="background:#F7F8FA"></div><div class="role">Fond</div><div class="hex">#F7F8FA</div></div>
+      <div class="sw"><div class="box" style="background:#FFFFFF"></div><div class="role">Surface</div><div class="hex">#FFFFFF</div></div>
+      <div class="sw"><div class="box" style="background:#1B2030"></div><div class="role">Texte</div><div class="hex">#1B2030</div></div>
+      <div class="sw"><div class="box" style="background:#5C6474"></div><div class="role">Atténué</div><div class="hex">#5C6474</div></div>
+      <div class="sw"><div class="box" style="background:#4F5BD5"></div><div class="role">Accent</div><div class="hex">#4F5BD5</div></div>
+      <div class="sw"><div class="box" style="background:#ECEEFB"></div><div class="role">Accent doux</div><div class="hex">#ECEEFB</div></div>
+    </div>
+    <div class="previews">
+      <div>
+        <div class="mtag">Clair</div>
+        <div class="card" style="background:#fff;border-color:#e6e8ef;">
+          <div class="t" style="color:#1B2030;">Débutants — 12 mars</div>
+          <div class="d" style="color:#5C6474;">Travaillé ce soir</div>
+          <div class="flow"><div class="pos lead"></div><div class="arrow" style="color:#4F5BD5;">passe pied<i style="background:#4F5BD5;"></i></div><div class="pos follow"></div></div>
+          <button class="btn" style="background:#4F5BD5;color:#fff;">Enregistrer</button>
+        </div>
+      </div>
+      <div>
+        <div class="mtag">Sombre</div>
+        <div class="card" style="background:#1B1F2C;border-color:#2a2f3e;">
+          <div class="t" style="color:#ECEEF5;">Débutants — 12 mars</div>
+          <div class="d" style="color:#9aa1b5;">Travaillé ce soir</div>
+          <div class="flow"><div class="pos lead"></div><div class="arrow" style="color:#8E97F0;">passe pied<i style="background:#8E97F0;"></i></div><div class="pos follow"></div></div>
+          <button class="btn" style="background:#8E97F0;color:#12151F;">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div class="palette">
+    <div class="phead"><span class="pname">B · Papier &amp; Argile</span><span class="preg">Chaleureux, artisanal, doux — sans tomber dans le rustique.</span></div>
+    <div class="prefs"><b>Dans l'esprit de :</b> Airbnb, le magazine Kinfolk, l'appli Craft — blancs cassés chauds et terre cuite.</div>
+    <div class="swatches">
+      <div class="sw"><div class="box" style="background:#F8F6F2"></div><div class="role">Fond</div><div class="hex">#F8F6F2</div></div>
+      <div class="sw"><div class="box" style="background:#FFFFFF"></div><div class="role">Surface</div><div class="hex">#FFFFFF</div></div>
+      <div class="sw"><div class="box" style="background:#262019"></div><div class="role">Texte</div><div class="hex">#262019</div></div>
+      <div class="sw"><div class="box" style="background:#6E6357"></div><div class="role">Atténué</div><div class="hex">#6E6357</div></div>
+      <div class="sw"><div class="box" style="background:#B15C3C"></div><div class="role">Accent</div><div class="hex">#B15C3C</div></div>
+      <div class="sw"><div class="box" style="background:#F6E7DF"></div><div class="role">Accent doux</div><div class="hex">#F6E7DF</div></div>
+    </div>
+    <div class="previews">
+      <div>
+        <div class="mtag">Clair</div>
+        <div class="card" style="background:#fff;border-color:#ece5dc;">
+          <div class="t" style="color:#262019;">Débutants — 12 mars</div>
+          <div class="d" style="color:#6E6357;">Travaillé ce soir</div>
+          <div class="flow"><div class="pos lead"></div><div class="arrow" style="color:#B15C3C;">passe pied<i style="background:#B15C3C;"></i></div><div class="pos follow"></div></div>
+          <button class="btn" style="background:#B15C3C;color:#fff;">Enregistrer</button>
+        </div>
+      </div>
+      <div>
+        <div class="mtag">Sombre</div>
+        <div class="card" style="background:#241F1A;border-color:#332c24;">
+          <div class="t" style="color:#EFE9E1;">Débutants — 12 mars</div>
+          <div class="d" style="color:#b0a294;">Travaillé ce soir</div>
+          <div class="flow"><div class="pos lead"></div><div class="arrow" style="color:#D98A6A;">passe pied<i style="background:#D98A6A;"></i></div><div class="pos follow"></div></div>
+          <button class="btn" style="background:#D98A6A;color:#1A1713;">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="palette">
+    <div class="phead"><span class="pname">C · Lin &amp; Sauge</span><span class="preg">Frais, apaisant — clin d'œil discret au vert de tes images.</span></div>
+    <div class="prefs"><b>Dans l'esprit de :</b> Aesop, Headspace, les templates « earthy » de Squarespace — verts sourds et naturels.</div>
+    <div class="swatches">
+      <div class="sw"><div class="box" style="background:#F6F7F3"></div><div class="role">Fond</div><div class="hex">#F6F7F3</div></div>
+      <div class="sw"><div class="box" style="background:#FFFFFF"></div><div class="role">Surface</div><div class="hex">#FFFFFF</div></div>
+      <div class="sw"><div class="box" style="background:#202519"></div><div class="role">Texte</div><div class="hex">#202519</div></div>
+      <div class="sw"><div class="box" style="background:#5E6553"></div><div class="role">Atténué</div><div class="hex">#5E6553</div></div>
+      <div class="sw"><div class="box" style="background:#5E8A5A"></div><div class="role">Accent</div><div class="hex">#5E8A5A</div></div>
+      <div class="sw"><div class="box" style="background:#E6EFE0"></div><div class="role">Accent doux</div><div class="hex">#E6EFE0</div></div>
+    </div>
+    <div class="previews">
+      <div>
+        <div class="mtag">Clair</div>
+        <div class="card" style="background:#fff;border-color:#e5e8de;">
+          <div class="t" style="color:#202519;">Débutants — 12 mars</div>
+          <div class="d" style="color:#5E6553;">Travaillé ce soir</div>
+          <div class="flow"><div class="pos lead"></div><div class="arrow" style="color:#5E8A5A;">passe pied<i style="background:#5E8A5A;"></i></div><div class="pos follow"></div></div>
+          <button class="btn" style="background:#5E8A5A;color:#fff;">Enregistrer</button>
+        </div>
+      </div>
+      <div>
+        <div class="mtag">Sombre</div>
+        <div class="card" style="background:#1D211A;border-color:#2b3026;">
+          <div class="t" style="color:#E9EEE2;">Débutants — 12 mars</div>
+          <div class="d" style="color:#a8b0a0;">Travaillé ce soir</div>
+          <div class="flow"><div class="pos lead"></div><div class="arrow" style="color:#8FBE8A;">passe pied<i style="background:#8FBE8A;"></i></div><div class="pos follow"></div></div>
+          <button class="btn" style="background:#8FBE8A;color:#14170F;">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D -->
+  <div class="palette">
+    <div class="phead"><span class="pname">D · Brume &amp; Ardoise-bleu</span><span class="preg">Sobre et net, accent bleu-canard — pro sans être froid.</span></div>
+    <div class="prefs"><b>Dans l'esprit de :</b> Things 3, Bear, Stripe — bleus-pétrole nets sur fond clair.</div>
+    <div class="swatches">
+      <div class="sw"><div class="box" style="background:#F4F6F8"></div><div class="role">Fond</div><div class="hex">#F4F6F8</div></div>
+      <div class="sw"><div class="box" style="background:#FFFFFF"></div><div class="role">Surface</div><div class="hex">#FFFFFF</div></div>
+      <div class="sw"><div class="box" style="background:#1A222B"></div><div class="role">Texte</div><div class="hex">#1A222B</div></div>
+      <div class="sw"><div class="box" style="background:#566672"></div><div class="role">Atténué</div><div class="hex">#566672</div></div>
+      <div class="sw"><div class="box" style="background:#2E7D93"></div><div class="role">Accent</div><div class="hex">#2E7D93</div></div>
+      <div class="sw"><div class="box" style="background:#E1EEF1"></div><div class="role">Accent doux</div><div class="hex">#E1EEF1</div></div>
+    </div>
+    <div class="previews">
+      <div>
+        <div class="mtag">Clair</div>
+        <div class="card" style="background:#fff;border-color:#e2e7eb;">
+          <div class="t" style="color:#1A222B;">Débutants — 12 mars</div>
+          <div class="d" style="color:#566672;">Travaillé ce soir</div>
+          <div class="flow"><div class="pos lead"></div><div class="arrow" style="color:#2E7D93;">passe pied<i style="background:#2E7D93;"></i></div><div class="pos follow"></div></div>
+          <button class="btn" style="background:#2E7D93;color:#fff;">Enregistrer</button>
+        </div>
+      </div>
+      <div>
+        <div class="mtag">Sombre</div>
+        <div class="card" style="background:#18222B;border-color:#26323c;">
+          <div class="t" style="color:#E8EFF3;">Débutants — 12 mars</div>
+          <div class="d" style="color:#9fb0bb;">Travaillé ce soir</div>
+          <div class="flow"><div class="pos lead"></div><div class="arrow" style="color:#5FB3C8;">passe pied<i style="background:#5FB3C8;"></i></div><div class="pos follow"></div></div>
+          <button class="btn" style="background:#5FB3C8;color:#101820;">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
