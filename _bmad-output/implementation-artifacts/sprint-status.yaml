@@ -1,0 +1,107 @@
+# generated: 2026-08-24
+# last_updated: 2026-08-24
+# project: passe-finder
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-08-24
+last_updated: 2026-08-24
+project: passe-finder
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # --- Epic 1: Socle déployable & pipeline continu ---
+  epic-1: backlog
+  1-1-scaffold-du-monolithe-next-js-payload: backlog
+  1-2-image-docker-de-production: backlog
+  1-3-pipeline-ci-cd-commit-production-avec-filet-playwright: backlog
+  1-4-persistance-fiable-volume-sqlite-sauvegarde-continue-vers-s3: backlog
+  1-5-systeme-visuel-lin-sauge-tokens-theme-composants-de-base: backlog
+  1-6-coquille-de-navigation-layout-responsive: backlog
+  1-7-instrumentation-d-audience-cloudflare-web-analytics: backlog
+  epic-1-retrospective: optional
+
+  # --- Epic 2: Catalogue de référence (Positions & Passes) ---
+  epic-2: backlog
+  2-1-modele-danse-mono-danse-rock-6-temps: backlog
+  2-2-gerer-les-positions-crud-admin-image-non-bloquante: backlog
+  2-3-gerer-les-passes-meme-danse-positions-existantes: backlog
+  2-4-blocage-de-suppression-d-un-element-reference: backlog
+  2-5-fiche-position-publique-exploration-du-graphe: backlog
+  2-6-fiche-passe-publique-navigation-vers-les-positions: backlog
+  epic-2-retrospective: optional
+
+  # --- Epic 3: Comptes & accès ---
+  epic-3: backlog
+  3-1-inscription-creer-un-compte: backlog
+  3-2-connexion-deconnexion-etat-connecte-dans-la-nav: backlog
+  3-3-recuperation-d-acces-mot-de-passe-oublie: backlog
+  3-4-role-admin-unique-gouvernance-du-catalogue: backlog
+  3-5-porte-d-acces-aux-actions-reservees-retour-apres-connexion: backlog
+  epic-3-retrospective: optional
+
+  # --- Epic 4: Composition & enchaînements (climax du produit) ---
+  epic-4: backlog
+  4-1-moteur-de-composition-passes-possibles-depuis-la-position-courante: backlog
+  4-2-compositeur-composition-guidee-rendu-de-chaine: backlog
+  4-3-enregistrer-un-enchainement-metadonnees-defaut-prive-sauvegarde-fiable: backlog
+  4-4-vue-lecture-partage-par-url-controles-de-partage: backlog
+  4-5-editer-supprimer-ses-propres-enchainements: backlog
+  4-6-lier-une-video-youtube-a-un-enchainement: backlog
+  epic-4-retrospective: optional
+
+  # --- Epic 5: Découverte, favoris & profil ---
+  epic-5: backlog
+  5-1-mettre-en-favori-un-enchainement-partage-d-autrui: backlog
+  5-2-profil-a-deux-listes-mes-enchainements-mes-favoris: backlog
+  5-3-accueil-fil-des-nouveautes: backlog
+  5-4-catalogue-navigable-positions-passes: backlog
+  5-5-recherche-globale-groupee-par-categorie: backlog
+  5-6-fiche-passe-complete-enchainements-videos-reverse-lookup: backlog
+  epic-5-retrospective: optional
+
+  # --- Epic 6: Migration des données legacy ---
+  epic-6: backlog
+  6-1-extraction-mapping-du-dump-legacy: backlog
+  6-2-migrer-le-catalogue-danses-positions-passes: backlog
+  6-3-migrer-les-enchainements-liaisons-ordonnees: backlog
+  6-4-verification-rejouabilite-de-la-migration: backlog
+  epic-6-retrospective: optional
