@@ -17,3 +17,43 @@ _bmad/custom/*.user.toml
 #   _bmad-output/            — livrables BMAD (brief, PRD, architecture…)
 #   _bmad/bmm/config.yaml    — config projet
 #   _bmad/custom/config.toml — overrides (langue = French)
+
+# --- Application (scaffold Story 1.1) ---
+# dépendances
+/node_modules
+node_modules/
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+/build
+next-env.d.ts
+
+# variables d'environnement (jamais commiter les secrets)
+.env
+.env*.local
+
+# base SQLite locale (dev)
+*.db
+*.db-shm
+*.db-wal
+
+# typescript
+*.tsbuildinfo
+
+# tests
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# uploads locaux
+/media
+
+# divers
+.DS_Store
+*.pem
+npm-debug.log*
