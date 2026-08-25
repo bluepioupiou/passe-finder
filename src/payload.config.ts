@@ -6,6 +6,7 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
+import { DATABASE_URI, PAYLOAD_SECRET } from './env'
 import { Users } from './collections/Users'
 
 const filename = fileURLToPath(import.meta.url)
@@ -22,7 +23,7 @@ export default buildConfig({
   // (Danse, Position, Passe, Enchainement, Favori) arrivent aux Epics 2/3.
   collections: [Users],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
@@ -30,8 +31,12 @@ export default buildConfig({
   // seul scribe de la base. En dev, fichier local ; en prod, volume persistant.
   db: sqliteAdapter({
     client: {
-      url: process.env.DATABASE_URI || 'file:./passe-finder.db',
+      url: DATABASE_URI,
     },
+    // Dev : Payload synchronise le schéma automatiquement (push par défaut).
+    // Prod : le schéma est appliqué par les migrations (`payload migrate`,
+    // lancé au démarrage du conteneur, cf. docker-entrypoint.sh). Toute
+    // évolution de collection nécessite un `npm run payload -- migrate:create`.
   }),
   sharp,
   // NFR-7 : back-office en français (identifiants de code en anglais,

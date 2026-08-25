@@ -1,0 +1,38 @@
+# Contexte de build Docker : n'envoyer que le nécessaire.
+# Sécurité : ne JAMAIS copier les secrets ni la base locale dans l'image.
+
+# dépendances / artefacts (réinstallés/reconstruits dans l'image)
+node_modules
+.next
+out
+build
+
+# secrets & base locale
+.env
+.env*.local
+*.db
+*.db-shm
+*.db-wal
+
+# outillage & livrables non nécessaires au runtime
+.git
+.gitignore
+.claude
+_bmad
+_bmad-output
+docs
+images
+passe-finder-saveDB.gz
+
+# tests & rapports
+tests
+test-results
+playwright-report
+blob-report
+playwright/.cache
+
+# divers
+Dockerfile
+.dockerignore
+README.md
+*.log

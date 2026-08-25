@@ -7,6 +7,9 @@ const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
+  // NB : pas de `output: 'standalone'`. L'image de prod conserve les
+  // node_modules complets car le CLI `payload migrate` doit tourner au
+  // démarrage du conteneur (le standalone minimal ne l'embarque pas).
   // Désactive la génération automatique de AGENTS.md / CLAUDE.md par Next 16
   // (le projet gère ses propres conventions via BMAD).
   agentRules: false,

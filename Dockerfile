@@ -1,74 +1,79 @@
-# To use this Dockerfile, you have to set `output: 'standalone'` in your next.config.mjs file.
-# From https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile
+# Image de production du monolithe Next.js + Payload (Story 1.2).
+# Multi-stage : deps → builder → runner.
+# L'image finale conserve les node_modules complets : le CLI `payload migrate`
+# doit tourner au démarrage (docker-entrypoint.sh) pour créer/mettre à jour le
+# schéma SQLite. Base Node 24 (requise par Payload >= 3.88).
 
-# NOTE (Story 1.1) : Dockerfile par défaut du template. Sa finalisation
-# (build standalone, volume SQLite, variables d'env) est l'objet de la Story 1.2.
-# Base alignée sur Node 24 (requis par Payload >= 3.88, engines >= 24.15.0).
 FROM node:24-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+# libc6-compat : compat glibc pour certains binaires natifs (dont sharp) sur Alpine/musl.
 RUN apk add --no-cache libc6-compat
+
+# ---------------------------------------------------------------------------
+# 1) Dépendances (lockfile strict, reproductible)
+# ---------------------------------------------------------------------------
+FROM base AS deps
 WORKDIR /app
+# .npmrc (legacy-peer-deps=true) requis pour que la résolution corresponde au lockfile.
+COPY package.json package-lock.json* .npmrc* ./
+RUN npm ci
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
-
-# Rebuild the source code only when needed
+# ---------------------------------------------------------------------------
+# 2) Build
+# ---------------------------------------------------------------------------
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ENV NODE_ENV=production
+# Le build importe payload.config.ts → src/env.ts, qui EXIGE PAYLOAD_SECRET et
+# (en production) DATABASE_URI. Valeurs de build fournies EN LIGNE : valables
+# uniquement pour cette commande, jamais stockées dans une couche de l'image.
+# Les vraies valeurs sont fournies au runtime.
+RUN PAYLOAD_SECRET=build-time-placeholder \
+    DATABASE_URI=file:./build-time-placeholder.db \
+    npm run build
 
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
-# Production image, copy all the files and run next
+# ---------------------------------------------------------------------------
+# 3) Image finale
+# ---------------------------------------------------------------------------
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV PORT=3000
+# AD-10 : la base SQLite vit sur un volume persistant monté en /data,
+# jamais dans la couche image éphémère. Surchargage possible au runtime.
+ENV DATABASE_URI=file:/data/passe-finder.db
+# NB : PAYLOAD_SECRET n'a PAS de valeur par défaut → doit être fourni au runtime
+# (sinon échec explicite au démarrage, cf. src/env.ts).
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Utilisateur non-root
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs
 
-# Remove this line if you do not have this folder
-COPY --from=builder /app/public ./public
+# Répertoire de données du volume, inscriptible par l'utilisateur nextjs.
+RUN mkdir -p /data && chown nextjs:nodejs /data
+VOLUME /data
 
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Application : node_modules (pour `payload` + `next`), build, config, migrations.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/src ./src
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/next.config.ts ./next.config.ts
+COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
+COPY --from=builder --chown=nextjs:nodejs /app/.npmrc ./.npmrc
+COPY --from=builder --chown=nextjs:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
 
 USER nextjs
-
 EXPOSE 3000
 
-ENV PORT 3000
+# Vérifie que l'app répond (busybox wget présent sur Alpine).
+# Forme shell : $PORT est développé au runtime, donc la sonde suit le port réel
+# même si PORT est surchargé au `docker run`.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD wget --quiet --spider "http://127.0.0.1:${PORT:-3000}/" || exit 1
 
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD HOSTNAME="0.0.0.0" node server.js
+# Migrations puis démarrage (cf. docker-entrypoint.sh).
+ENTRYPOINT ["sh", "docker-entrypoint.sh"]

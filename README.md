@@ -35,6 +35,31 @@ Puis ouvrir :
 | `npm run generate:types` | régénère les types après un changement de collection |
 | `npm run test:int` | tests d'intégration (Vitest) |
 
+## Docker (image de production)
+
+L'application se package en une image Docker unique (monolithe). La base SQLite vit
+sur un **volume** monté en `/data` (jamais dans l'image — sinon les données seraient
+perdues à chaque redéploiement).
+
+```bash
+# 1. construire l'image
+docker build -t passe-finder .
+
+# 2. lancer le conteneur (secret requis + volume pour la base)
+docker run --rm -p 3000:3000 \
+  -e PAYLOAD_SECRET="une-valeur-aleatoire-longue" \
+  -e DATABASE_URI="file:/data/passe-finder.db" \
+  -v passe-finder-data:/data \
+  passe-finder
+```
+
+- `PAYLOAD_SECRET` est **obligatoire** : sans lui, le conteneur s'arrête au démarrage
+  avec un message d'erreur explicite (pas de plantage silencieux).
+- `-v passe-finder-data:/data` : volume nommé Docker → la base **persiste** entre les
+  redémarrages et recréations du conteneur.
+- La réplication continue du volume vers AWS S3 (sauvegarde) est ajoutée à la Story 1.4 ;
+  le pipeline de build/déploiement automatique à la Story 1.3.
+
 ## Comment ça marche / structure du projet
 
 👉 Voir **[docs/structure-et-choix-techniques.md](docs/structure-et-choix-techniques.md)** — explique
