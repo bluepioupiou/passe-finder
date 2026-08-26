@@ -166,6 +166,44 @@ Pour démarrer : `cp .env.example .env` puis renseigner les valeurs.
 
 ---
 
+## 8bis. L'integration continue (CI)
+
+A chaque `git push` sur `v2` (ou `main`), GitHub Actions execute automatiquement
+`.github/workflows/ci.yml`. Rien a lancer a la main.
+
+**Deux etapes, dans l'ordre :**
+
+| Etape | Ce qu'elle fait | Si ca echoue |
+| --- | --- | --- |
+| **Qualite** | verification des types, lint, tests d'integration | tout s'arrete |
+| **Image** | construit l'image Docker, la demarre, lance le test de fumee, puis publie | rien n'est publie |
+
+**Le test de fumee** (`tests/e2e/smoke.e2e.spec.ts`) tourne contre le **vrai
+conteneur**, pas contre le serveur de developpement. Il verifie trois choses :
+la page d'accueil s'affiche, `/admin` repond, et **la base de donnees repond**.
+
+**Pourquoi tester contre le conteneur ?** En developpement, Payload cree les
+tables tout seul ; en production, seules les migrations le font. Un test lance
+contre `npm run dev` ne verrait donc jamais une migration oubliee. Lance contre
+le conteneur, il l'attrape immediatement.
+
+> **Regle a retenir** : des qu'une collection change (ajout de champ, nouvelle
+> collection), il faut generer la migration correspondante :
+> ```bash
+> npm run payload -- migrate:create un-nom-parlant
+> ```
+> puis commiter le fichier genere. Sans cela, **la CI echoue** (c'est voulu :
+> mieux vaut un pipeline rouge qu'une production cassee).
+
+**Ou va l'image ?** Sur `ghcr.io` (le registre d'images de GitHub), avec deux
+etiquettes : le SHA du commit (immuable) et `latest`. L'authentification utilise
+le jeton fourni par GitHub : aucun secret a creer.
+
+**Ce qui n'est PAS encore automatise** : la recuperation de cette image par le
+serveur AWS Lightsail et le redemarrage du conteneur. C'est l'objet d'une story
+dediee, une fois l'instance provisionnee. Aujourd'hui la chaine va donc de
+*commit* a *image publiee*, pas encore jusqu'a la production.
+
 ## 9. Ce qui n'est PAS encore là (et où ça arrive)
 
 Le scaffold est volontairement **minimal**. La suite, epic par epic :
@@ -173,7 +211,8 @@ Le scaffold est volontairement **minimal**. La suite, epic par epic :
 | Manque actuel | Story / Epic |
 | --- | --- |
 | Image Docker de production finalisée | Story 1.2 |
-| Déploiement automatique (CI/CD GitHub Actions → AWS) | Story 1.3 |
+| CI : build, tests et publication de l'image | Story 1.3 (fait) |
+| Deploiement automatique vers AWS Lightsail | story dediee (a venir) |
 | Sauvegarde continue de la base vers S3 | Story 1.4 |
 | Design « Lin & Sauge » (couleurs, thème clair/sombre, composants) | Story 1.5 |
 | Barre de navigation | Story 1.6 |

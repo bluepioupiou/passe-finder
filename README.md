@@ -60,6 +60,18 @@ docker run --rm -p 3000:3000 \
 - La réplication continue du volume vers AWS S3 (sauvegarde) est ajoutée à la Story 1.4 ;
   le pipeline de build/déploiement automatique à la Story 1.3.
 
+## Integration continue
+
+Chaque push sur `v2`/`main` declenche GitHub Actions : verification des types,
+lint, tests d'integration, puis construction de l'image Docker, **test de fumee
+contre le conteneur** et publication sur `ghcr.io`. Si un test echoue, rien
+n'est publie.
+
+> Toute evolution de collection Payload impose de generer sa migration
+> (`npm run payload -- migrate:create <nom>`), sinon la CI echoue.
+
+Details : [docs/structure-et-choix-techniques.md](docs/structure-et-choix-techniques.md).
+
 ## Comment ça marche / structure du projet
 
 👉 Voir **[docs/structure-et-choix-techniques.md](docs/structure-et-choix-techniques.md)** — explique
