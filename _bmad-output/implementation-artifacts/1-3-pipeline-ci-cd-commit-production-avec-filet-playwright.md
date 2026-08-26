@@ -4,7 +4,7 @@ baseline_commit: 6f4adc8903a144165c227383fd15bb2fb9756d3b
 
 # Story 1.3: Pipeline CI/CD commit → production avec filet Playwright
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -64,7 +64,7 @@ Conséquence assumée : à l'issue de cette story, **FR-41 n'est que partielleme
   - [x] Valider la syntaxe YAML du workflow avant de pousser.
   - [x] Rejouer **localement** la séquence exacte du job image (build → run conteneur → test de fumée contre le conteneur) pour prouver que le filet fonctionne.
   - [x] Prouver le garde-fou de l'AC #3 : sur une image dont les migrations ne couvrent pas le schéma, le test de fumée doit **échouer** (démontrer, puis rétablir).
-  - [ ] Après push, vérifier l'exécution réelle du workflow sur GitHub et la présence de l'image publiée dans `ghcr.io`.
+  - [x] Après push, vérifier l'exécution réelle du workflow sur GitHub et la présence de l'image publiée dans `ghcr.io`.
 
 ## Dev Notes
 
@@ -173,6 +173,25 @@ claude-opus-5 (Claude Opus 5)
 
 **Reste a faire apres le push :** verifier l'execution du workflow dans l'onglet Actions de GitHub et la presence de l'image sur `ghcr.io/bluepioupiou/passe-finder`. Prevoir que le **premier run sera lent** (image ~1,76 Go, cache GHA a constituer).
 
+### Verification reelle sur GitHub (2026-08-26)
+
+Commit `31d6e4c` pousse par Alain sur `v2` -> [run 32952275431](https://github.com/bluepioupiou/passe-finder/actions/runs/32952275431).
+
+| Controle | Resultat |
+| --- | --- |
+| Conclusion du run | **success** (8,6 min, sans cache) |
+| Job `qualite` | types, lint, tests d'integration : tous verts |
+| Job `image` | build -> conteneur demarre -> **test de fumee passe** -> publication |
+| Etape « Logs du conteneur » | *skipped* (declenchee seulement en cas d'echec) : preuve qu'aucune etape n'a echoue |
+| Image publiee | `ghcr.io/bluepioupiou/passe-finder` |
+| Etiquettes presentes | `31d6e4c0ca965b8b3ca78f6f61b5554a8d7bfb66` **et** `latest` (verifie via l'API du registre) |
+
+Les 4 AC de la story sont donc satisfaits et verifies en conditions reelles.
+
+Notes pour la suite :
+- Le paquet `ghcr.io` est **lisible publiquement** (jeton anonyme accepte). Pratique pour le futur `docker pull` depuis Lightsail : aucune authentification a configurer cote serveur. Sans risque ici, l'image ne contient aucun secret (verifie en Story 1.2 : le placeholder de build n'est pas incorpore au bundle).
+- **8,6 min pour ce premier run** sans cache. Les suivants beneficieront du cache GHA ; si la duree reste genante, la tache de suivi sur la taille d'image (1,76 Go) est le bon levier.
+
 ### File List
 
 **Nouveaux fichiers :**
@@ -190,4 +209,5 @@ claude-opus-5 (Claude Opus 5)
 
 | Date | Version | Description | Auteur |
 | --- | --- | --- | --- |
+| 2026-08-26 | 0.1.1 | Verification reelle : run CI vert sur le commit `31d6e4c`, image publiee sur `ghcr.io` avec les tags SHA et `latest`. Story -> review. | Amelia (dev agent) |
 | 2026-08-26 | 0.1.0 | Pipeline CI GitHub Actions : qualite (types/lint/tests) puis build de l'image, test de fumee **contre le conteneur** et publication sur `ghcr.io`. Garde-fou de migration prouve par contre-epreuve. Correction de deux bugs Playwright preexistants (`pnpm dev`, `channel: chromium`). Deploiement Lightsail hors perimetre (decision d'Alain). Verification reelle sur GitHub en attente d'un push. | Amelia (dev agent) |

@@ -7,6 +7,10 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
 import { DATABASE_URI, PAYLOAD_SECRET } from './env'
+import { Danse } from './collections/Danse'
+import { Media } from './collections/Media'
+import { Position } from './collections/Position'
+import { seedDanseV1 } from './seed'
 import { Users } from './collections/Users'
 
 const filename = fileURLToPath(import.meta.url)
@@ -21,7 +25,7 @@ export default buildConfig({
   },
   // v1 : une seule collection d'authentification. Les collections métier
   // (Danse, Position, Passe, Enchainement, Favori) arrivent aux Epics 2/3.
-  collections: [Users],
+  collections: [Users, Danse, Media, Position],
   editor: lexicalEditor(),
   secret: PAYLOAD_SECRET,
   typescript: {
@@ -39,6 +43,10 @@ export default buildConfig({
     // évolution de collection nécessite un `npm run payload -- migrate:create`.
   }),
   sharp,
+  // Semis des donnees de reference au demarrage (idempotent).
+  // En production, l'entrypoint applique d'abord les migrations, donc le schema
+  // existe deja ; en developpement, Payload synchronise le schema avant onInit.
+  onInit: seedDanseV1,
   // NFR-7 : back-office en français (identifiants de code en anglais,
   // libellés/domaine/UI en français).
   i18n: {

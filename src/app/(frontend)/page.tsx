@@ -1,61 +1,41 @@
 import { headers as getHeaders } from 'next/headers.js'
-import Image from 'next/image'
 import { getPayload } from 'payload'
 import React from 'react'
-import { fileURLToPath } from 'url'
 
+import { Bouton } from '@/components/Bouton'
 import config from '@/payload.config'
-import './styles.css'
 
+export const dynamic = 'force-dynamic'
+
+/**
+ * Accueil provisoire. Le vrai fil des nouveautes (E1) arrive avec la Story 5.3 ;
+ * cette page sert pour l'instant de point d'entree vers le catalogue.
+ */
 export default async function HomePage() {
   const headers = await getHeaders()
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
   const { user } = await payload.auth({ headers })
 
-  const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
-
   return (
-    <div className="home">
-      <div className="content">
-        <picture>
-          <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg" />
-          <Image
-            alt="Payload Logo"
-            height={65}
-            src="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg"
-            width={65}
-          />
-        </picture>
-        {!user || !('email' in user) ? (
-          <h1>Passe Finder</h1>
-        ) : (
-          <h1>Bienvenue, {user.email}</h1>
-        )}
-        <div className="links">
-          <a
-            className="admin"
-            href={payloadConfig.routes.admin}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Aller au back-office
-          </a>
-          <a
-            className="docs"
-            href="https://payloadcms.com/docs"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Documentation
-          </a>
-        </div>
-      </div>
-      <div className="footer">
-        <p>Update this page by editing</p>
-        <a className="codeLink" href={fileURL}>
-          <code>app/(frontend)/page.tsx</code>
-        </a>
+    <div className="contenu-page">
+      <h1>{!user || !('email' in user) ? 'Passe Finder' : `Bienvenue, ${user.email}`}</h1>
+      <p className="texte-attenue" style={{ marginTop: 'var(--space-2)' }}>
+        Le catalogue des positions et des passes de rock 6 temps.
+      </p>
+
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 'var(--space-3)',
+          marginTop: 'var(--space-8)',
+        }}
+      >
+        <Bouton href="/positions">Voir les positions</Bouton>
+        <Bouton href={payloadConfig.routes.admin} variante="fantome">
+          Aller au back-office
+        </Bouton>
       </div>
     </div>
   )

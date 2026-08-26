@@ -1,164 +1,122 @@
-:root {
-  --font-mono: 'Roboto Mono', monospace;
-}
+/*
+ * Styles de base du site public, entierement bases sur les tokens
+ * « Lin & Sauge » (voir tokens.css). Aucune valeur en dur ici.
+ */
 
-* {
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
-  font-size: 18px;
-  line-height: 32px;
-
-  background: rgb(0, 0, 0);
+  -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
-}
-
-html,
-body,
-#app {
-  height: 100%;
+  /* Evite un flash de couleur avant le rendu du body. */
+  background: var(--bg);
+  color-scheme: light dark;
 }
 
 body {
-  font-family: system-ui;
-  font-size: 18px;
-  line-height: 32px;
-
   margin: 0;
-  color: rgb(1000, 1000, 1000);
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--body-size);
+  font-weight: var(--body-weight);
+  line-height: var(--body-line);
+}
 
-  @media (max-width: 1024px) {
-    font-size: 15px;
-    line-height: 24px;
-  }
+/* --- Hierarchie typographique : par taille et graisse, une seule famille --- */
+
+h1 {
+  margin: 0;
+  font-size: var(--display-size);
+  font-weight: var(--display-weight);
+  line-height: var(--display-line);
+  letter-spacing: var(--display-tracking);
+}
+
+h2 {
+  margin: 0;
+  font-size: var(--headline-size);
+  font-weight: var(--headline-weight);
+  line-height: var(--headline-line);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Focus visible en accent, exigence du plancher d'accessibilite (UX-DR17). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--rounded-sm);
 }
 
 img {
   max-width: 100%;
   height: auto;
-  display: block;
 }
 
-h1 {
-  margin: 40px 0;
-  font-size: 64px;
-  line-height: 70px;
-  font-weight: bold;
+/* --- Utilitaires typographiques --- */
 
-  @media (max-width: 1024px) {
-    margin: 24px 0;
-    font-size: 42px;
-    line-height: 42px;
-  }
-
-  @media (max-width: 768px) {
-    font-size: 38px;
-    line-height: 38px;
-  }
-
-  @media (max-width: 400px) {
-    font-size: 32px;
-    line-height: 32px;
-  }
+.texte-attenue {
+  color: var(--muted);
 }
 
-p {
-  margin: 24px 0;
-
-  @media (max-width: 1024px) {
-    margin: var(--spacer-3) 0;
-  }
+.label-caps {
+  font-size: var(--label-caps-size);
+  font-weight: var(--label-caps-weight);
+  line-height: var(--label-caps-line);
+  letter-spacing: var(--label-caps-tracking);
+  text-transform: uppercase;
 }
 
-a {
-  color: currentColor;
-
-  &:focus {
-    opacity: 0.8;
-    outline: none;
-  }
-
-  &:active {
-    opacity: 0.7;
-    outline: none;
-  }
+.donnee {
+  font-family: var(--font-mono);
+  font-size: var(--data-size);
+  font-weight: var(--data-weight);
+  line-height: var(--data-line);
 }
 
-svg {
-  vertical-align: middle;
-}
+/* --- Conteneur de page : marges 16px mobile / 24px desktop --- */
 
-.home {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  height: 100vh;
-  padding: 45px;
-  max-width: 1024px;
+.contenu-page {
+  width: 100%;
+  max-width: 1100px;
   margin: 0 auto;
-  overflow: hidden;
+  padding: var(--space-6) var(--page-margin) var(--space-12);
+}
 
-  @media (max-width: 400px) {
-    padding: 24px;
-  }
+/* --- Bandeau provisoire (remplace par la nav complete en Story 1.6) --- */
 
-  .content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex-grow: 1;
+.bandeau-provisoire {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--page-margin);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
 
-    h1 {
-      text-align: center;
-    }
-  }
-
-  .links {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    a {
-      text-decoration: none;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-    }
-
-    .admin {
-      color: rgb(0, 0, 0);
-      background: rgb(1000, 1000, 1000);
-      border: 1px solid rgb(0, 0, 0);
-    }
-
-    .docs {
-      color: rgb(1000, 1000, 1000);
-      background: rgb(0, 0, 0);
-      border: 1px solid rgb(1000, 1000, 1000);
-    }
-  }
-
-  .footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    @media (max-width: 1024px) {
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    p {
-      margin: 0;
-    }
-
-    .codeLink {
-      text-decoration: none;
-      padding: 0 0.5rem;
-      background: rgb(60, 60, 60);
-      border-radius: 4px;
-    }
-  }
+.bandeau-provisoire__marque {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
 }
