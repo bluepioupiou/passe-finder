@@ -1,7 +1,6 @@
-import Link from 'next/link'
 import React from 'react'
 
-import { SelecteurTheme } from '@/components/SelecteurTheme'
+import { Navigation } from '@/components/Navigation'
 import './styles.css'
 
 export const metadata = {
@@ -31,16 +30,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_ANTI_FLASH }} />
       </head>
       <body>
-        {/*
-          Bandeau provisoire : il porte le selecteur de theme en attendant la
-          barre de navigation complete (Story 1.6), qui l'accueillera.
-        */}
-        <div className="bandeau-provisoire">
-          <Link className="bandeau-provisoire__marque" href="/">
-            Passe Finder
-          </Link>
-          <SelecteurTheme />
-        </div>
+        <Navigation />
         <main>{children}</main>
       </body>
     </html>

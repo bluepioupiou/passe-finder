@@ -78,7 +78,7 @@ development_status:
   1-3-pipeline-ci-cd-commit-production-avec-filet-playwright: review
   1-4-persistance-fiable-volume-sqlite-sauvegarde-continue-vers-s3: backlog
   1-5-systeme-visuel-lin-sauge-tokens-theme-composants-de-base: review
-  1-6-coquille-de-navigation-layout-responsive: backlog
+  1-6-coquille-de-navigation-layout-responsive: review
   1-7-instrumentation-d-audience-cloudflare-web-analytics: backlog
   epic-1-retrospective: optional
 
