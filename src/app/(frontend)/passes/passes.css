@@ -21,6 +21,10 @@
 }
 
 .passe-carte {
+  height: 100%;
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -93,4 +97,9 @@
 .passe-description {
   font-size: var(--body-size);
   line-height: var(--body-line);
+}
+
+.passe-carte:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }

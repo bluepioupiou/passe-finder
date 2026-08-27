@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
@@ -49,12 +50,14 @@ export default async function PositionsPage() {
       ) : (
         <ul className="positions-grille">
           {positions.map((position) => (
-            <li key={position.id} className="position-carte">
-              <ImagePosition position={position} />
-              <h2 className="position-nom">{position.nom}</h2>
-              {position.description ? (
-                <p className="position-description texte-attenue">{position.description}</p>
-              ) : null}
+            <li key={position.id}>
+              <Link className="position-carte" href={`/positions/${position.id}`}>
+                <ImagePosition position={position} />
+                <h2 className="position-nom">{position.nom}</h2>
+                {position.description ? (
+                  <p className="position-description texte-attenue">{position.description}</p>
+                ) : null}
+              </Link>
             </li>
           ))}
         </ul>

@@ -156,8 +156,30 @@ Collection `Passe` livrée, 110 passes historiques migrées, page publique en li
 - `package.json` — scripts `migrate:passes` et `migrate:all`.
 - `src/payload-types.ts`, `src/migrations/index.ts` — régénérés.
 
+### Correctif (2026-08-27) — images de position non affichées
+
+**Signalé par Alain** : sur les passes, les deux images (départ et arrivée) affichaient systématiquement le placeholder au point d'interrogation, alors que les noms et les liens étaient corrects.
+
+**Cause** : les requêtes utilisaient `depth: 1`. Payload résolvait bien `positionDebut`/`positionFin` en objets Position (d'où les noms justes), mais s'arrêtait là : le champ `image` de ces positions restait un simple identifiant. `imageDePosition()` ne voyant pas d'objet basculait sur le placeholder — comportement correct de l'utilitaire, appelé avec des données incomplètes.
+
+Sur les pages Position, l'image est à un seul niveau de profondeur (`position -> image`), ce qui explique qu'elles n'aient jamais été touchées. Sur les passes, il y a deux niveaux : `passe -> position -> image`.
+
+**Correction** : `depth: 2` sur la liste des passes et sur la fiche passe.
+
+| Page | Avant | Après |
+| --- | --- | --- |
+| `/passes` | 0 vraie image, 440 placeholders | **436 vraies images**, 4 placeholders (les 2 positions réellement sans image) |
+| `/passes/[id]` | 0 vraie image, 4 placeholders | **4 vraies images**, 0 placeholder |
+
+URLs d'images vérifiées côté serveur : `HTTP 200`, `image/jpeg`, taille non nulle.
+
+**Défaut de ma vérification initiale** : j'avais contrôlé la présence et l'exactitude des *liens* (« 2 liens uniques vers des positions ») sans jamais vérifier que les *images* se chargeaient. Un comptage de liens ne prouve pas qu'une page s'affiche correctement.
+
+**Observation annexe** : le dossier `media/` contient 56 fichiers pour 28 positions illustrées — 28 doublons suffixés `-1`, accumulés lors des recréations de base sans vidage du dossier. Sans impact (la base référence les bons fichiers) ; à nettoyer à l'occasion.
+
 ## Change Log
 
 | Date | Version | Description | Auteur |
 | --- | --- | --- | --- |
+| 2026-08-27 | 0.1.1 | Correctif : `depth: 2` sur les requêtes de passes — les images des positions de départ/arrivée affichaient le placeholder au lieu des vrais schémas. | Amelia (dev agent) |
 | 2026-08-27 | 0.1.0 | Collection `Passe` (graphe, validation même-danse, difficulté optionnelle, champs legacy archivés et masqués de l'API), migration des 110 passes rock, page publique `/passes`. | Amelia (dev agent) |

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
@@ -33,7 +34,10 @@ export default async function PassesPage() {
   const { docs: passes, totalDocs } = await payload.find({
     collection: 'passes',
     limit: 300,
-    depth: 1,
+    // depth 2 : passe -> position -> image. Avec depth 1, la position est bien
+    // résolue (d'où le nom correct) mais son image reste un identifiant, et
+    // l'affichage bascule à tort sur le placeholder.
+    depth: 2,
     sort: 'nom',
   })
 
@@ -60,7 +64,8 @@ export default async function PassesPage() {
             const difficulte = libelleDifficulte(passe.difficulte)
 
             return (
-              <li key={passe.id} className="passe-carte">
+              <li key={passe.id}>
+                <Link className="passe-carte" href={`/passes/${passe.id}`}>
                 <div className="passe-entete">
                   <h2 className="passe-nom">{passe.nom}</h2>
                   {difficulte ? <span className="passe-difficulte label-caps">{difficulte}</span> : null}
@@ -90,6 +95,7 @@ export default async function PassesPage() {
                 {passe.description ? (
                   <p className="passe-description texte-attenue">{passe.description}</p>
                 ) : null}
+                </Link>
               </li>
             )
           })}
