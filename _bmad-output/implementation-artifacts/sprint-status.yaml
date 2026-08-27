@@ -86,7 +86,7 @@ development_status:
   epic-2: in-progress
   2-1-modele-danse-mono-danse-rock-6-temps: review
   2-2-gerer-les-positions-crud-admin-image-non-bloquante: review
-  2-3-gerer-les-passes-meme-danse-positions-existantes: backlog
+  2-3-gerer-les-passes-meme-danse-positions-existantes: review
   2-4-blocage-de-suppression-d-un-element-reference: backlog
   2-5-fiche-position-publique-exploration-du-graphe: backlog
   2-6-fiche-passe-publique-navigation-vers-les-positions: backlog

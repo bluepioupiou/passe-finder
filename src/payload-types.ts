@@ -71,6 +71,7 @@ export interface Config {
     danses: Danse;
     media: Media;
     positions: Position;
+    passes: Pass;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +83,7 @@ export interface Config {
     danses: DansesSelect<false> | DansesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     positions: PositionsSelect<false> | PositionsSelect<true>;
+    passes: PassesSelect<false> | PassesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -200,6 +202,44 @@ export interface Position {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "passes".
+ */
+export interface Pass {
+  id: number;
+  nom: string;
+  /**
+   * À choisir parmi les positions existantes (FR-4).
+   */
+  positionDebut: number | Position;
+  /**
+   * À choisir parmi les positions existantes (FR-4).
+   */
+  positionFin: number | Position;
+  /**
+   * Présentation générale de la passe.
+   */
+  description?: string | null;
+  /**
+   * Comment exécuter la passe, temps par temps.
+   */
+  deroule?: string | null;
+  difficulte?: ('1' | '2' | '3' | '4') | null;
+  legacyYoutubeUrl?: string | null;
+  legacyPersonnalisations?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  legacyId?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -237,6 +277,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'positions';
         value: number | Position;
+      } | null)
+    | ({
+        relationTo: 'passes';
+        value: number | Pass;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -339,6 +383,23 @@ export interface PositionsSelect<T extends boolean = true> {
   image?: T;
   legacyId?: T;
   danse?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "passes_select".
+ */
+export interface PassesSelect<T extends boolean = true> {
+  nom?: T;
+  positionDebut?: T;
+  positionFin?: T;
+  description?: T;
+  deroule?: T;
+  difficulte?: T;
+  legacyYoutubeUrl?: T;
+  legacyPersonnalisations?: T;
+  legacyId?: T;
   updatedAt?: T;
   createdAt?: T;
 }

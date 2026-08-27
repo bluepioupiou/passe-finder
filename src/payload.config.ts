@@ -9,6 +9,7 @@ import sharp from 'sharp'
 import { DATABASE_URI, PAYLOAD_SECRET } from './env'
 import { Danse } from './collections/Danse'
 import { Media } from './collections/Media'
+import { Passe } from './collections/Passe'
 import { Position } from './collections/Position'
 import { seedDanseV1 } from './seed'
 import { Users } from './collections/Users'
@@ -25,7 +26,7 @@ export default buildConfig({
   },
   // v1 : une seule collection d'authentification. Les collections métier
   // (Danse, Position, Passe, Enchainement, Favori) arrivent aux Epics 2/3.
-  collections: [Users, Danse, Media, Position],
+  collections: [Users, Danse, Media, Position, Passe],
   editor: lexicalEditor(),
   secret: PAYLOAD_SECRET,
   typescript: {

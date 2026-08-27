@@ -61,11 +61,10 @@ export const Position: CollectionConfig = {
       type: 'number',
       unique: true,
       label: 'Identifiant historique',
-      admin: {
-        // Trace technique de la migration (FR-32) : permet de rejouer l'import
-        // sans creer de doublon. Sans interet fonctionnel, donc masque.
-        hidden: true,
-      },
+      // Trace technique de la migration (FR-32) : permet de rejouer l'import
+      // sans creer de doublon. Sans interet fonctionnel : masque de l'admin ET
+      // des reponses de l'API. La migration le relit via `showHiddenFields: true`.
+      hidden: true,
     },
     {
       name: 'danse',

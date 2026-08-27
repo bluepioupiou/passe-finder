@@ -45,7 +45,10 @@ export function Navigation() {
         >
           <nav className="nav__liens" aria-label="Navigation principale">
             <Link className="nav__lien" href="/positions" onClick={() => setDeplie(false)}>
-              Catalogue
+              Positions
+            </Link>
+            <Link className="nav__lien" href="/passes" onClick={() => setDeplie(false)}>
+              Passes
             </Link>
           </nav>
 

@@ -1,0 +1,96 @@
+/*
+ * Liste des passes. Valeurs issues des tokens « Lin & Sauge ».
+ * La fleche est l'element porteur de sens : elle materialise l'arete du graphe
+ * entre la position de depart et la position d'arrivee (DESIGN.md, AD-2).
+ */
+
+.passes-entete {
+  margin-bottom: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.passes-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-6);
+}
+
+.passe-carte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-lg);
+}
+
+.passe-entete {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.passe-nom {
+  font-size: var(--headline-size);
+  font-weight: var(--headline-weight);
+  line-height: var(--headline-line);
+}
+
+.passe-difficulte {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-2);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: var(--rounded-sm);
+  text-transform: uppercase;
+}
+
+/* --- L'arete : position de depart -> position d'arrivee --- */
+
+.passe-chaine {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.passe-maillon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.passe-image {
+  max-width: 96px;
+}
+
+.passe-position-nom {
+  font-size: var(--label-caps-size);
+  line-height: var(--label-caps-line);
+  text-align: center;
+}
+
+/* Fleche en accent sauge, seul point de couleur du chrome (DESIGN.md). */
+.passe-fleche {
+  flex-shrink: 0;
+  align-self: center;
+  margin-top: calc(-1 * var(--space-5));
+  color: var(--accent);
+  font-size: var(--display-size);
+  line-height: 1;
+}
+
+.passe-description {
+  font-size: var(--body-size);
+  line-height: var(--body-line);
+}
