@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { APIError } from 'payload'
 
 import { DANSE_V1 } from './Danse'
 
@@ -29,6 +30,38 @@ export const Position: CollectionConfig = {
     create: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
     delete: ({ req }) => Boolean(req.user),
+  },
+  hooks: {
+    beforeDelete: [
+      async ({ id, req }) => {
+        // AD-6 / FR-8 : on ne supprime jamais une position encore utilisee.
+        // Sans cette garde, supprimer une position casserait toutes les passes
+        // qui s'y rattachent — donc le contenu de revision des eleves.
+        const utilisee = await req.payload.find({
+          collection: 'passes',
+          where: {
+            or: [{ positionDebut: { equals: id } }, { positionFin: { equals: id } }],
+          },
+          limit: 5,
+          depth: 0,
+        })
+
+        if (utilisee.totalDocs === 0) return
+
+        // Message actionnable : on nomme les passes fautives pour que l'admin
+        // sache exactement quoi retirer d'abord.
+        const noms = utilisee.docs.map((passe) => `« ${passe.nom} »`)
+        const reste = utilisee.totalDocs - noms.length
+        const liste = noms.join(', ') + (reste > 0 ? ` et ${reste} autre${reste > 1 ? 's' : ''}` : '')
+
+        throw new APIError(
+          `Suppression impossible : cette position est utilisée par ${utilisee.totalDocs} passe` +
+            `${utilisee.totalDocs > 1 ? 's' : ''} (${liste}). ` +
+            "Retire d'abord ces passes, ou fais-les pointer vers une autre position.",
+          400,
+        )
+      },
+    ],
   },
   fields: [
     {

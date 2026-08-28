@@ -39,6 +39,10 @@ export const Passe: CollectionConfig = {
     delete: ({ req }) => Boolean(req.user),
   },
   hooks: {
+    // À AJOUTER À L'EPIC 4 (AD-6 / FR-8), quand la collection Enchainement
+    // existera : un `beforeDelete` refusant la suppression d'une passe encore
+    // utilisée par un enchaînement — sur le modèle de celui de Position.
+    // Aujourd'hui rien ne référence une Passe : la garde serait sans objet.
     beforeValidate: [
       async ({ data, req }) => {
         // AD-5 / FR-5 : une passe ne relie jamais deux danses differentes.
