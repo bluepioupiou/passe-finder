@@ -31,7 +31,10 @@
 }
 
 .fiche-image {
-  width: 220px;
+  /* `max-width` et non `width` : le composant porte deja `width: 100%`, et deux
+     regles `width` de meme priorite se departagent a l'ordre de chargement des
+     fichiers — l'image debordait alors sur toute la largeur disponible. */
+  max-width: 220px;
   flex-shrink: 0;
 }
 

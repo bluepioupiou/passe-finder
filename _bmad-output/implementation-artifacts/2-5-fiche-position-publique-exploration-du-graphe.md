@@ -84,8 +84,34 @@ Fiche position livree : le catalogue devient navigable de proche en proche.
 **Modifies :**
 - `src/app/(frontend)/positions/page.tsx` + `positions.css` — cartes cliquables vers la fiche.
 
+### Correctif (2026-08-27) — image démesurée sur la fiche position
+
+**Signalé par Alain** : sur la fiche d'une position, l'image occupait toute la hauteur de l'écran.
+
+**Cause** : `fiche-position.css` fixait `width: 220px` alors que le composant `ImagePosition` porte déjà `width: 100%`. Deux règles `width` portées par des sélecteurs de même priorité se départagent à **l'ordre de chargement des fichiers** — c'est le `100%` qui l'emportait. Combiné au ratio carré imposé (`aspect-ratio: 1 / 1`), l'image s'étendait sur toute la largeur du conteneur, donc sur une hauteur équivalente.
+
+Les autres pages n'étaient pas touchées : elles utilisent `max-width`, qui **plafonne** sans entrer en conflit avec `width: 100%`.
+
+**Correction** :
+- `.fiche-image` : `width` → `max-width` (aligné sur les autres pages) ;
+- garde-fou `max-width: 100%` ajouté dans le composant lui-même, pour qu'une page appelante ne puisse plus provoquer ce débordement.
+
+**Tailles vérifiées après correction** (fenêtre 1280 px, aucun débordement horizontal) :
+
+| Page | Image |
+| --- | --- |
+| Fiche position | **220×220** (auparavant : toute la hauteur d'écran) |
+| Fiche passe | 140×140 |
+| Liste passes | 96×96 |
+| Liste positions | 211×211 |
+
+Vérifié aussi en 375 px (mobile) : 220×220, pas de débordement.
+
+**Piège de mesure rencontré** : une première série de mesures donnait des images de « 2×2 px » et des débordements partout. En réalité le panneau navigateur était masqué, donc `window.innerWidth` valait **0** — les chiffres étaient des artefacts. Toute mesure de mise en page doit imposer une fenêtre explicite au préalable.
+
 ## Change Log
 
 | Date | Version | Description | Auteur |
 | --- | --- | --- | --- |
+| 2026-08-27 | 0.1.1 | Correctif : image de la fiche position démesurée (`width` en conflit avec le `width: 100%` du composant) ; passage en `max-width` + garde-fou dans le composant. | Amelia (dev agent) |
 | 2026-08-27 | 0.1.0 | Fiche position publique avec les deux listes du graphe (passes entrantes / sortantes), etats vides verifies sur des positions reellement isolees, cartes de liste cliquables. | Amelia (dev agent) |
