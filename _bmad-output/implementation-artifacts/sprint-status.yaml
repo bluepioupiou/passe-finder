@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-30 (tranche enchainements : collection + migration)
+# last_updated: 2026-08-30 (point releve sur les cartes du catalogue)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -161,6 +161,46 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # RESTE A FAIRE : lancer `migrate:enchainements` en prod (avec
 # MIGRATION_AUTEUR_EMAIL si plusieurs comptes existent).
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ACTION ITEMS
+# ---------------------------------------------------------------------------
+action_items:
+  # Releve par Alain le 2026-08-30, en regardant le catalogue livre (5.4).
+  - id: cartes-catalogue-harmoniser
+    status: open
+    titre: "Harmoniser les cartes Position et Passe dans le catalogue"
+    concerne: [5-4-catalogue-navigable-positions-passes]
+    constat: >
+      Les deux cartes ont un ordre INVERSE. Position : image, puis nom, puis
+      description. Passe : nom + difficulte, puis les deux images de la chaine,
+      puis description. Le catalogue se filtre par nom : quand la grille se
+      reduit, l'oeil cherche le nom, qui doit donc etre au meme endroit sur les
+      deux types de carte.
+    demande:
+      - "Nom en premier sur les deux cartes (la carte Passe le fait deja ; c'est
+         la carte Position qui est l'exception a corriger)."
+      - "Puis l'image. Une seule image centree convient pour la position, mais
+         plus petite qu'aujourd'hui."
+      - "Puis la description, coupee a 3 lignes maximum avec « … » si elle
+         depasse. Des items de hauteur homogene font une grille qu'on balaie,
+         au lieu d'une liste qu'on deroule. La description complete reste
+         visible sur la fiche."
+    nuances_a_instruire:
+      - >
+        NE PAS rendre les deux cartes identiques. Une passe porte deux images
+        par nature (depart -> arrivee, l'arete du graphe) ; une position en
+        porte une, parce qu'elle est un noeud. Cette difference encode le
+        modele de donnees. L'objectif est « meme ordre, meme rythme, contenu
+        different assume », pas « meme carte ».
+      - >
+        2 lignes plutot que 3 ? Sur mobile, 3 lignes de description pesent deja
+        plus que l'image. A trancher sur ecran, pas sur le papier.
+      - >
+        Un plancher pour l'image de position : un danseur reconnait une position
+        a son schema avant d'en lire le nom. Plus petite oui, trop petite et la
+        carte perd ce qui la rend identifiable d'un coup d'oeil.
+    taille_estimee: "petite — CSS et ordre du balisage, pas de changement de modele"
 
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
