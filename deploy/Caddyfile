@@ -1,0 +1,17 @@
+# Caddy obtient et renouvelle le certificat HTTPS tout seul (Let's Encrypt),
+# des lors que le domaine pointe vers l'IP de la machine. Rien a configurer
+# de plus : pas de certbot, pas de cron de renouvellement.
+
+{$DOMAINE}, www.{$DOMAINE} {
+	encode gzip zstd
+
+	# Tout le trafic est relaye vers l'application, qui n'est pas exposee
+	# directement sur Internet.
+	reverse_proxy app:3000
+
+	# Journaux au format JSON, lisibles via `docker compose logs caddy`.
+	log {
+		output stdout
+		format json
+	}
+}

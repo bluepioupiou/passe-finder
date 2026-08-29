@@ -133,3 +133,98 @@ jobs:
           docker push "${{ steps.image.outputs.name }}:${{ github.sha }}"
           docker push "${{ steps.image.outputs.name }}:latest"
           echo "Image publiee : ${{ steps.image.outputs.name }}:${{ github.sha }}"
+
+  # ---------------------------------------------------------------------------
+  # 3) Deploiement : recupere l'image publiee et redemarre le site.
+  #    Uniquement sur push (jamais sur pull request) et seulement si l'image
+  #    a ete testee et publiee.
+  # ---------------------------------------------------------------------------
+  deploiement:
+    name: Deploiement en production
+    needs: image
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Tant que le serveur n'est pas configure, ce job ne doit pas faire
+      # echouer le pipeline : il s'arrete proprement en l'annoncant.
+      - name: Verifier que le deploiement est configure
+        id: verif
+        run: |
+          if [ -z "${{ secrets.SSH_HOTE }}" ]; then
+            echo "pret=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Deploiement ignore : les secrets ne sont pas encore renseignes (voir docs/mise-en-production.md)."
+          else
+            echo "pret=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Preparer le nom de l'image
+        if: steps.verif.outputs.pret == 'true'
+        id: image
+        run: |
+          name="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Preparer la connexion SSH
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          # La cle privee vient des secrets : GitHub la masque dans les journaux.
+          echo "${{ secrets.SSH_CLE_PRIVEE }}" > ~/.ssh/deploiement
+          chmod 600 ~/.ssh/deploiement
+          # Enregistre l'empreinte du serveur pour eviter toute question
+          # interactive lors de la premiere connexion.
+          ssh-keyscan -H "${{ secrets.SSH_HOTE }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Envoyer les fichiers de deploiement
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          scp -i ~/.ssh/deploiement             deploy/docker-compose.yml deploy/Caddyfile deploy/litestream.yml             "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}:/opt/passe-finder/"
+
+      - name: Deployer
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          # Le tag SHA est immuable : on deploie exactement l'image testee,
+          # jamais un `latest` qui aurait pu bouger entre-temps.
+          ssh -i ~/.ssh/deploiement             "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}"             IMAGE="${{ steps.image.outputs.name }}:${{ github.sha }}"             PAYLOAD_SECRET="${{ secrets.PAYLOAD_SECRET }}"             DOMAINE="${{ secrets.DOMAINE }}"             AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"             AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"             S3_BUCKET="${{ secrets.S3_BUCKET }}"             S3_REGION="${{ secrets.S3_REGION }}"             "bash -s" <<'DISTANT'
+          set -e
+          cd /opt/passe-finder
+
+          # Le fichier .env n'est jamais lu dans les journaux et reste sur le
+          # serveur, accessible au seul proprietaire.
+          umask 077
+          cat > .env <<ENV
+          IMAGE=$IMAGE
+          PAYLOAD_SECRET=$PAYLOAD_SECRET
+          DOMAINE=$DOMAINE
+          AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+          AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+          S3_BUCKET=$S3_BUCKET
+          S3_REGION=$S3_REGION
+          ENV
+
+          echo "-> Recuperation de l'image..."
+          docker compose pull
+
+          echo "-> Redemarrage des conteneurs..."
+          docker compose up -d --remove-orphans
+
+          echo "-> Nettoyage des images devenues inutiles..."
+          docker image prune -f
+          DISTANT
+
+      - name: Verifier que le site repond
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ secrets.DOMAINE }}/" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "Site en ligne (HTTP 200) apres ${i} tentative(s)."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Le site n'a pas repondu 200 dans le delai imparti."
+          exit 1

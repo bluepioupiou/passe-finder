@@ -55,6 +55,12 @@ RUN addgroup --system --gid 1001 nodejs \
 RUN mkdir -p /data && chown nextjs:nodejs /data
 VOLUME /data
 
+# Les images televersees vivent ici. Sans volume, elles disparaitraient a chaque
+# redeploiement (la couche image est jetable). Voir la note sur AD-11 dans
+# docs/mise-en-production.md : le passage a S3 reste la cible.
+RUN mkdir -p /app/media && chown nextjs:nodejs /app/media
+VOLUME /app/media
+
 # Application : node_modules (pour `payload` + `next`), build, config, migrations.
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
@@ -65,6 +71,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/next.config.ts ./next.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=nextjs:nodejs /app/.npmrc ./.npmrc
 COPY --from=builder --chown=nextjs:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --from=builder --chown=nextjs:nodejs /app/deploy ./deploy
 
 USER nextjs
 EXPOSE 3000

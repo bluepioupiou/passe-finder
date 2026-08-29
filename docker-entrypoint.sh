@@ -10,5 +10,8 @@ set -e
 echo "→ Application des migrations Payload..."
 npm run payload -- migrate
 
+echo "→ Vérification du mode WAL (requis par la sauvegarde Litestream)..."
+node deploy/activer-wal.mjs
+
 echo "→ Démarrage du serveur Next.js..."
 exec node_modules/.bin/next start -H 0.0.0.0 -p "${PORT:-3000}"
