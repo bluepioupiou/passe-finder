@@ -24,13 +24,14 @@ ton commit
                             └─> récupère l'image et redémarre le site
 ```
 
-Sur la machine tournent **trois conteneurs** :
+Sur la machine tournent **quatre conteneurs** :
 
 | Conteneur | Rôle |
 | --- | --- |
 | **app** | Passe Finder (Next.js + Payload) |
 | **caddy** | reverse proxy : sert le site en HTTPS, certificat gratuit et auto-renouvelé |
 | **litestream** | réplique en continu la base SQLite vers S3 (sauvegarde) |
+| **sauvegarde-medias** | copie les images téléversées vers le même bucket, une fois par heure |
 
 ---
 
@@ -147,9 +148,11 @@ l'instance à 5 $/mois.
 
 ---
 
-## Étape 2 — Bucket S3 (sauvegarde de la base)
+## Étape 2 — Bucket S3 (sauvegarde de la base et des images)
 
 C'est ce qui garantit qu'une panne de la machine ne te fait rien perdre.
+Un **seul bucket** accueille les deux sauvegardes, dans deux dossiers séparés :
+`passe-finder/` pour la base, `medias/` pour les images.
 
 1. Console AWS → **S3** → *Create bucket*.
 2. Nom : quelque chose d'unique, ex. `passe-finder-sauvegarde-<un-suffixe>`.
@@ -193,6 +196,10 @@ Le conteneur de sauvegarde a besoin d'un accès au bucket — mais **uniquement*
 
 4. Nomme la politique `passe-finder-sauvegarde`, crée-la, puis rattache-la à
    l'utilisateur.
+
+> Cette politique couvre **tout le bucket** : les mêmes clés servent à la
+> sauvegarde de la base (Litestream) et à celle des images. Rien à ajouter
+> côté AWS pour les images.
 5. Une fois l'utilisateur créé : *Security credentials* → *Create access key* →
    choisis **Application running outside AWS**.
 6. **Note les deux valeurs** (`Access key ID` et `Secret access key`). La clé
@@ -409,6 +416,21 @@ sudo docker compose logs litestream --tail=20
 Tu dois y lire `snapshot complete`, `ltx file uploaded` puis des `replica sync`
 réguliers. Toute ligne `level=ERROR` signale un problème.
 
+3. **Vérifie aussi la sauvegarde des images** :
+
+```bash
+sudo docker compose logs sauvegarde-medias --tail=20
+```
+
+Au démarrage, une première copie part immédiatement, puis une par heure. Un
+dossier `medias` doit apparaître dans le bucket à côté de `passe-finder`.
+
+Pour lister ce qui est réellement sauvegardé :
+
+```bash
+sudo docker compose exec sauvegarde-medias rclone ls "s3:$S3_BUCKET/medias"
+```
+
 ### Panne rencontrée : « attempt to write a readonly database »
 
 Symptôme : le bucket reste vide, et les journaux répètent
@@ -425,20 +447,100 @@ Correctif, déjà appliqué dans `deploy/docker-compose.yml` :
     user: '1001:1001'
 ```
 
-## Limite connue : les images téléversées
+## Ce qui est sauvegardé, et comment
 
-Les images vivent sur un **volume Docker** de la machine. Elles survivent aux
-redéploiements et aux redémarrages, mais **ne sont pas répliquées vers S3** —
-seule la base de données l'est.
+Deux mécanismes distincts, un seul bucket :
 
-Conséquence concrète : si la machine était perdue, il faudrait rejouer
-`npm run migrate:all` pour réimporter les images depuis le dépôt. Tes 30
-positions historiques sont donc couvertes ; en revanche, une image que tu
-ajouterais *ensuite* depuis le back-office serait perdue.
+| Donnée | Mécanisme | Fréquence | Perte possible |
+| --- | --- | --- | --- |
+| Base SQLite (`/data`) | Litestream, dossier `passe-finder/` | continue | quelques secondes |
+| Images téléversées (`/app/media`) | `rclone copy`, dossier `medias/` | toutes les heures | jusqu'à 1 h |
 
-L'architecture prévoit à terme de stocker les images dans S3 (AD-11), ce qui
-réglerait ce point. C'est un travail distinct, à planifier quand tu commenceras
-à enrichir le catalogue depuis l'interface.
+**Pourquoi `copy` et pas `sync`** : `rclone copy` n'efface jamais côté S3. Une
+image supprimée par erreur depuis le back-office reste donc récupérable dans le
+bucket. C'est ce qui fait la différence entre une *sauvegarde* et une simple
+copie distante — cette dernière propagerait la suppression.
+
+**Rien à changer côté AWS** : la politique IAM de l'étape 3 autorise déjà la
+lecture et l'écriture sur l'ensemble du bucket. Le conteneur de sauvegarde des
+images réutilise les mêmes clés que Litestream.
+
+**La contrepartie à connaître** : la base est répliquée à la seconde, les images
+avec jusqu'à une heure de retard. Si la machine disparaissait juste après un
+ajout, tu retrouverais une position dont l'image manque — à re-téléverser
+depuis le back-office. Vu la fréquence à laquelle tu ajoutes des images, c'est
+un prix assumé plutôt qu'un oubli. Pour raccourcir ce délai, change
+`INTERVALLE_SAUVEGARDE` dans `deploy/docker-compose.yml`.
+
+## Pourquoi une livraison ne perd jamais de données
+
+C'est la question qui revient à chaque déploiement. La réponse tient dans les
+**volumes Docker nommés** : `donnees` (la base) et `medias` (les images) sont
+déclarés à part des conteneurs. Une livraison détruit et recrée le conteneur
+`app` — mais les volumes, eux, sont simplement rattachés au nouveau conteneur.
+Les données ne vivent jamais dans l'image Docker, qui est jetable (AD-10).
+
+Trois garde-fous complètent ça :
+
+1. **Migrations incrémentales** — `payload migrate` ne rejoue que les migrations
+   pas encore appliquées (Payload tient une table `payload_migrations`). Le
+   schéma évolue, les données restent.
+2. **Import du catalogue conditionnel** — les données historiques ne sont
+   importées que si la base est vide (`deploy/catalogue-vide.mjs`). Sans ce
+   garde-fou, chaque livraison ressusciterait les positions supprimées.
+3. **Litestream tourne pendant tout ça**, avec 30 jours d'historique. Même une
+   migration qui abîmerait des données est rattrapable : Litestream sait
+   restaurer à un instant précis, pas seulement au dernier état.
+
+> ⚠️ La seule commande qui détruirait tout est `docker compose down -v` : le
+> `-v` supprime les volumes. Le déploiement utilise `up -d --remove-orphans`,
+> qui n'y touche jamais. À ne pas taper à la main sur le serveur.
+
+## Repartir de zéro après une perte totale
+
+Scénario : la machine est perdue (panne, suppression, compte fermé). Tout ce qui
+compte est dans S3 ; le reste se reconstruit tout seul.
+
+1. **Crée une nouvelle instance** (étape 4) et repointe le DNS vers sa nouvelle
+   IP statique (étape 5b).
+2. **Mets à jour le secret `SSH_HOTE`** dans GitHub avec cette IP, et installe
+   la clé publique de déploiement sur la nouvelle machine (étape 6).
+3. **Lance un déploiement** (pousse un commit, ou relance le dernier workflow
+   depuis l'onglet *Actions*). Il prépare la machine et démarre la pile.
+4. **Restaure** — c'est l'étape qui rapatrie tes données :
+
+```bash
+sudo sh /opt/passe-finder/restaurer.sh
+```
+
+Le script arrête la pile, efface la base fraîchement créée, la restaure depuis
+Litestream, recopie les images depuis le bucket, puis redémarre tout.
+
+**Pourquoi effacer la base créée au démarrage** : au premier lancement sur une
+machine vierge, l'application voit une base vide et importe le catalogue
+historique. Sans cette étape, tu repartirais des 30 positions d'origine au lieu
+de ton état réel. Le script s'en charge — c'est justement sa raison d'être.
+
+### Tester la restauration (recommandé)
+
+Une sauvegarde jamais restaurée n'est pas une sauvegarde. Le test le plus
+honnête consiste à créer une **seconde instance jetable**, y dérouler la
+procédure ci-dessus, vérifier que le site revient avec tes données, puis
+supprimer l'instance. Quelques centimes, et tu sais.
+
+Version courte, sans deuxième machine — restaurer la base **à côté** de la base
+en service, sans y toucher :
+
+```bash
+sudo docker compose run --rm --no-deps litestream restore -config /etc/litestream.yml -o /data/verification.db /data/passe-finder.db
+```
+
+Si la commande se termine sans erreur, la sauvegarde de la base est exploitable.
+Supprime ensuite le fichier de vérification :
+
+```bash
+sudo docker run --rm -v "$(sudo docker volume ls -q | grep _donnees$)":/data alpine:3 rm -f /data/verification.db
+```
 
 ## Et après ?
 

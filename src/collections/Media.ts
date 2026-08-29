@@ -11,8 +11,10 @@ import type { CollectionConfig } from 'payload'
  * deviendrait obligatoire a la creation, ce qui violerait FR-2 (l'image ne doit
  * jamais bloquer la creation d'une position).
  *
- * Stockage : disque local en v1 locale. Le passage a S3 (ADD-13) est un simple
- * changement d'adaptateur, a traiter avec la mise en production.
+ * Stockage : disque local, sur un volume persistant en production. Les fichiers
+ * sont copies vers S3 toutes les heures (service `sauvegarde-medias`) : c'est
+ * une sauvegarde, pas un deplacement du stockage. Le passage a S3 comme
+ * stockage de reference (AD-11) reste un simple changement d'adaptateur.
  */
 export const Media: CollectionConfig = {
   slug: 'media',
