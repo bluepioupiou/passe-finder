@@ -13,10 +13,10 @@ import './navigation.css'
  * Droite  : zone d'actions de compte + selecteur de theme.
  * Mobile  : les entrees se replient derriere un bouton « Menu » (NFR-1).
  *
- * Deux elements sont volontairement des PLACEHOLDERS, faute de story livree :
- *  - la recherche globale (page de resultats E10 : Story 5.5) ;
- *  - la zone de compte, figee sur « Se connecter » (authentification : Epic 3).
- * Ils sont presents mais desactives, plutot que de mener a une page inexistante.
+ * La recherche globale reste un PLACEHOLDER desactive, faute de page de
+ * resultats (E10 : Story 5.5) — la recherche par nom du catalogue, elle, est
+ * livree sur les pages Positions et Passes (Story 5.4).
+ * La zone de compte est vide en attendant l'authentification (Epic 3).
  */
 export function Navigation() {
   const [deplie, setDeplie] = useState(false)
@@ -67,14 +67,9 @@ export function Navigation() {
           </div>
 
           <div className="nav__actions">
-            <button
-              type="button"
-              className="bouton bouton--fantome"
-              disabled
-              title="La création de compte arrive avec la gestion des comptes."
-            >
-              Se connecter
-            </button>
+            {/* Zone de compte volontairement vide : le bouton « Se connecter »
+                reviendra avec l'authentification (Epic 3). Un bouton desactive
+                laissait croire a une panne plutot qu'a une fonction a venir. */}
             <SelecteurTheme />
           </div>
         </div>

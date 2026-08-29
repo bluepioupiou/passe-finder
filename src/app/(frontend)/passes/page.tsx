@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { GrilleFiltrable } from '@/components/GrilleFiltrable'
 import { ImagePosition } from '@/components/ImagePosition'
+import { OngletsCatalogue } from '@/components/OngletsCatalogue'
 import { DIFFICULTES } from '@/collections/Passe'
 import config from '@/payload.config'
 import type { Position } from '@/payload-types'
@@ -27,6 +29,9 @@ function libelleDifficulte(valeur?: string | null): string | null {
  * Chaque passe est une arête du graphe : elle relie une position de départ à
  * une position d'arrivée (AD-2). L'affichage rend cette lecture évidente en
  * montrant les deux positions de part et d'autre d'une flèche.
+ *
+ * Section « Passes » du catalogue (E2) : recherche par nom et filtre par
+ * difficulté, la seule dimension de tri utile pour choisir quoi travailler.
  */
 export default async function PassesPage() {
   const payload = await getPayload({ config: await config })
@@ -41,6 +46,53 @@ export default async function PassesPage() {
     sort: 'nom',
   })
 
+  // Les cartes sont rendues ici (côté serveur) ; la grille cliente ne fait que
+  // choisir lesquelles afficher.
+  const elements = passes.map((passe) => {
+    const debut = passe.positionDebut as Position | number
+    const fin = passe.positionFin as Position | number
+    const difficulte = libelleDifficulte(passe.difficulte)
+
+    return {
+      cle: passe.id,
+      nom: passe.nom,
+      difficulte: passe.difficulte,
+      carte: (
+        <Link className="passe-carte" href={`/passes/${passe.id}`}>
+          <div className="passe-entete">
+            <h2 className="passe-nom">{passe.nom}</h2>
+            {difficulte ? <span className="passe-difficulte label-caps">{difficulte}</span> : null}
+          </div>
+
+          {/* L'arête du graphe : position de départ → position d'arrivée. */}
+          <div className="passe-chaine">
+            {typeof debut === 'object' ? (
+              <div className="passe-maillon">
+                <ImagePosition position={debut} className="passe-image" />
+                <span className="passe-position-nom texte-attenue">{debut.nom}</span>
+              </div>
+            ) : null}
+
+            <span className="passe-fleche" aria-hidden="true">
+              →
+            </span>
+
+            {typeof fin === 'object' ? (
+              <div className="passe-maillon">
+                <ImagePosition position={fin} className="passe-image" />
+                <span className="passe-position-nom texte-attenue">{fin.nom}</span>
+              </div>
+            ) : null}
+          </div>
+
+          {passe.description ? (
+            <p className="passe-description texte-attenue">{passe.description}</p>
+          ) : null}
+        </Link>
+      ),
+    }
+  })
+
   return (
     <div className="contenu-page">
       <header className="passes-entete">
@@ -52,54 +104,24 @@ export default async function PassesPage() {
         </p>
       </header>
 
+      <OngletsCatalogue actif="passes" />
+
       {totalDocs === 0 ? (
         <p className="texte-attenue">
           Le catalogue est vide. Ajoute une passe depuis le back-office.
         </p>
       ) : (
-        <ul className="passes-liste">
-          {passes.map((passe) => {
-            const debut = passe.positionDebut as Position | number
-            const fin = passe.positionFin as Position | number
-            const difficulte = libelleDifficulte(passe.difficulte)
-
-            return (
-              <li key={passe.id}>
-                <Link className="passe-carte" href={`/passes/${passe.id}`}>
-                <div className="passe-entete">
-                  <h2 className="passe-nom">{passe.nom}</h2>
-                  {difficulte ? <span className="passe-difficulte label-caps">{difficulte}</span> : null}
-                </div>
-
-                {/* L'arête du graphe : position de départ → position d'arrivée. */}
-                <div className="passe-chaine">
-                  {typeof debut === 'object' ? (
-                    <div className="passe-maillon">
-                      <ImagePosition position={debut} className="passe-image" />
-                      <span className="passe-position-nom texte-attenue">{debut.nom}</span>
-                    </div>
-                  ) : null}
-
-                  <span className="passe-fleche" aria-hidden="true">
-                    →
-                  </span>
-
-                  {typeof fin === 'object' ? (
-                    <div className="passe-maillon">
-                      <ImagePosition position={fin} className="passe-image" />
-                      <span className="passe-position-nom texte-attenue">{fin.nom}</span>
-                    </div>
-                  ) : null}
-                </div>
-
-                {passe.description ? (
-                  <p className="passe-description texte-attenue">{passe.description}</p>
-                ) : null}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+        <GrilleFiltrable
+          elements={elements}
+          classeGrille="passes-liste"
+          etiquetteRecherche="Rechercher une passe"
+          invite="Nom de la passe…"
+          singulier="passe"
+          pluriel="passes"
+          // Copie simple des libellés : la collection Payload ne doit pas
+          // partir dans le navigateur (voir GrilleFiltrable).
+          optionsDifficulte={DIFFICULTES.map((d) => ({ label: d.label, value: d.value }))}
+        />
       )}
     </div>
   )

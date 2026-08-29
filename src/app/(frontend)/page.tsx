@@ -33,8 +33,8 @@ export default async function HomePage() {
         }}
       >
         <Bouton href="/positions">Voir les positions</Bouton>
-        <Bouton href={payloadConfig.routes.admin} variante="fantome">
-          Aller au back-office
+        <Bouton href="/passes" variante="fantome">
+          Voir les passes
         </Bouton>
       </div>
     </div>

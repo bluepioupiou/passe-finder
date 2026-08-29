@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { GrilleFiltrable } from '@/components/GrilleFiltrable'
 import { ImagePosition } from '@/components/ImagePosition'
+import { OngletsCatalogue } from '@/components/OngletsCatalogue'
 import config from '@/payload.config'
 import './positions.css'
 
@@ -21,6 +23,9 @@ export const metadata = {
 /**
  * Liste publique des positions, habillee par le design system « Lin & Sauge ».
  * Lecture publique : aucune authentification requise (FR-21).
+ *
+ * Section « Positions » du catalogue (E2) : les onglets la relient aux Passes,
+ * et la recherche par nom filtre la grille sans aller-retour serveur.
  */
 export default async function PositionsPage() {
   const payload = await getPayload({ config: await config })
@@ -31,6 +36,22 @@ export default async function PositionsPage() {
     depth: 1,
     sort: 'nom',
   })
+
+  // Les cartes sont rendues ici (cote serveur) ; la grille cliente ne fait que
+  // choisir lesquelles afficher.
+  const elements = positions.map((position) => ({
+    cle: position.id,
+    nom: position.nom,
+    carte: (
+      <Link className="position-carte" href={`/positions/${position.id}`}>
+        <ImagePosition position={position} />
+        <h2 className="position-nom">{position.nom}</h2>
+        {position.description ? (
+          <p className="position-description texte-attenue">{position.description}</p>
+        ) : null}
+      </Link>
+    ),
+  }))
 
   return (
     <div className="contenu-page">
@@ -43,24 +64,21 @@ export default async function PositionsPage() {
         </p>
       </header>
 
+      <OngletsCatalogue actif="positions" />
+
       {totalDocs === 0 ? (
         <p className="texte-attenue">
           Le catalogue est vide. Ajoute une position depuis le back-office.
         </p>
       ) : (
-        <ul className="positions-grille">
-          {positions.map((position) => (
-            <li key={position.id}>
-              <Link className="position-carte" href={`/positions/${position.id}`}>
-                <ImagePosition position={position} />
-                <h2 className="position-nom">{position.nom}</h2>
-                {position.description ? (
-                  <p className="position-description texte-attenue">{position.description}</p>
-                ) : null}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <GrilleFiltrable
+          elements={elements}
+          classeGrille="positions-grille"
+          etiquetteRecherche="Rechercher une position"
+          invite="Nom de la position…"
+          singulier="position"
+          pluriel="positions"
+        />
       )}
     </div>
   )
