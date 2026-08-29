@@ -393,6 +393,38 @@ L'import reste rejouable à la demande si besoin :
 sudo docker compose exec app npm run migrate:all
 ```
 
+## Vérifier que la sauvegarde fonctionne
+
+Une sauvegarde qu'on n'a jamais vue tourner n'est pas une sauvegarde. Après le
+premier déploiement :
+
+1. **Ouvre le bucket S3** — un dossier `passe-finder` doit apparaître en
+   quelques minutes.
+2. **Regarde les journaux** :
+
+```bash
+sudo docker compose logs litestream --tail=20
+```
+
+Tu dois y lire `snapshot complete`, `ltx file uploaded` puis des `replica sync`
+réguliers. Toute ligne `level=ERROR` signale un problème.
+
+### Panne rencontrée : « attempt to write a readonly database »
+
+Symptôme : le bucket reste vide, et les journaux répètent
+`create _litestream_seq table: attempt to write a readonly database (8)`.
+
+Cause : l'image Litestream tourne en utilisateur `nonroot`, alors que le volume
+`/data` appartient à l'uid 1001 de l'application. Litestream **v0.5 écrit** dans
+la base (contrairement aux versions 0.3), il lui faut donc les droits d'écriture.
+
+Correctif, déjà appliqué dans `deploy/docker-compose.yml` :
+
+```yaml
+  litestream:
+    user: '1001:1001'
+```
+
 ## Limite connue : les images téléversées
 
 Les images vivent sur un **volume Docker** de la machine. Elles survivent aux

@@ -40,6 +40,11 @@ services:
   litestream:
     image: litestream/litestream:latest
     restart: unless-stopped
+    # L'image tourne par defaut en `nonroot`, qui n'a que les droits « autres »
+    # sur /data (possede par l'uid 1001 de l'app). Litestream v0.5 ECRIT dans la
+    # base (table `_litestream_seq`) : sans cet alignement d'uid, il echoue sur
+    # « attempt to write a readonly database » et ne replique rien.
+    user: '1001:1001'
     depends_on:
       - app
     environment:
