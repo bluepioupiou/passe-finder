@@ -198,6 +198,7 @@ jobs:
             'sudo mkdir -p /opt/passe-finder && sudo chown $USER:$USER /opt/passe-finder'
           scp -i ~/.ssh/deploiement \
             deploy/docker-compose.yml deploy/Caddyfile deploy/litestream.yml deploy/bootstrap.sh \
+            deploy/sauvegarde-medias.sh deploy/restaurer.sh \
             "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}:/opt/passe-finder/"
 
       # Prépare la machine (Docker, swap, dossiers). Idempotent : sans effet si

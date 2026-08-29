@@ -56,8 +56,9 @@ RUN mkdir -p /data && chown nextjs:nodejs /data
 VOLUME /data
 
 # Les images televersees vivent ici. Sans volume, elles disparaitraient a chaque
-# redeploiement (la couche image est jetable). Voir la note sur AD-11 dans
-# docs/mise-en-production.md : le passage a S3 reste la cible.
+# redeploiement (la couche image est jetable). Le volume les protege des
+# livraisons ; leur copie horaire vers S3 (service `sauvegarde-medias` du
+# docker-compose) les protege de la perte de la machine.
 RUN mkdir -p /app/media && chown nextjs:nodejs /app/media
 VOLUME /app/media
 

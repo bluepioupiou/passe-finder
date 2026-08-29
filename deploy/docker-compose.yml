@@ -1,10 +1,11 @@
 # Pile de production Passe Finder.
 # Deposee sur le serveur dans /opt/passe-finder par le job de deploiement.
 #
-# Trois conteneurs :
-#   app        : l'application (migrations + WAL + Next.js au demarrage)
-#   caddy      : HTTPS automatique (Let's Encrypt), unique porte d'entree publique
-#   litestream : replication continue de la base vers S3
+# Quatre conteneurs :
+#   app               : l'application (migrations + WAL + Next.js au demarrage)
+#   caddy             : HTTPS automatique (Let's Encrypt), unique porte d'entree publique
+#   litestream        : replication continue de la base vers S3
+#   sauvegarde-medias : copie horaire des images televersees vers le meme bucket
 #
 # Les variables viennent du fichier .env voisin, ecrit par le deploiement.
 
@@ -57,6 +58,42 @@ services:
       - donnees:/data
       - ./litestream.yml:/etc/litestream.yml:ro
     command: replicate
+
+  # Sauvegarde des images televersees vers le meme bucket S3 que la base.
+  # Litestream couvre /data (la base) ; ce conteneur couvre /app/media (les
+  # images). Sans lui, perdre la machine = perdre les images ajoutees depuis
+  # le back-office.
+  #
+  # rclone plutot que l'AWS CLI : un binaire Go de quelques Mo (~20 Mo de
+  # memoire le temps de la copie) contre ~120 Mo pour la CLI Python. Sur une
+  # instance a 1 Go partagee avec Next.js, la difference compte.
+  sauvegarde-medias:
+    image: rclone/rclone:1
+    restart: unless-stopped
+    # Meme uid que l'application : le volume des images lui appartient.
+    user: '1001:1001'
+    depends_on:
+      - app
+    environment:
+      # Configuration rclone par variables : pas de fichier de conf a deployer.
+      RCLONE_CONFIG: /tmp/rclone.conf
+      HOME: /tmp
+      RCLONE_CONFIG_S3_TYPE: s3
+      RCLONE_CONFIG_S3_PROVIDER: AWS
+      RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      RCLONE_CONFIG_S3_REGION: ${S3_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      # Une copie par heure. La base, elle, est repliquee en secondes : une
+      # image ajoutee dans l'heure precedant une panne serait a re-televerser.
+      INTERVALLE_SAUVEGARDE: 3600
+    volumes:
+      # Monte en ecriture UNIQUEMENT pour permettre la restauration
+      # (deploy/restaurer.sh reutilise ce conteneur dans l'autre sens).
+      # La boucle de sauvegarde, elle, ne fait que lire.
+      - medias:/medias
+      - ./sauvegarde-medias.sh:/sauvegarde-medias.sh:ro
+    entrypoint: ['/bin/sh', '/sauvegarde-medias.sh']
 
 volumes:
   donnees:
