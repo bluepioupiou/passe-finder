@@ -83,6 +83,9 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 #     complete.
 #   - 5-4 passe de `in-progress` a `review` : onglets, recherche par nom
 #     (insensible aux accents) et filtre difficulte livres.
+#   - 5-5 passe de `backlog` a `in-progress` : la recherche globale de la barre
+#     de navigation est active et renvoie Positions et Passes ; il manque le
+#     groupe Enchainements, qui depend de l'Epic 4.
 #
 # Reste sur l'Epic 1 : 1-7 (audience Cloudflare).
 #
@@ -144,7 +147,9 @@ development_status:
   5-3-accueil-fil-des-nouveautes: backlog
   # onglets Positions|Passes, recherche par nom, filtre difficulte, etat sans resultat
   5-4-catalogue-navigable-positions-passes: review
-  5-5-recherche-globale-groupee-par-categorie: backlog
+  # page /recherche livree : groupes Positions et Passes, « voir tout » vers le
+  # catalogue pre-filtre. Le groupe Enchainements attend l'Epic 4.
+  5-5-recherche-globale-groupee-par-categorie: in-progress
   5-6-fiche-passe-complete-enchainements-videos-reverse-lookup: backlog
   epic-5-retrospective: optional
 
