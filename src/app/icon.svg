@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    Icone d'onglet (favicon).
+
+    Deliberement PLUS SIMPLE que le logo de la barre de navigation : a 16 px,
+    un carre de seize pixels de cote ne tient pas cinq formes. On garde les
+    trois qui portent le sens — les deux danseurs et le lien entre eux.
+    Le decalage vertical est ce qui evite que deux ronds cote a cote ne se
+    lisent comme une paire d'yeux.
+  -->
+  <rect width="32" height="32" rx="7" fill="#5e8a5a"/>
+  <circle cx="10.5" cy="20" r="5" fill="#a9c7e6"/>
+  <circle cx="21.5" cy="12.5" r="5" fill="#f2b5cf"/>
+  <path d="M17.2 20.6 L20.4 18.3" stroke="#202519" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

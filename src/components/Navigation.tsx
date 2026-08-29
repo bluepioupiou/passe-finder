@@ -2,6 +2,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { Bouton } from './Bouton'
+import { Logo } from './Logo'
 import { SelecteurTheme } from './SelecteurTheme'
 import './navigation.css'
 
@@ -24,6 +25,7 @@ export function Navigation() {
     <header className="nav">
       <div className="nav__barre">
         <Link className="nav__marque" href="/">
+          <Logo className="nav__logo" />
           Passe Finder
         </Link>
 
