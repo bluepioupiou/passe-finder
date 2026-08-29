@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Passe Finder — écrans consultation</title>
+<style>
+  :root{
+    --bg:#F6F7F3; --surf:#FFFFFF; --scont:#F0F2EC; --ink:#202519; --muted:#5E6553;
+    --line:#E3E7DD; --accent:#5E8A5A; --accent-soft:#E6EFE0; --danger:#B4432E;
+    --posbg:#DCEBD9; --lead:#A9C7E6; --follow:#F2B5CF;
+    --b-pos:#E1EDF6; --b-passe:#E6EFE0; --b-ench:#F4ECDC;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#e9ebe4;color:var(--ink);padding:24px;line-height:1.5;}
+  h1{font-size:1.3rem;margin:0 0 2px;} .sub{color:var(--muted);margin:0 0 20px;font-size:.9rem;}
+  .frames{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;}
+  .tag{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  .app{background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:hidden;width:340px;}
+  .nav{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surf);border-bottom:1px solid var(--line);}
+  .brand{font-weight:700;font-size:.9rem;} .brand b{color:var(--accent);}
+  .nav .search{margin-left:auto;font-size:.72rem;color:#9aa1ac;border:1px solid var(--line);border-radius:20px;padding:4px 10px;background:#fff;}
+  .body{padding:14px;}
+  .h2{font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:2px 0 10px;}
+
+  .pos{background:var(--posbg);border:1px solid #cadcc6;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;flex:0 0 auto;}
+  .pos .dots{display:flex;gap:4px;} .pos .dots i{width:10px;height:10px;border-radius:50%;display:block;}
+  .lead{background:var(--lead);} .follow{background:var(--follow);}
+
+  .badge{font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:2px 7px;border-radius:20px;color:#3c4636;}
+  .b-pos{background:var(--b-pos);} .b-passe{background:var(--b-passe);} .b-ench{background:var(--b-ench);}
+
+  /* feed */
+  .feed{display:flex;flex-direction:column;gap:9px;}
+  .fcard{display:flex;align-items:center;gap:11px;background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:10px;}
+  .fcard .thumb{width:42px;height:42px;flex:0 0 auto;}
+  .fcard .txt{flex:1;min-width:0;}
+  .fcard .tt{font-weight:600;font-size:.85rem;}
+  .fcard .mt{font-size:.68rem;color:var(--muted);font-family:ui-monospace,Consolas,monospace;margin-top:3px;}
+
+  /* list rows */
+  .rows{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .row{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:.82rem;}
+  .row .to{margin-left:auto;font-size:.66rem;color:var(--muted);}
+  .row .mini{width:26px;height:26px;flex:0 0 auto;}
+
+  .detail-img{width:120px;height:120px;margin:2px auto 12px;}
+  .dname{font-size:1.15rem;font-weight:700;text-align:center;}
+  .ddesc{font-size:.83rem;color:var(--muted);text-align:center;margin:5px 0 16px;}
+  .diff{display:inline-block;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#7a5b1e;background:#F4ECDC;padding:2px 8px;border-radius:20px;}
+  .pf{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0 16px;}
+  .pf .mid{color:var(--accent);font-size:.7rem;font-weight:600;text-align:center;}
+  .pf .mid i{display:block;height:2px;width:34px;background:var(--accent);margin-top:3px;}
+</style>
+</head>
+<body>
+  <h1>Passe Finder v2 — écrans de consultation (Lin &amp; Sauge)</h1>
+  <p class="sub">Accueil (fil des nouveautés), fiche Position, fiche Passe (2 listes distinctes), et résultats de recherche groupés.</p>
+
+  <div class="frames">
+
+    <!-- ACCUEIL -->
+    <div>
+      <div class="tag">E1 · Accueil — fil des nouveautés</div>
+      <div class="app">
+        <div class="nav"><div class="brand">Passe<b>Finder</b></div><span class="search">🔍 Rechercher</span></div>
+        <div class="body">
+          <div class="h2">Quoi de neuf</div>
+          <div class="feed">
+            <div class="fcard"><div class="pos thumb"><div class="dots"><i class="lead"></i><i class="follow"></i></div></div><div class="txt"><div class="tt">Débutants — passes de base</div><div class="mt">Enchaînement · il y a 3 j · Alain</div></div><span class="badge b-ench">Ench.</span></div>
+            <div class="fcard"><div class="pos thumb"><div class="dots"><i class="lead"></i><i class="follow"></i></div></div><div class="txt"><div class="tt">Toupie double</div><div class="mt">Passe · il y a 8 j</div></div><span class="badge b-passe">Passe</span></div>
+            <div class="fcard"><div class="pos thumb"><div class="dots"><i class="lead"></i><i class="follow"></i></div></div><div class="txt"><div class="tt">Position américaine</div><div class="mt">Position · il y a 10 j</div></div><span class="badge b-pos">Position</span></div>
+            <div class="fcard"><div class="pos thumb"><div class="dots"><i class="lead"></i><i class="follow"></i></div></div><div class="txt"><div class="tt">Intermédiaires — 5 mars</div><div class="mt">Enchaînement · il y a 14 j · Alain</div></div><span class="badge b-ench">Ench.</span></div>
+            <div class="fcard"><div class="pos thumb"><div class="dots"><i class="lead"></i><i class="follow"></i></div></div><div class="txt"><div class="tt">Passe dans le dos</div><div class="mt">Passe · il y a 16 j</div></div><span class="badge b-passe">Passe</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FICHE POSITION -->
+    <div>
+      <div class="tag">E3 · Fiche Position</div>
+      <div class="app">
+        <div class="nav"><div class="brand">Passe<b>Finder</b></div><span class="search">🔍 Rechercher</span></div>
+        <div class="body">
+          <div class="pos detail-img"><div class="dots"><i class="lead"></i><i class="follow"></i></div></div>
+          <div class="dname">Position fermée</div>
+          <div class="ddesc">Tenue de base, mains jointes, danseurs face à face.</div>
+          <div class="h2">Passes qui partent d'ici</div>
+          <div class="rows">
+            <div class="row">Passe pied <span class="to">→ ouverte</span></div>
+            <div class="row">Toupie <span class="to">→ américaine</span></div>
+          </div>
+          <div class="h2">Passes qui arrivent ici</div>
+          <div class="rows">
+            <div class="row">Retour simple <span class="to">depuis ouverte</span></div>
+            <div class="row">Toupie inverse <span class="to">depuis américaine</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FICHE PASSE -->
+    <div>
+      <div class="tag">E4 · Fiche Passe (2 listes)</div>
+      <div class="app">
+        <div class="nav"><div class="brand">Passe<b>Finder</b></div><span class="search">🔍 Rechercher</span></div>
+        <div class="body">
+          <div class="dname" style="margin-top:4px;">Toupie</div>
+          <div style="text-align:center;margin:6px 0 12px;"><span class="diff">Difficulté ●●○</span></div>
+          <div class="pf">
+            <div class="pos" style="width:56px;height:56px;"><div class="dots"><i class="lead"></i><i class="follow"></i></div></div>
+            <div class="mid">toupie<i></i></div>
+            <div class="pos" style="width:56px;height:56px;"><div class="dots"><i class="lead"></i><i class="follow"></i></div></div>
+          </div>
+          <div class="ddesc" style="margin-top:0;">La danseuse pivote sous le bras, retour en position fermée.</div>
+          <div class="h2">Enchaînements qui l'utilisent</div>
+          <div class="rows">
+            <div class="row"><div class="pos mini"><div class="dots"><i class="lead"></i></div></div> Débutants — passes de base</div>
+            <div class="row"><div class="pos mini"><div class="dots"><i class="follow"></i></div></div> Intermédiaires — 5 mars</div>
+          </div>
+          <div class="h2">Vidéos où elle apparaît</div>
+          <div class="rows">
+            <div class="row">▶ Débutants — passes de base <span class="to">YouTube</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHERCHE -->
+    <div>
+      <div class="tag">E10 · Résultats de recherche</div>
+      <div class="app">
+        <div class="nav"><div class="brand">Passe<b>Finder</b></div><span class="search" style="margin-left:auto;color:var(--ink);border-color:var(--accent);">🔍 toupie|</span></div>
+        <div class="body">
+          <div class="h2">Positions</div>
+          <div class="rows"><div class="row"><div class="pos mini"><div class="dots"><i class="lead"></i><i class="follow"></i></div></div> Position toupie <span class="badge b-pos" style="margin-left:auto;">Position</span></div></div>
+          <div class="h2">Passes</div>
+          <div class="rows">
+            <div class="row">Toupie <span class="to">fermée → américaine</span></div>
+            <div class="row">Toupie double <span class="to">fermée → fermée</span></div>
+            <div class="row">Toupie inverse <span class="to">américaine → fermée</span></div>
+          </div>
+          <div class="h2">Enchaînements</div>
+          <div class="rows"><div class="row">Débutants — passes de base <span class="to">contient « toupie »</span></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

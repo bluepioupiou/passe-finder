@@ -1,0 +1,239 @@
+name: CI
+
+# Declenche a chaque push sur la branche de travail (v2) et sur main, ainsi que
+# sur les pull requests. Les PR sont testees mais ne publient JAMAIS d'image.
+on:
+  push:
+    branches: [v2, main]
+  pull_request:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1) Qualite : typage, lint et tests d'integration. Rapide, echoue tot.
+  # ---------------------------------------------------------------------------
+  qualite:
+    name: Qualite (typage, lint, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verification des types
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests d'integration
+        run: npm run test:int
+        env:
+          # Valeur factice : src/env.ts exige PAYLOAD_SECRET au chargement.
+          # Ce n'est PAS un secret de production.
+          PAYLOAD_SECRET: ci-integration-secret
+
+  # ---------------------------------------------------------------------------
+  # 2) Image : construite UNE SEULE FOIS, testee, puis publiee si tout est vert.
+  #    Le test de fumee vise le conteneur reel (migrations appliquees), ce qui
+  #    fait echouer la CI si une collection a evolue sans migration.
+  # ---------------------------------------------------------------------------
+  image:
+    name: Image (build, fumee, publication)
+    needs: qualite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparer le nom de l'image
+        id: image
+        # Le nom d'une image ghcr.io doit etre entierement en minuscules.
+        run: |
+          name="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "Image : $name"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Construire l'image (chargee localement, pas encore publiee)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          push: false
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Demarrer le conteneur
+        run: |
+          docker run -d --name pf-ci -p 3000:3000             -e PAYLOAD_SECRET=ci-smoke-secret             -v pf-ci-data:/data             "${{ steps.image.outputs.name }}:${{ github.sha }}"
+
+      - name: Attendre que l'application reponde
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:3000/ >/dev/null 2>&1; then
+              echo "Application prete apres ${i}s"
+              exit 0
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' pf-ci)" != "true" ]; then
+              echo "Le conteneur s'est arrete avant de repondre."
+              docker logs pf-ci
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "L'application n'a pas repondu dans le delai imparti."
+          docker logs pf-ci
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Installer le navigateur Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Test de fumee contre le conteneur
+        run: npm run test:e2e -- tests/e2e/smoke.e2e.spec.ts
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Logs du conteneur (diagnostic en cas d'echec)
+        if: failure()
+        run: docker logs pf-ci
+
+      # --- Publication : uniquement sur push (jamais sur une pull request) ---
+      - name: Connexion a ghcr.io
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # Jeton fourni automatiquement par GitHub : aucun secret a creer.
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publier l'image
+        if: github.event_name == 'push'
+        run: |
+          docker push "${{ steps.image.outputs.name }}:${{ github.sha }}"
+          docker push "${{ steps.image.outputs.name }}:latest"
+          echo "Image publiee : ${{ steps.image.outputs.name }}:${{ github.sha }}"
+
+  # ---------------------------------------------------------------------------
+  # 3) Deploiement : recupere l'image publiee et redemarre le site.
+  #    Uniquement sur push (jamais sur pull request) et seulement si l'image
+  #    a ete testee et publiee.
+  # ---------------------------------------------------------------------------
+  deploiement:
+    name: Deploiement en production
+    needs: image
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Tant que le serveur n'est pas configure, ce job ne doit pas faire
+      # echouer le pipeline : il s'arrete proprement en l'annoncant.
+      - name: Verifier que le deploiement est configure
+        id: verif
+        run: |
+          if [ -z "${{ secrets.SSH_HOTE }}" ]; then
+            echo "pret=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Deploiement ignore : les secrets ne sont pas encore renseignes (voir docs/mise-en-production.md)."
+          else
+            echo "pret=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Preparer le nom de l'image
+        if: steps.verif.outputs.pret == 'true'
+        id: image
+        run: |
+          name="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Preparer la connexion SSH
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          # La cle privee vient des secrets : GitHub la masque dans les journaux.
+          echo "${{ secrets.SSH_CLE_PRIVEE }}" > ~/.ssh/deploiement
+          chmod 600 ~/.ssh/deploiement
+          # Enregistre l'empreinte du serveur pour eviter toute question
+          # interactive lors de la premiere connexion.
+          ssh-keyscan -H "${{ secrets.SSH_HOTE }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Envoyer les fichiers de deploiement
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          # Le dossier peut ne pas exister au tout premier deploiement.
+          ssh -i ~/.ssh/deploiement "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}" 'sudo mkdir -p /opt/passe-finder && sudo chown $USER:$USER /opt/passe-finder'
+          scp -i ~/.ssh/deploiement             deploy/docker-compose.yml deploy/Caddyfile deploy/litestream.yml deploy/bootstrap.sh             "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}:/opt/passe-finder/"
+
+      # Prepare la machine (Docker, swap, dossiers). Idempotent : sans effet si
+      # tout est deja en place. Evite tout geste manuel sur un serveur neuf.
+      - name: Preparer le serveur
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          ssh -i ~/.ssh/deploiement "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}" 'sh /opt/passe-finder/bootstrap.sh'
+
+      - name: Deployer
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          # Le tag SHA est immuable : on deploie exactement l'image testee,
+          # jamais un `latest` qui aurait pu bouger entre-temps.
+          ssh -i ~/.ssh/deploiement             "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}"             IMAGE="${{ steps.image.outputs.name }}:${{ github.sha }}"             PAYLOAD_SECRET="${{ secrets.PAYLOAD_SECRET }}"             DOMAINE="${{ secrets.DOMAINE }}"             AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"             AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"             S3_BUCKET="${{ secrets.S3_BUCKET }}"             S3_REGION="${{ secrets.S3_REGION }}"             "bash -s" <<'DISTANT'
+          set -e
+          cd /opt/passe-finder
+
+          # Le fichier .env n'est jamais lu dans les journaux et reste sur le
+          # serveur, accessible au seul proprietaire.
+          umask 077
+          cat > .env <<ENV
+          IMAGE=$IMAGE
+          PAYLOAD_SECRET=$PAYLOAD_SECRET
+          DOMAINE=$DOMAINE
+          AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+          AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+          S3_BUCKET=$S3_BUCKET
+          S3_REGION=$S3_REGION
+          ENV
+
+          echo "-> Recuperation de l'image..."
+          sudo docker compose pull
+
+          echo "-> Redemarrage des conteneurs..."
+          sudo docker compose up -d --remove-orphans
+
+          echo "-> Nettoyage des images devenues inutiles..."
+          sudo docker image prune -f
+          DISTANT
+
+      - name: Verifier que le site repond
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ secrets.DOMAINE }}/" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "Site en ligne (HTTP 200) apres ${i} tentative(s)."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Le site n'a pas repondu 200 dans le delai imparti."
+          exit 1

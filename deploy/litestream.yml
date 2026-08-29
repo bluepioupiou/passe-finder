@@ -1,0 +1,21 @@
+# Replication continue de la base SQLite vers S3 (AD-10 / NFR-4).
+#
+# Litestream suit le journal WAL et pousse les changements en continu : une
+# ecriture validee est repliquee en quelques secondes. C'est ce qui garantit
+# qu'aucun enchainement enregistre n'est perdu si la machine disparait.
+#
+# Prerequis : la base DOIT etre en mode WAL. L'application s'en assure au
+# demarrage (deploy/activer-wal.mjs).
+
+dbs:
+  - path: /data/passe-finder.db
+    replicas:
+      - type: s3
+        bucket: $S3_BUCKET
+        path: passe-finder
+        region: $S3_REGION
+        # Conserve 30 jours d'historique : on peut revenir en arriere, pas
+        # seulement restaurer le dernier etat.
+        retention: 720h
+        # Frequence de verification d'integrite des instantanes.
+        validation-interval: 12h

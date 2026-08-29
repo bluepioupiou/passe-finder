@@ -1,0 +1,45 @@
+/* Boutons du design system « Lin & Sauge » (UX-DR3). */
+
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  /* Cible tactile confortable sur mobile (UX-DR17). */
+  min-height: 44px;
+  padding: var(--space-2) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-md);
+  font-family: var(--font-sans);
+  font-size: var(--body-size);
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+/* Primaire : sauge plein. Un seul par zone d'action. */
+.bouton--primaire {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.bouton--primaire:hover {
+  /* Assombrissement leger sans introduire de couleur hors palette. */
+  filter: brightness(0.94);
+}
+
+/* Fantome : surface blanche, bordure line, texte attenue. */
+.bouton--fantome {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.bouton--fantome:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+}

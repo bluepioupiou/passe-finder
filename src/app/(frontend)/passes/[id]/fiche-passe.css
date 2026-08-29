@@ -1,0 +1,93 @@
+/* --- Elements partages par les fiches (positions et passes) --- */
+
+.fiche-fil {
+  margin-bottom: var(--space-4);
+  font-size: var(--label-caps-size);
+}
+
+.fiche-section {
+  margin-top: var(--space-8);
+}
+
+.fiche-section__titre {
+  margin-bottom: var(--space-4);
+  font-size: var(--headline-size);
+  font-weight: var(--headline-weight);
+}
+
+.fiche-texte {
+  white-space: pre-line; /* le texte d'origine porte ses propres sauts de ligne */
+  line-height: var(--body-line);
+  max-width: 68ch;
+}
+
+/* --- Entete de la fiche passe --- */
+
+.fiche-passe-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.fiche-passe-badge {
+  padding: var(--space-1) var(--space-3);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: var(--rounded-sm);
+  text-transform: uppercase;
+}
+
+/* --- L'arete : depart -> arrivee, les deux cliquables (FR-22) --- */
+
+.fiche-chaine {
+  margin-top: var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-lg);
+}
+
+.fiche-maillon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  max-width: 200px;
+  padding: var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-md);
+  color: var(--ink);
+  text-decoration: none;
+  text-align: center;
+}
+
+.fiche-maillon:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.fiche-maillon__image {
+  max-width: 140px;
+}
+
+.fiche-maillon__nom {
+  font-weight: 600;
+}
+
+.fiche-chaine__fleche {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-size: var(--display-size);
+  line-height: 1;
+}
+
+.fiche-texte--deroule {
+  font-size: var(--body-size);
+}

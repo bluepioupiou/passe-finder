@@ -1,0 +1,18 @@
+/*
+ * Image de position (UX-DR3) : ronde, fond pos-bg, fidele au schema vu de
+ * dessus. Le texte alternatif est toujours le nom de la position (UX-DR17).
+ */
+
+.image-position {
+  display: block;
+  width: 100%;
+  /* Garde-fou : meme sans contrainte de la page appelante, l'image ne peut pas
+     s'etendre au-dela d'une taille raisonnable ni deborder de son conteneur.
+     Les pages affinent la valeur avec `max-width`. */
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--rounded-full);
+  background: var(--pos-bg);
+  border: 1px solid var(--line);
+}

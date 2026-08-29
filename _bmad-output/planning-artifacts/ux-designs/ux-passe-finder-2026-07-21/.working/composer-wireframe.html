@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compositeur — wireframe</title>
+<style>
+  :root{
+    --bg:#F6F7F3; --surf:#FFFFFF; --ink:#202519; --muted:#5E6553;
+    --accent:#5E8A5A; --accent-soft:#E6EFE0; --line:#E3E7DD;
+    --posbg:#DCEBD9; --lead:#A9C7E6; --follow:#F2B5CF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#e9ebe4;color:var(--ink);padding:24px;line-height:1.5;}
+  h1{font-size:1.3rem;margin:0 0 2px;}
+  .sub{color:var(--muted);margin:0 0 22px;font-size:.9rem;}
+  .frames{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;}
+  .tag{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+
+  /* ---- shared bits ---- */
+  .app{background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surf);border-bottom:1px solid var(--line);}
+  .brand{font-weight:700;font-size:.95rem;} .brand b{color:var(--accent);}
+  .top .who{font-size:.78rem;color:var(--muted);}
+
+  .pos{background:var(--posbg);border:1px solid #cadcc6;border-radius:12px;display:flex;align-items:center;justify-content:center;position:relative;}
+  .pos .dots{display:flex;gap:5px;} .pos .dots i{width:11px;height:11px;border-radius:50%;display:block;}
+  .pos .lbl{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-size:.6rem;color:#41563e;}
+  .arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--accent);}
+  .arrow .nm{font-size:.68rem;font-weight:600;white-space:nowrap;}
+  .arrow .ln{position:relative;}
+  .undo{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:.7rem;line-height:14px;text-align:center;cursor:pointer;}
+
+  /* ---- DESKTOP frame ---- */
+  .desktop{width:640px;}
+  .body{display:grid;grid-template-columns:210px 1fr;min-height:360px;}
+  .rail{border-right:1px solid var(--line);padding:14px;background:var(--surf);}
+  .field{margin-bottom:14px;}
+  .field .fl{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+  .locked{display:flex;align-items:center;gap:8px;background:var(--accent-soft);border:1px solid #cfe0c9;border-radius:9px;padding:8px 10px;font-size:.82rem;font-weight:600;color:#31502e;}
+  .locked .lk{margin-left:auto;font-size:.7rem;color:var(--accent);}
+  .plist{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto;}
+  .prow{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:.8rem;cursor:pointer;}
+  .prow:hover{border-color:var(--accent);background:var(--accent-soft);}
+  .prow .to{margin-left:auto;font-size:.66rem;color:var(--muted);}
+
+  .canvas{padding:18px;position:relative;}
+  .ctitle{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+  /* boustrophedon: two rows, second reversed, with a turn connector */
+  .row{display:flex;align-items:center;gap:6px;}
+  .row.r2{flex-direction:row-reverse;margin-top:8px;}
+  .seg{display:flex;align-items:center;gap:6px;}
+  .d-pos{width:52px;height:52px;}
+  .d-arrow .ln{width:44px;height:2px;background:var(--accent);border-radius:2px;margin-top:3px;}
+  .turn{display:flex;justify-content:flex-end;padding-right:26px;}
+  .turn .down{width:2px;height:20px;background:var(--accent);border-radius:2px;position:relative;}
+  .turn .down::after{content:"";position:absolute;bottom:0;left:-3px;border:4px solid transparent;border-top-color:var(--accent);}
+  .r2 .turn{justify-content:flex-start;padding-left:26px;padding-right:0;}
+
+  .savebar{border-top:1px solid var(--line);background:var(--surf);padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .savebar input{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:.78rem;font-family:inherit;background:#fff;}
+  .savebar .ti{width:150px;} .savebar .de{flex:1;min-width:120px;}
+  .vis{display:flex;align-items:center;gap:6px;font-size:.76rem;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:#fff;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+  .btn{padding:8px 16px;border-radius:9px;font-size:.82rem;font-weight:700;border:none;background:var(--accent);color:#fff;cursor:pointer;}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--muted);font-weight:600;}
+
+  /* ---- MOBILE frame ---- */
+  .mobile{width:300px;}
+  .m-body{padding:14px;}
+  .m-chain{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .m-pos{width:70px;height:70px;}
+  .m-arrow{display:flex;flex-direction:column;align-items:center;color:var(--accent);}
+  .m-arrow .ln{width:2px;height:18px;background:var(--accent);border-radius:2px;position:relative;margin-top:3px;}
+  .m-arrow .ln::after{content:"";position:absolute;bottom:0;left:-3px;border:4px solid transparent;border-top-color:var(--accent);}
+  .m-passbtn{margin-top:10px;width:100%;text-align:center;padding:9px;border:1px dashed var(--accent);border-radius:9px;color:var(--accent);font-size:.8rem;font-weight:600;background:var(--accent-soft);}
+</style>
+</head>
+<body>
+  <h1>Compositeur d'enchaînement — wireframe (palette Lin &amp; Sauge)</h1>
+  <p class="sub">À valider : le zigzag sur PC, la colonne verticale sur mobile, et l'annulation. Les ronds vert pâle = tes images de positions (bleu = danseur, rose = danseuse).</p>
+
+  <div class="frames">
+
+    <!-- DESKTOP -->
+    <div>
+      <div class="tag">PC / grand écran</div>
+      <div class="app desktop">
+        <div class="top"><div class="brand">Passe<b>Finder</b></div><div class="who">Alain · admin</div></div>
+        <div class="body">
+          <div class="rail">
+            <div class="field">
+              <div class="fl">Position de départ</div>
+              <div class="locked">Position fermée <span class="lk">✓ verrouillée</span></div>
+            </div>
+            <div class="field">
+              <div class="fl">Passes possibles d'ici</div>
+              <div class="plist">
+                <div class="prow">Passe pied <span class="to">→ ouverte</span></div>
+                <div class="prow">Toupie <span class="to">→ fermée</span></div>
+                <div class="prow">Passe dans le dos <span class="to">→ américaine</span></div>
+                <div class="prow">Retour simple <span class="to">→ fermée</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="canvas">
+            <div class="ctitle">L'enchaînement se construit</div>
+            <!-- row 1 : left to right -->
+            <div class="row r1">
+              <div class="seg"><div class="pos d-pos"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">fermée</div></div>
+                <div class="arrow d-arrow"><span class="nm">passe pied</span><div class="ln"></div></div></div>
+              <div class="seg"><div class="pos d-pos"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">ouverte</div></div>
+                <div class="arrow d-arrow"><span class="nm">toupie</span><div class="ln"></div></div></div>
+              <div class="seg"><div class="pos d-pos"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">fermée</div></div>
+                <div class="arrow d-arrow"><span class="nm">passe dos</span><div class="ln"></div></div></div>
+              <div class="seg"><div class="pos d-pos"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">améric.</div></div></div>
+            </div>
+            <div class="turn"><div class="down"></div></div>
+            <!-- row 2 : right to left -->
+            <div class="row r2">
+              <div class="seg"><div class="pos d-pos"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">améric.</div></div>
+                <div class="arrow d-arrow"><span class="nm">retour</span><div class="ln"></div></div></div>
+              <div class="seg"><div class="pos d-pos" style="border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">fermée</div>
+                <span class="undo" title="annuler la dernière passe">×</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="savebar">
+          <input class="ti" placeholder="Titre (ex. Débutants)"/>
+          <input class="de" placeholder="Description / notes"/>
+          <span class="vis"><span class="dot"></span>Privé</span>
+          <button class="btn ghost">↶ Annuler dernière</button>
+          <button class="btn">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE -->
+    <div>
+      <div class="tag">Mobile (lecture élève)</div>
+      <div class="app mobile">
+        <div class="top"><div class="brand">Passe<b>Finder</b></div><div class="who">Débutants · 12 mars</div></div>
+        <div class="m-body">
+          <div class="m-chain">
+            <div class="pos m-pos"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">fermée</div></div>
+            <div class="m-arrow"><span style="font-size:.72rem;font-weight:600;">passe pied</span><div class="ln"></div></div>
+            <div class="pos m-pos"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">ouverte</div></div>
+            <div class="m-arrow"><span style="font-size:.72rem;font-weight:600;">toupie</span><div class="ln"></div></div>
+            <div class="pos m-pos"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">fermée</div></div>
+            <div class="m-arrow"><span style="font-size:.72rem;font-weight:600;">passe dos</span><div class="ln"></div></div>
+            <div class="pos m-pos"><div class="dots"><i class="lead"></i><i class="follow"></i></div><div class="lbl">américaine</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+/*
+ * Design system « Lin & Sauge » — tokens (Story 1.5, UX-DR1/UX-DR2).
+ *
+ * Source de verite : _bmad-output/planning-artifacts/ux-designs/.../DESIGN.md
+ * Toute valeur de couleur, typo, rayon ou espacement du produit doit venir
+ * d'ici. Aucune valeur en dur ailleurs.
+ *
+ * Themes : la palette claire est definie sur `:root` nu. Le mode sombre est
+ * applique dans deux cas — preference systeme, et choix explicite du lecteur
+ * via `data-theme` — chaque bloc redefinissant UNIQUEMENT les couleurs.
+ * Aucune police externe n'est chargee (UX-DR1) : pile systeme uniquement.
+ */
+
+:root {
+  /* --- Couleurs : theme clair --- */
+  --bg: #f6f7f3;
+  --surface: #ffffff;
+  --surface-container: #f0f2ec;
+  --ink: #202519;
+  --muted: #5e6553;
+  --line: #e3e7dd;
+  --accent: #5e8a5a;
+  --accent-soft: #e6efe0;
+  --on-accent: #ffffff;
+  --danger: #b4432e;
+  --pos-bg: #dcebd9;
+  --dancer-lead: #a9c7e6;
+  --dancer-follow: #f2b5cf;
+
+  /* --- Typographie : pile systeme, aucune dependance externe --- */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
+
+  --display-size: 30px;
+  --display-weight: 700;
+  --display-line: 1.15;
+  --display-tracking: -0.01em;
+
+  --headline-size: 20px;
+  --headline-weight: 700;
+  --headline-line: 1.25;
+
+  --body-size: 16px;
+  --body-weight: 400;
+  --body-line: 1.55;
+
+  --label-caps-size: 12px;
+  --label-caps-weight: 600;
+  --label-caps-line: 1.4;
+  --label-caps-tracking: 0.08em;
+
+  --data-size: 13px;
+  --data-weight: 400;
+  --data-line: 1.4;
+
+  /* --- Rayons --- */
+  --rounded-sm: 0.4rem;
+  --rounded: 0.55rem;
+  --rounded-md: 0.7rem;
+  --rounded-lg: 0.85rem;
+  --rounded-full: 9999px;
+
+  /* --- Espacements : unite de base 4px --- */
+  --unit: 4px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --gutter: 16px;
+  /* Marge de page : 16px mobile, 24px desktop (voir media query plus bas). */
+  --page-margin: 16px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --page-margin: 24px;
+  }
+}
+
+/*
+ * Mode sombre suivant la preference systeme.
+ * Neutralise des que le lecteur a explicitement choisi le theme clair.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #14170f;
+    --surface: #1d211a;
+    --surface-container: #242a20;
+    --ink: #e9eee2;
+    --muted: #a8b0a0;
+    --line: #2b3026;
+    --accent: #8fbe8a;
+    --accent-soft: #22301f;
+    --on-accent: #14170f;
+  }
+}
+
+/* Choix explicite du lecteur : prime sur la preference systeme. */
+:root[data-theme='dark'] {
+  --bg: #14170f;
+  --surface: #1d211a;
+  --surface-container: #242a20;
+  --ink: #e9eee2;
+  --muted: #a8b0a0;
+  --line: #2b3026;
+  --accent: #8fbe8a;
+  --accent-soft: #22301f;
+  --on-accent: #14170f;
+}
+
+/*
+ * Accessibilite : aucune animation imposee a qui n'en veut pas (UX-DR2/UX-DR17).
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

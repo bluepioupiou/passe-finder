@@ -1,0 +1,27 @@
+# Normalisation des fins de ligne, indépendante du client git (GitKraken, CLI,
+# runner CI…). Ce fichier PRIME sur le réglage local `core.autocrlf`, ce qui
+# garantit le même résultat sur toutes les machines.
+#
+# Par défaut : LF partout (dépôt ET copie de travail). Les éditeurs modernes
+# sous Windows (VS Code, GitKraken) gèrent LF sans problème.
+* text=auto eol=lf
+
+# CRITIQUE — scripts exécutés dans un conteneur Linux : des fins de ligne CRLF
+# les rendent inexécutables (`set: illegal option -`) et empêchent le conteneur
+# de démarrer. Ne jamais laisser convertir.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-entrypoint.sh text eol=lf
+
+# Binaires : aucune conversion (une normalisation les corromprait).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.gz binary
+*.zip binary
+*.db binary
+*.woff binary
+*.woff2 binary

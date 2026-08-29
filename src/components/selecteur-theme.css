@@ -1,0 +1,11 @@
+/* Selecteur de theme clair / sombre (UX-DR2). */
+
+.selecteur-theme {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.selecteur-theme__label {
+  color: var(--muted);
+}
