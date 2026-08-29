@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-26 (1-1, 1-2, 1-3 en review)
+# last_updated: 2026-08-29 (mise en production, 1-4 et 5-4 livrees)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-24
-last_updated: 2026-08-27
+last_updated: 2026-08-29
 project: passe-finder
 project_key: NOKEY
 tracking_system: file-system
@@ -69,6 +69,28 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 #   - migration du rock uniquement : 30 positions sur 32 (2 en Salsa ecartees)
 #   - page volontairement non stylee ; le design system (1-5) l'habillera ensuite
 # ---------------------------------------------------------------------------
+# MISE EN PRODUCTION (2026-08-29)
+# ---------------------------------------------------------------------------
+# Le site tourne en production : Lightsail + Caddy (HTTPS) + Litestream.
+#
+# Consequences sur le suivi, qui avait pris du retard sur la realite :
+#   - 1-4 passe de `backlog` a `review` : volume persistant, replication
+#     continue de la base vers S3, sauvegarde horaire des images, script de
+#     restauration complete et procedure documentee.
+#   - le DEPLOIEMENT (CI/CD vers Lightsail) n'avait jamais ete formalise comme
+#     story dans epics.md alors qu'il est livre. Trace ici sous 1-8 pour que le
+#     suivi ne mente pas ; a reintegrer dans epics.md si on veut la tracabilite
+#     complete.
+#   - 5-4 passe de `in-progress` a `review` : onglets, recherche par nom
+#     (insensible aux accents) et filtre difficulte livres.
+#
+# Reste sur l'Epic 1 : 1-7 (audience Cloudflare).
+#
+# Prochaine bascule produit a trancher : Epic 3 (comptes) puis Epic 4
+# (composition). Attention a l'ordre : 3-4 (drapeau admin) DOIT preceder 3-1
+# (inscription), sinon tout inscrit peut editer le catalogue — voir les TODO
+# « Story 3.4 » dans les collections Danse/Position/Passe.
+# ---------------------------------------------------------------------------
 
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
@@ -76,10 +98,14 @@ development_status:
   1-1-scaffold-du-monolithe-next-js-payload: review
   1-2-image-docker-de-production: review
   1-3-pipeline-ci-cd-commit-production-avec-filet-playwright: review
-  1-4-persistance-fiable-volume-sqlite-sauvegarde-continue-vers-s3: backlog
+  # base ET images repliquees vers S3 ; restauration scriptee (deploy/restaurer.sh)
+  1-4-persistance-fiable-volume-sqlite-sauvegarde-continue-vers-s3: review
   1-5-systeme-visuel-lin-sauge-tokens-theme-composants-de-base: review
   1-6-coquille-de-navigation-layout-responsive: review
   1-7-instrumentation-d-audience-cloudflare-web-analytics: backlog
+  # Livre mais absent d'epics.md : CI/CD vers Lightsail, Caddy/HTTPS, bootstrap
+  # de la machine, entrypoint (migrations + WAL + import conditionnel).
+  1-8-deploiement-continu-vers-lightsail-https: review
   epic-1-retrospective: optional
 
   # --- Epic 2: Catalogue de référence (Positions & Passes) ---
@@ -116,8 +142,8 @@ development_status:
   5-1-mettre-en-favori-un-enchainement-partage-d-autrui: backlog
   5-2-profil-a-deux-listes-mes-enchainements-mes-favoris: backlog
   5-3-accueil-fil-des-nouveautes: backlog
-  # liste des positions livree ; onglets, recherche et filtre difficulte a faire
-  5-4-catalogue-navigable-positions-passes: in-progress
+  # onglets Positions|Passes, recherche par nom, filtre difficulte, etat sans resultat
+  5-4-catalogue-navigable-positions-passes: review
   5-5-recherche-globale-groupee-par-categorie: backlog
   5-6-fiche-passe-complete-enchainements-videos-reverse-lookup: backlog
   epic-5-retrospective: optional
