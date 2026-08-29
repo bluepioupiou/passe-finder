@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { AnalytiqueAudience } from '@/components/AnalytiqueAudience'
 import { Navigation } from '@/components/Navigation'
 import './styles.css'
 
@@ -32,6 +33,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       <body>
         <Navigation />
         <main>{children}</main>
+        <AnalytiqueAudience />
       </body>
     </html>
   )

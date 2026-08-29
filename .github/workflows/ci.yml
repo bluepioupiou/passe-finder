@@ -223,6 +223,7 @@ jobs:
             AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
             S3_BUCKET="${{ secrets.S3_BUCKET }}" \
             S3_REGION="${{ secrets.S3_REGION }}" \
+            CLOUDFLARE_ANALYTICS_TOKEN="${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}" \
             "bash -s" <<'DISTANT'
           set -e
           cd /opt/passe-finder
@@ -237,6 +238,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
           S3_BUCKET=$S3_BUCKET
           S3_REGION=$S3_REGION
+          CLOUDFLARE_ANALYTICS_TOKEN=$CLOUDFLARE_ANALYTICS_TOKEN
           ENV
 
           echo "-> Récupération de l'image..."

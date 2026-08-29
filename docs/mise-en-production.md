@@ -359,6 +359,7 @@ Dépôt GitHub → *Settings* → *Secrets and variables* → *Actions* → *New
 | `AWS_SECRET_ACCESS_KEY` | la clé secrète | étape 3 |
 | `S3_BUCKET` | le nom du bucket | étape 2 |
 | `S3_REGION` | la région, ex. `eu-north-1` | étape 2 |
+| `CLOUDFLARE_ANALYTICS_TOKEN` | le jeton de mesure d'audience | **facultatif**, voir ci-dessous |
 
 Pour générer le `PAYLOAD_SECRET` :
 
@@ -369,6 +370,22 @@ openssl rand -base64 32
 > ⚠️ Le `PAYLOAD_SECRET` de production doit être **différent** de celui de ton
 > `.env` local. S'il change après coup, toutes les sessions ouvertes sont
 > invalidées (les gens doivent se reconnecter) — sans perte de données.
+
+### Le jeton Cloudflare (facultatif)
+
+`CLOUDFLARE_ANALYTICS_TOKEN` sert à compter les visiteurs. **Tu peux déployer
+sans lui** : le site fonctionne exactement pareil, il n'est simplement pas
+mesuré, et il n'appelle alors aucun service extérieur.
+
+Pour l'obtenir : [dash.cloudflare.com](https://dash.cloudflare.com) → **Web
+Analytics** → *Add a site* → ton domaine. Ton domaine n'a **pas** besoin d'être
+géré par Cloudflare : notre installation pose le script à la main. Cloudflare
+affiche ensuite un extrait de code ; le jeton est la valeur de `token` à
+l'intérieur, une longue suite de caractères. C'est elle seule qu'on met dans le
+secret, pas l'extrait entier.
+
+> Cette mesure ne pose **aucun cookie** et ne suit personne individuellement.
+> C'est pour cela que le site n'a pas besoin de bandeau de consentement.
 
 ---
 

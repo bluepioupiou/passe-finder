@@ -55,3 +55,32 @@ function resolveDatabaseUri(): string {
 }
 
 export const DATABASE_URI = resolveDatabaseUri()
+
+/**
+ * Lit une variable FACULTATIVE : absente ou vide, elle vaut `undefined`.
+ *
+ * Le pendant de `requireEnv`. Deux comportements opposés, et c'est voulu : on
+ * échoue fort quand l'absence met les données ou les sessions en danger, on
+ * dégrade en silence quand elle ne prive que d'un confort.
+ */
+function optionalEnv(name: string): string | undefined {
+  const value = process.env[name]
+  if (!value || value.trim() === '') return undefined
+
+  return value.trim()
+}
+
+/**
+ * Jeton du site Cloudflare Web Analytics (Story 1.7, AD-15).
+ *
+ * FACULTATIF : sans lui, aucun script d'audience n'est émis et le site
+ * fonctionne normalement. C'est l'état du développement local, de la CI et du
+ * test de fumée du conteneur — aucun d'eux ne doit dépendre d'un appel réseau
+ * vers un tiers.
+ *
+ * PAS de préfixe `NEXT_PUBLIC_`, et c'est important : la valeur est lue au
+ * RENDU, côté serveur. Une variable `NEXT_PUBLIC_` serait figée à la
+ * CONSTRUCTION de l'image, dans GitHub Actions, où le jeton n'existe pas — le
+ * beacon partirait vide en production sans qu'aucune erreur ne le signale.
+ */
+export const CLOUDFLARE_ANALYTICS_TOKEN = optionalEnv('CLOUDFLARE_ANALYTICS_TOKEN')
