@@ -16,6 +16,11 @@ services:
     environment:
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
       DATABASE_URI: file:/data/passe-finder.db
+      # Mesure d'audience (story 1.7). Facultative : si le secret n'est pas
+      # renseigne, la variable arrive vide et aucun script n'est emis. Elle est
+      # fournie ICI, a l'execution, et non a la construction de l'image : le
+      # jeton n'existe pas dans GitHub Actions au moment du build.
+      CLOUDFLARE_ANALYTICS_TOKEN: ${CLOUDFLARE_ANALYTICS_TOKEN:-}
     volumes:
       - donnees:/data
       - medias:/app/media

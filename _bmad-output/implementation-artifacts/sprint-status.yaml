@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-29 (mise en production, 1-4 et 5-4 livrees)
+# last_updated: 2026-08-29 (mise en production ; story 1-7 livree)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -87,7 +87,16 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 #     de navigation est active et renvoie Positions et Passes ; il manque le
 #     groupe Enchainements, qui depend de l'Epic 4.
 #
-# Reste sur l'Epic 1 : 1-7 (audience Cloudflare).
+# Epic 1 : 1-7 (audience Cloudflare) livree, en `review`. Toutes les stories
+# de l'Epic 1 sont desormais en `review`.
+#
+# DETTE ASSUMEE sur 1-7 (decidee avec Alain le 2026-08-29) : la segmentation
+# connectes / anonymes de FR-43 et ADD-17 est DIFFEREE. Cloudflare Web Analytics
+# n'accepte ni evenement ni dimension personnalisee, et l'Epic 3 n'existe pas
+# encore : personne ne peut se connecter hors /admin, qui est justement exclu de
+# la mesure. La story 1-7 livre donc le total visiteurs/jour seulement.
+# A ROUVRIR avec la story 3-2 (connexion / etat connecte dans la nav).
+# L'AC correspondant reste inchange dans epics.md : il est en attente, pas faux.
 #
 # Prochaine bascule produit a trancher : Epic 3 (comptes) puis Epic 4
 # (composition). Attention a l'ordre : 3-4 (drapeau admin) DOIT preceder 3-1
@@ -105,7 +114,7 @@ development_status:
   1-4-persistance-fiable-volume-sqlite-sauvegarde-continue-vers-s3: review
   1-5-systeme-visuel-lin-sauge-tokens-theme-composants-de-base: review
   1-6-coquille-de-navigation-layout-responsive: review
-  1-7-instrumentation-d-audience-cloudflare-web-analytics: backlog
+  1-7-instrumentation-d-audience-cloudflare-web-analytics: review
   # Livre mais absent d'epics.md : CI/CD vers Lightsail, Caddy/HTTPS, bootstrap
   # de la machine, entrypoint (migrations + WAL + import conditionnel).
   1-8-deploiement-continu-vers-lightsail-https: review
