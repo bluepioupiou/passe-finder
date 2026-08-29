@@ -5,7 +5,7 @@ import React from 'react'
 import { GrilleFiltrable } from '@/components/GrilleFiltrable'
 import { ImagePosition } from '@/components/ImagePosition'
 import { OngletsCatalogue } from '@/components/OngletsCatalogue'
-import { DIFFICULTES } from '@/collections/Passe'
+import { DIFFICULTES, libelleDifficulte } from '@/collections/Passe'
 import config from '@/payload.config'
 import type { Position } from '@/payload-types'
 import './passes.css'
@@ -15,12 +15,6 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: 'Passes — Passe Finder',
   description: 'Le catalogue des passes de rock 6 temps.',
-}
-
-/** Libellé lisible d'un niveau de difficulté (1 à 4). */
-function libelleDifficulte(valeur?: string | null): string | null {
-  if (!valeur) return null
-  return DIFFICULTES.find((d) => d.value === valeur)?.label ?? null
 }
 
 /**
@@ -33,7 +27,15 @@ function libelleDifficulte(valeur?: string | null): string | null {
  * Section « Passes » du catalogue (E2) : recherche par nom et filtre par
  * difficulté, la seule dimension de tri utile pour choisir quoi travailler.
  */
-export default async function PassesPage() {
+export default async function PassesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  // `?q=` : requete transmise par la recherche globale (« voir tout »).
+  const { q } = await searchParams
+  const requeteInitiale = (q ?? '').trim()
+
   const payload = await getPayload({ config: await config })
 
   const { docs: passes, totalDocs } = await payload.find({
@@ -112,6 +114,10 @@ export default async function PassesPage() {
         </p>
       ) : (
         <GrilleFiltrable
+          // Remonte le composant quand la requete de l'URL change, pour que le
+          // champ suive l'URL au lieu de garder l'ancienne saisie.
+          key={requeteInitiale}
+          requeteInitiale={requeteInitiale}
           elements={elements}
           classeGrille="passes-liste"
           etiquetteRecherche="Rechercher une passe"

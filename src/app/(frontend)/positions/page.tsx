@@ -27,7 +27,15 @@ export const metadata = {
  * Section « Positions » du catalogue (E2) : les onglets la relient aux Passes,
  * et la recherche par nom filtre la grille sans aller-retour serveur.
  */
-export default async function PositionsPage() {
+export default async function PositionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  // `?q=` : requete transmise par la recherche globale (« voir tout »).
+  const { q } = await searchParams
+  const requeteInitiale = (q ?? '').trim()
+
   const payload = await getPayload({ config: await config })
 
   const { docs: positions, totalDocs } = await payload.find({
@@ -72,6 +80,10 @@ export default async function PositionsPage() {
         </p>
       ) : (
         <GrilleFiltrable
+          // Remonte le composant quand la requete de l'URL change, pour que le
+          // champ suive l'URL au lieu de garder l'ancienne saisie.
+          key={requeteInitiale}
+          requeteInitiale={requeteInitiale}
           elements={elements}
           classeGrille="positions-grille"
           etiquetteRecherche="Rechercher une position"
