@@ -181,7 +181,16 @@ jobs:
       - name: Envoyer les fichiers de deploiement
         if: steps.verif.outputs.pret == 'true'
         run: |
-          scp -i ~/.ssh/deploiement             deploy/docker-compose.yml deploy/Caddyfile deploy/litestream.yml             "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}:/opt/passe-finder/"
+          # Le dossier peut ne pas exister au tout premier deploiement.
+          ssh -i ~/.ssh/deploiement "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}" 'sudo mkdir -p /opt/passe-finder && sudo chown $USER:$USER /opt/passe-finder'
+          scp -i ~/.ssh/deploiement             deploy/docker-compose.yml deploy/Caddyfile deploy/litestream.yml deploy/bootstrap.sh             "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}:/opt/passe-finder/"
+
+      # Prepare la machine (Docker, swap, dossiers). Idempotent : sans effet si
+      # tout est deja en place. Evite tout geste manuel sur un serveur neuf.
+      - name: Preparer le serveur
+        if: steps.verif.outputs.pret == 'true'
+        run: |
+          ssh -i ~/.ssh/deploiement "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}" 'sh /opt/passe-finder/bootstrap.sh'
 
       - name: Deployer
         if: steps.verif.outputs.pret == 'true'
@@ -206,13 +215,13 @@ jobs:
           ENV
 
           echo "-> Recuperation de l'image..."
-          docker compose pull
+          sudo docker compose pull
 
           echo "-> Redemarrage des conteneurs..."
-          docker compose up -d --remove-orphans
+          sudo docker compose up -d --remove-orphans
 
           echo "-> Nettoyage des images devenues inutiles..."
-          docker image prune -f
+          sudo docker image prune -f
           DISTANT
 
       - name: Verifier que le site repond

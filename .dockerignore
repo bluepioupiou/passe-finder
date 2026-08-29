@@ -21,8 +21,10 @@ build
 _bmad
 _bmad-output
 docs
-images
-passe-finder-saveDB.gz
+
+# NB : `images/` et `passe-finder-saveDB.gz` sont VOLONTAIREMENT conservés.
+# L'import du catalogue historique s'exécute dans le conteneur au premier
+# démarrage ; sans eux, il n'aurait aucune source à lire (~400 Ko au total).
 
 # tests & rapports
 tests

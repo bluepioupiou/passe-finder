@@ -247,21 +247,57 @@ Ajoute HTTP et HTTPS s'ils manquent.
 
 ## Étape 5 — Nom de domaine
 
-1. Achète un domaine chez le registrar de ton choix (OVH, Gandi, Namecheap…),
-   ~12 €/an. AWS Route 53 fonctionne aussi mais coûte un peu plus.
-2. Dans la zone DNS du domaine, crée un enregistrement :
+### 5a — Acheter le domaine
 
-| Type | Nom | Valeur |
+| Registrar | Prix indicatif | Remarque |
 | --- | --- | --- |
-| `A` | `@` (ou vide) | l'IP statique de l'étape 4a |
-| `A` | `www` | la même IP |
+| OVH / Gandi | ~10-15 €/an | français, interface en français |
+| Cloudflare Registrar | au prix coûtant | le moins cher, mais impose son DNS |
+| AWS Route 53 | 12 $/an + ~6 $/an de zone hébergée | tout reste dans AWS (intérêt pédagogique) |
 
-3. La propagation prend de quelques minutes à quelques heures.
+> ⚠️ **Deux points après l'achat, quel que soit le registrar :**
+> 1. **Confirme l'e-mail de vérification.** Sans ce clic, le domaine peut être
+>    suspendu — c'est la cause n°1 de « mon domaine ne marche pas ».
+> 2. Route 53 crée automatiquement une **zone hébergée** avec des
+>    enregistrements `NS` et `SOA`. **N'y touche pas** : ils font fonctionner le
+>    domaine. Ajoute seulement les deux `A` ci-dessous.
 
-> Le certificat HTTPS est obtenu **automatiquement** par Caddy au premier
-> démarrage, une fois que le domaine pointe vers l'IP. Rien à faire de plus.
+Aucun de ces choix n'est mauvais. Route 53 ajoute un service managé AWS à
+manipuler ; OVH et Gandi coûtent un peu moins cher.
 
----
+### 5b — Créer les enregistrements DNS
+
+Dans la zone DNS du domaine :
+
+| Type | Nom | Valeur | TTL |
+| --- | --- | --- | --- |
+| `A` | `@` (ou vide) | l'IP statique de l'étape 4a | **300** |
+| `A` | `www` | la même IP | **300** |
+
+**Les deux enregistrements sont nécessaires** : la configuration Caddy demande un
+certificat pour le domaine nu *et* pour `www`. S'il en manque un, l'obtention du
+certificat échoue.
+
+**TTL court (300 s) au départ** : une erreur de saisie se corrige alors en
+5 minutes au lieu de plusieurs heures. À augmenter une fois tout stabilisé.
+
+### 5c — Vérifier AVANT de déployer
+
+> ⚠️ **Ne lance pas le déploiement tant que le DNS ne résout pas.**
+> Caddy demanderait le certificat, Let's Encrypt refuserait, et après quelques
+> échecs tu serais **temporairement bloqué par leurs limites de débit** — parfois
+> plusieurs heures d'attente forcée.
+
+```bash
+nslookup ton-domaine.fr
+nslookup www.ton-domaine.fr
+```
+
+Les deux doivent renvoyer l'IP statique de l'instance. La propagation prend de
+quelques minutes à quelques heures selon le registrar.
+
+Une fois que c'est bon, Caddy obtient et renouvelle le certificat tout seul :
+ni certbot, ni tâche planifiée de renouvellement.
 
 ## Étape 6 — Clé SSH pour le déploiement automatique
 
@@ -292,18 +328,14 @@ chmod 600 ~/.ssh/authorized_keys
 
 ---
 
-## Étape 7 — Préparer le serveur
+## Étape 7 — (rien à faire)
 
-Toujours dans la console SSH de Lightsail :
+**La préparation du serveur est automatique.** Le job de déploiement envoie et
+exécute `deploy/bootstrap.sh` à chaque passage : installation de Docker,
+création du fichier d'échange, des dossiers, et activation du démarrage
+automatique. Le script est idempotent — sans effet si tout est déjà en place.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/bluepioupiou/passe-finder/v2/deploy/bootstrap.sh | bash
-```
-
-Ce script installe Docker, crée les dossiers nécessaires et prépare
-l'arborescence. Il est **idempotent** : le relancer ne casse rien.
-
----
+Tu n'as donc rien à lancer à la main sur la machine.
 
 ## Étape 8 — Secrets GitHub
 
@@ -342,21 +374,24 @@ Au bout de quelques minutes : `https://ton-domaine.fr`
 
 ---
 
-## Étape 10 — Importer ton catalogue en production
+## Étape 10 — (rien à faire)
 
-La base de production démarre **vide**. Deux options :
+**L'import du catalogue est automatique.** Au démarrage, le conteneur enchaîne :
 
-**A. Rejouer la migration sur le serveur** *(recommandé)* — le dump legacy est
-dans le dépôt, donc l'import est reproductible :
+1. migrations Payload (schéma de la base) ;
+2. bascule en mode WAL (nécessaire à la sauvegarde) ;
+3. **import du catalogue historique — uniquement si la base est vide**.
+
+Ce garde-fou est important : sans lui, une position que tu supprimerais depuis
+le back-office **réapparaîtrait** au déploiement suivant. En n'important que sur
+une base vide, on obtient zéro geste manuel au premier déploiement et aucune
+résurrection de contenu supprimé ensuite.
+
+L'import reste rejouable à la demande si besoin :
 
 ```bash
-docker compose exec app npm run migrate:all
+sudo docker compose exec app npm run migrate:all
 ```
-
-**B. Transférer ta base locale** — à préférer si tu as fait des modifications
-dans le back-office local que tu veux conserver.
-
----
 
 ## Limite connue : les images téléversées
 
@@ -389,10 +424,25 @@ réglerait ce point. C'est un travail distinct, à planifier quand tu commencera
 | Instance Lightsail $7 (1 Go) | ~77 €/an |
 | IP statique | gratuite tant qu'attachée |
 | Bucket S3 | quelques centimes/mois |
-| Nom de domaine | ~12 €/an |
+| Nom de domaine `.fr` (Route 53) | 12 $/an |
+| Zone hébergée Route 53 | ~6 $/an (0,50 $/mois) |
 | GitHub Actions + ghcr.io | gratuit (dépôt public) |
-| **Total** | **~90 €/an** |
+| **Total** | **~93 €/an** |
 
-À comparer à la référence de ~50 €/an du PRD : on est légèrement au-dessus,
-essentiellement à cause du nom de domaine. Sans domaine (IP brute, sans HTTPS)
-on serait à ~55 €/an, mais l'expérience pour tes élèves serait dégradée.
+À comparer à la référence de ~50 €/an du PRD : on est **presque au double**.
+Il faut l'assumer clairement plutôt que de le minimiser.
+
+D'où vient l'écart :
+
+| Poste | Écart | Pouvait-on faire autrement ? |
+| --- | --- | --- |
+| Instance à 7 $ au lieu de 5 $ | +22 €/an | **Non.** 512 Mo ne suffisent pas à faire tourner Next.js + Payload. |
+| Domaine + zone hébergée | +16 €/an | Oui, mais au prix d'une URL en IP brute, sans HTTPS — inacceptable pour un lien partagé dans WhatsApp. |
+
+Autrement dit, la référence de 50 €/an du PRD était **optimiste** : elle
+supposait la formule la moins chère et aucun nom de domaine. Le coût réel d'un
+site utilisable se situe autour de 90 €/an, soit **~7,50 €/mois**.
+
+Deux atténuations : les **crédits AWS** couvrent environ les 14 premiers mois, et
+un registrar externe (OVH, Gandi) ferait économiser la zone hébergée si le coût
+devenait un sujet.
