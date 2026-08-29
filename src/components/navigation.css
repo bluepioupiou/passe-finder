@@ -1,7 +1,11 @@
 /*
  * Barre de navigation globale (UX-DR4).
  * Toutes les valeurs viennent des tokens « Lin & Sauge ».
- * Mobile d'abord : les entrees sont repliees, puis deployees a partir de 768px.
+ *
+ * Peu d'entrees (deux liens, une recherche, le theme) : elles tiennent sans
+ * repli, ce qui evite un bouton « Menu » de plus a comprendre. Sur petit ecran
+ * elles passent simplement a la ligne, au lieu de s'empiler une par une —
+ * sinon la barre mangerait la moitie de l'ecran avant le contenu.
  */
 
 .nav {
@@ -16,7 +20,7 @@
   padding: var(--space-3) var(--page-margin);
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -28,25 +32,11 @@
   margin-right: auto;
 }
 
-/* --- Bouton de repli, visible sur petit ecran uniquement --- */
-
-.nav__bascule {
-  min-height: 40px;
-  padding: var(--space-2) var(--space-4);
-}
-
-/* --- Contenu repliable --- */
-
 .nav__contenu {
-  display: none;
-  width: 100%;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding-top: var(--space-4);
-}
-
-.nav__contenu--deplie {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
 }
 
 .nav__liens {
@@ -68,22 +58,31 @@
 }
 
 .nav__recherche {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  flex: 1;
+  min-width: 240px;
 }
 
+/* Le champ porte deja un intitule explicite (son texte d'invite) : le label
+   reste la pour les lecteurs d'ecran, sans encombrer la barre (UX-DR17). */
 .nav__recherche-label {
-  font-size: var(--label-caps-size);
-  font-weight: var(--label-caps-weight);
-  letter-spacing: var(--label-caps-tracking);
-  text-transform: uppercase;
-  color: var(--muted);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.nav__recherche-ligne {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .nav__champ {
   min-height: 44px;
   width: 100%;
+  min-width: 0;
   padding: var(--space-2) var(--space-3);
   background: var(--surface-container);
   color: var(--ink);
@@ -93,9 +92,8 @@
   font-size: var(--body-size);
 }
 
-.nav__champ:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
+.nav__envoyer {
+  flex-shrink: 0;
 }
 
 .nav__actions {
@@ -105,47 +103,29 @@
   gap: var(--space-3);
 }
 
-.nav__actions .bouton:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-/* --- A partir de 768px : tout est visible, plus de repli --- */
+/* --- A partir de 768px : tout tient sur une seule ligne --- */
 
 @media (min-width: 768px) {
-  .nav__bascule {
-    display: none;
-  }
-
-  .nav__contenu {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-6);
-    width: auto;
-    padding-top: 0;
+  .nav__barre {
+    gap: var(--space-4);
   }
 
   .nav__marque {
     margin-right: var(--space-6);
   }
 
+  .nav__contenu {
+    flex: 1;
+    gap: var(--space-6);
+  }
+
   .nav__recherche {
+    flex: 0 0 auto;
+    min-width: 0;
     margin-left: auto;
   }
 
-  .nav__recherche-label {
-    /* Le champ porte deja un intitule explicite : on garde le label pour les
-       lecteurs d'ecran sans encombrer la barre. */
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
   .nav__champ {
-    width: 260px;
+    width: 220px;
   }
 }

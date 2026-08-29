@@ -4,18 +4,12 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import { ImagePosition } from '@/components/ImagePosition'
-import { DIFFICULTES } from '@/collections/Passe'
+import { libelleDifficulte } from '@/collections/Passe'
 import config from '@/payload.config'
 import type { Position } from '@/payload-types'
 import './fiche-passe.css'
 
 export const dynamic = 'force-dynamic'
-
-/** Libellé lisible d'un niveau de difficulté (1 à 4). */
-function libelleDifficulte(valeur?: string | null): string | null {
-  if (!valeur) return null
-  return DIFFICULTES.find((d) => d.value === valeur)?.label ?? null
-}
 
 /** Position cliquable vers sa fiche (FR-22). */
 function MaillonPosition({ position, role }: { position: Position; role: string }) {

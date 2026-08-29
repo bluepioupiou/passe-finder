@@ -10,6 +10,17 @@ export const DIFFICULTES = [
 ] as const
 
 /**
+ * Libellé lisible d'un niveau de difficulté ('1' à '4').
+ *
+ * Vit ici, à côté des valeurs : chaque surface d'affichage (liste, fiche,
+ * résultats de recherche) doit lire le même libellé, sans le réécrire.
+ */
+export function libelleDifficulte(valeur?: string | null): string | null {
+  if (!valeur) return null
+  return DIFFICULTES.find((difficulte) => difficulte.value === valeur)?.label ?? null
+}
+
+/**
  * Passe — mouvement reliant une position de départ à une position d'arrivée.
  *
  * C'est ici que vit le graphe (AD-2) : les aretes sont `positionDebut` et

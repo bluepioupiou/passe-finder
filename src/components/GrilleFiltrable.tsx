@@ -42,6 +42,7 @@ export function GrilleFiltrable({
   singulier,
   pluriel,
   optionsDifficulte,
+  requeteInitiale = '',
 }: {
   elements: ElementCatalogue[]
   /** Classe de la liste, propre a chaque page (grille de positions, de passes…). */
@@ -56,8 +57,14 @@ export function GrilleFiltrable({
    * embarquerait tout Payload.
    */
   optionsDifficulte?: OptionDifficulte[]
+  /**
+   * Requete pre-remplie, venant de l'URL (`?q=`). C'est ce qui permet au
+   * « voir tout » de la page de resultats d'arriver ici avec le filtre deja
+   * applique, sans que le lecteur ait a retaper sa recherche.
+   */
+  requeteInitiale?: string
 }) {
-  const [requete, setRequete] = useState('')
+  const [requete, setRequete] = useState(requeteInitiale)
   const [difficulte, setDifficulte] = useState('')
   const idRecherche = useId()
   const idDifficulte = useId()

@@ -4,19 +4,13 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import { ImagePosition } from '@/components/ImagePosition'
-import { DIFFICULTES } from '@/collections/Passe'
+import { libelleDifficulte } from '@/collections/Passe'
 import config from '@/payload.config'
 // Payload singularise le slug `passes` en `Pass` dans les types generes.
 import type { Pass, Position } from '@/payload-types'
 import './fiche-position.css'
 
 export const dynamic = 'force-dynamic'
-
-/** Libellé lisible d'un niveau de difficulté (1 à 4). */
-function libelleDifficulte(valeur?: string | null): string | null {
-  if (!valeur) return null
-  return DIFFICULTES.find((d) => d.value === valeur)?.label ?? null
-}
 
 /** L'autre extrémité d'une passe, selon le sens de lecture. */
 function extremite(passe: Pass, sens: 'sortante' | 'entrante'): Position | null {
