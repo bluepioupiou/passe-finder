@@ -4,7 +4,6 @@ import React from 'react'
 
 import { GrilleFiltrable } from '@/components/GrilleFiltrable'
 import { ImagePosition } from '@/components/ImagePosition'
-import { OngletsCatalogue } from '@/components/OngletsCatalogue'
 import config from '@/payload.config'
 import './positions.css'
 
@@ -24,8 +23,9 @@ export const metadata = {
  * Liste publique des positions, habillee par le design system « Lin & Sauge ».
  * Lecture publique : aucune authentification requise (FR-21).
  *
- * Section « Positions » du catalogue (E2) : les onglets la relient aux Passes,
- * et la recherche par nom filtre la grille sans aller-retour serveur.
+ * Section « Positions » du catalogue (E2) : la recherche par nom filtre la
+ * grille sans aller-retour serveur. Le passage vers les Passes se fait par
+ * la barre de navigation, seul endroit ou vit ce choix.
  */
 export default async function PositionsPage({
   searchParams,
@@ -71,8 +71,6 @@ export default async function PositionsPage({
             : `${totalDocs} position${totalDocs > 1 ? 's' : ''} au catalogue.`}
         </p>
       </header>
-
-      <OngletsCatalogue actif="positions" />
 
       {totalDocs === 0 ? (
         <p className="texte-attenue">

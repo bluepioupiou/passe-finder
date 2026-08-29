@@ -145,7 +145,8 @@ development_status:
   5-1-mettre-en-favori-un-enchainement-partage-d-autrui: backlog
   5-2-profil-a-deux-listes-mes-enchainements-mes-favoris: backlog
   5-3-accueil-fil-des-nouveautes: backlog
-  # onglets Positions|Passes, recherche par nom, filtre difficulte, etat sans resultat
+  # recherche par nom, filtre difficulte, etat sans resultat. Pas d'onglets :
+  # le choix Positions/Passes vit dans la barre de navigation, a un seul endroit.
   5-4-catalogue-navigable-positions-passes: review
   # page /recherche livree : groupes Positions et Passes, « voir tout » vers le
   # catalogue pre-filtre. Le groupe Enchainements attend l'Epic 4.

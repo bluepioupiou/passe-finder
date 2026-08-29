@@ -4,7 +4,6 @@ import React from 'react'
 
 import { GrilleFiltrable } from '@/components/GrilleFiltrable'
 import { ImagePosition } from '@/components/ImagePosition'
-import { OngletsCatalogue } from '@/components/OngletsCatalogue'
 import { DIFFICULTES, libelleDifficulte } from '@/collections/Passe'
 import config from '@/payload.config'
 import type { Position } from '@/payload-types'
@@ -105,8 +104,6 @@ export default async function PassesPage({
             : `${totalDocs} passe${totalDocs > 1 ? 's' : ''} au catalogue.`}
         </p>
       </header>
-
-      <OngletsCatalogue actif="passes" />
 
       {totalDocs === 0 ? (
         <p className="texte-attenue">
