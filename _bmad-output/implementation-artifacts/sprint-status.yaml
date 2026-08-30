@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-29 (mise en production ; story 1-7 livree)
+# last_updated: 2026-08-30 (tranche enchainements : collection + migration)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-24
-last_updated: 2026-08-29
+last_updated: 2026-08-30
 project: passe-finder
 project_key: NOKEY
 tracking_system: file-system
@@ -104,6 +104,64 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # « Story 3.4 » dans les collections Danse/Position/Passe.
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# TRANCHE ENCHAINEMENTS (2026-08-30)
+# ---------------------------------------------------------------------------
+# Alain a demande a demarrer l'Epic 4 par « la table + la recuperation de
+# l'historique », dans la meme logique de tranche reelle que la tranche
+# « positions ». Livre : collection Enchainement, migration des 119
+# enchainements historiques (1322 maillons), blocage de suppression d'une passe
+# utilisee. Voir 4-3-6-3-tranche-enchainements-collection-et-migration.md.
+#
+# DECOUVERTE METIER — LES TRANSITIONS.
+# L'ancienne appli acceptait, au milieu d'une chaine, un maillon qui n'est pas
+# une passe mais une POSITION seule (82 cas). Ce n'etait pas une erreur de
+# saisie : c'est une TRANSITION de main (depuis « mains decroisees », lacher une
+# main pour arriver en « main droite / main gauche »), sans passe. Consequence :
+# 59 enchainements sur 119 sont DISCONTINUS au sens du graphe v2.
+#
+# Decisions d'Alain (2026-08-30) :
+#   - tout migrer, ne rien inventer ; la vue lecture (4-4) affichera la reprise
+#     (« on arrivait en X — reprise en Y ») ;
+#   - les marqueurs ne deviennent pas des maillons : ils sont deductibles du
+#     graphe (marqueur = position de depart de la passe suivante) et archives
+#     dans `legacyMarqueurs` ;
+#   - visibilite fidele au legacy : 107 partages, 12 prives.
+#
+# A INSTRUIRE — story « Transitions » a ecrire dans epics.md :
+#   1. objet Transition = arete position -> position sans passe ;
+#   2. vue lecture : nommer la transition au lieu d'afficher une rupture ;
+#   3. compositeur : faire glisser la position d'arrivee d'une passe vers une
+#      position atteignable par transition, ce qui elargit les passes proposees
+#      ensuite — sans polluer le catalogue de passes.
+#   Les 82 marqueurs archives disent quelles transitions existent reellement.
+#
+# Effets sur le suivi :
+#   - 6-1 et 6-2 passent en `review` : tous les volets sont livres (30 positions,
+#     110 passes rock sur 110 attendues).
+#   - 6-3 passe en `review`.
+#   - 4-3 passe en `in-progress` : le volet COLLECTION est livre, l'enregistrement
+#     depuis le compositeur attend 4-1/4-2.
+#   - 4-5 passe en `in-progress` : son dernier AC (blocage de suppression d'une
+#     passe utilisee, FR-8/ADD-8) est livre en avance, le reste est a faire.
+#
+# DEPLOIEMENT — FIN DE L'IMPORT AUTOMATIQUE (decision Alain, 2026-08-30).
+# L'entrypoint importait positions et passes au demarrage, sous condition « la
+# base est-elle vide ? » (deploy/catalogue-vide.mjs). Ce garde-fou tout-ou-rien
+# etait deja en defaut : la prod ayant des positions, il repond « peuple » et
+# aurait saute l'import des enchainements pour toujours.
+# Alternative etudiee puis ecartee : porter les imports dans src/migrations pour
+# que `payload_migrations` en tienne le registre. Ecartee car la reprise du
+# catalogue est un geste d'INITIALISATION, fait une fois par entite ; la base
+# existe et est repliquee vers S3, l'automatisation n'apporte plus de securite.
+# Consequences : entrypoint = schema + WAL + demarrage ; catalogue-vide.mjs
+# supprime ; scripts migrate/* conserves dans l'image, lances a la main
+# (`docker compose exec app npm run migrate:<entite>`), procedure ecrite dans
+# docs/mise-en-production.md (etape 10).
+# RESTE A FAIRE : lancer `migrate:enchainements` en prod (avec
+# MIGRATION_AUTEUR_EMAIL si plusieurs comptes existent).
+# ---------------------------------------------------------------------------
+
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
   epic-1: in-progress
@@ -140,12 +198,16 @@ development_status:
   epic-3-retrospective: optional
 
   # --- Epic 4: Composition & enchaînements (climax du produit) ---
-  epic-4: backlog
+  epic-4: in-progress
   4-1-moteur-de-composition-passes-possibles-depuis-la-position-courante: backlog
   4-2-compositeur-composition-guidee-rendu-de-chaine: backlog
-  4-3-enregistrer-un-enchainement-metadonnees-defaut-prive-sauvegarde-fiable: backlog
+  # volet COLLECTION livre (schema, defaut prive, acces) ; l'enregistrement
+  # depuis le compositeur attend 4-1/4-2
+  4-3-enregistrer-un-enchainement-metadonnees-defaut-prive-sauvegarde-fiable: in-progress
   4-4-vue-lecture-partage-par-url-controles-de-partage: backlog
-  4-5-editer-supprimer-ses-propres-enchainements: backlog
+  # dernier AC livre en avance : blocage de suppression d'une passe utilisee
+  # par un enchainement (FR-8 / ADD-8). Edition et suppression restent a faire.
+  4-5-editer-supprimer-ses-propres-enchainements: in-progress
   4-6-lier-une-video-youtube-a-un-enchainement: backlog
   epic-4-retrospective: optional
 
@@ -165,11 +227,12 @@ development_status:
 
   # --- Epic 6: Migration des données legacy ---
   epic-6: in-progress
-  # volet « positions » livre (voir 6-1-6-2-tranche-positions-migration-et-liste.md) ;
-  # volets passes/enchainements encore a faire
-  6-1-extraction-mapping-du-dump-legacy: in-progress
-  # Danses + Positions migrees ; Passes restantes
-  6-2-migrer-le-catalogue-danses-positions-passes: in-progress
-  6-3-migrer-les-enchainements-liaisons-ordonnees: backlog
+  # tous volets analyses : positions, passes, enchainements (dont le mecanisme
+  # de transition, cf. note ci-dessus)
+  6-1-extraction-mapping-du-dump-legacy: review
+  # 30 positions + 110 passes rock migrees, comptages conformes
+  6-2-migrer-le-catalogue-danses-positions-passes: review
+  # 119 enchainements, 1322 maillons, rejouable
+  6-3-migrer-les-enchainements-liaisons-ordonnees: review
   6-4-verification-rejouabilite-de-la-migration: backlog
   epic-6-retrospective: optional

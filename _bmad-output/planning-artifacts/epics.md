@@ -656,6 +656,23 @@ So that la connexion s'intègre sans friction dans mon parcours plutôt que de m
 
 Le geste central. Tout utilisateur connecté compose un enchaînement guidé par le graphe (le catalogue ne propose que les passes possibles depuis la position courante), annule pas-à-pas, l'enregistre avec titre/description/notes/date et visibilité (défaut privé), l'édite/supprime, et peut y associer une vidéo YouTube. Un enchaînement partagé s'ouvre en lecture seule sans connexion via une URL simple, avec le rendu de chaîne partagé (zigzag PC / vertical mobile).
 
+> **À INSTRUIRE — mécanisme de Transition (relevé le 2026-08-30, hors périmètre v1 actuel).**
+> La migration de l'historique (Story 6.3) a fait ressurgir un mécanisme métier
+> absent du modèle v2 : entre deux passes, un danseur peut **changer de prise
+> sans passe** — depuis « mains décroisées », lâcher une main pour se retrouver
+> en « main droite / main gauche ». L'ancienne appli notait cela en insérant une
+> position seule dans la chaîne (82 cas), ce qui rend **59 des 119 enchaînements
+> historiques discontinus** au sens du graphe.
+> Décision d'Alain : on migre tout tel quel et la vue lecture affiche la reprise ;
+> le mécanisme lui-même est reporté. À écrire ensuite comme story dédiée :
+> (1) objet **Transition** = arête position → position sans passe ;
+> (2) vue lecture : nommer la transition au lieu d'afficher une rupture ;
+> (3) compositeur : pouvoir déplacer la position d'arrivée d'une passe vers une
+> position atteignable par transition, ce qui élargit les passes proposées
+> ensuite — sans polluer le catalogue de passes.
+> Matière première disponible : les 82 marqueurs archivés dans
+> `enchainement.legacyMarqueurs` par la migration.
+
 ### Story 4.1: Moteur de composition — passes possibles depuis la position courante
 
 As a développeur du compositeur,

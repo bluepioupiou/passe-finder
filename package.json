@@ -16,9 +16,10 @@
     "test": "npm run test:int && npm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
-    "migrate:positions": "cross-env NODE_OPTIONS=--no-deprecation tsx migrate/migrate-positions.ts",
-    "migrate:passes": "cross-env NODE_OPTIONS=--no-deprecation tsx migrate/migrate-passes.ts",
-    "migrate:all": "npm run migrate:positions && npm run migrate:passes"
+    "migrate:positions": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/migrate-positions.ts",
+    "migrate:passes": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/migrate-passes.ts",
+    "migrate:enchainements": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/migrate-enchainements.ts",
+    "migrate:all": "npm run migrate:positions && npm run migrate:passes && npm run migrate:enchainements"
   },
   "dependencies": {
     "@payloadcms/db-sqlite": "3.88.0",
