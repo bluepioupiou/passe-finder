@@ -72,6 +72,7 @@ export interface Config {
     media: Media;
     positions: Position;
     passes: Pass;
+    enchainements: Enchainement;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -84,6 +85,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     positions: PositionsSelect<false> | PositionsSelect<true>;
     passes: PassesSelect<false> | PassesSelect<true>;
+    enchainements: EnchainementsSelect<false> | EnchainementsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -240,6 +242,63 @@ export interface Pass {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enchainements".
+ */
+export interface Enchainement {
+  id: number;
+  titre: string;
+  /**
+   * Ce qu'il faut retenir de l'enchaînement.
+   */
+  description?: string | null;
+  /**
+   * Notes personnelles (points de vigilance, variantes).
+   */
+  notes?: string | null;
+  /**
+   * Date du cours ou de la soirée.
+   */
+  date?: string | null;
+  /**
+   * Propriétaire de l'enchaînement.
+   */
+  auteur: number | User;
+  visibilite: 'prive' | 'partage';
+  /**
+   * L'ordre des lignes EST l'ordre de l'enchaînement.
+   */
+  passes: {
+    passe: number | Pass;
+    id?: string | null;
+  }[];
+  /**
+   * Facultative. Lien vers la vidéo de l'enchaînement (FR-37).
+   */
+  urlVideo?: string | null;
+  legacyId?: number | null;
+  legacyMarqueurs?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  legacyMeta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -281,6 +340,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'passes';
         value: number | Pass;
+      } | null)
+    | ({
+        relationTo: 'enchainements';
+        value: number | Enchainement;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -400,6 +463,30 @@ export interface PassesSelect<T extends boolean = true> {
   legacyYoutubeUrl?: T;
   legacyPersonnalisations?: T;
   legacyId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enchainements_select".
+ */
+export interface EnchainementsSelect<T extends boolean = true> {
+  titre?: T;
+  description?: T;
+  notes?: T;
+  date?: T;
+  auteur?: T;
+  visibilite?: T;
+  passes?:
+    | T
+    | {
+        passe?: T;
+        id?: T;
+      };
+  urlVideo?: T;
+  legacyId?: T;
+  legacyMarqueurs?: T;
+  legacyMeta?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -50,10 +50,36 @@ export const Passe: CollectionConfig = {
     delete: ({ req }) => Boolean(req.user),
   },
   hooks: {
-    // À AJOUTER À L'EPIC 4 (AD-6 / FR-8), quand la collection Enchainement
-    // existera : un `beforeDelete` refusant la suppression d'une passe encore
-    // utilisée par un enchaînement — sur le modèle de celui de Position.
-    // Aujourd'hui rien ne référence une Passe : la garde serait sans objet.
+    beforeDelete: [
+      async ({ id, req }) => {
+        // AD-6 / FR-8 : une passe utilisée par un enchaînement ne se supprime
+        // pas. Sans cette garde, la suppression viderait silencieusement un
+        // maillon au milieu des enchaînements des élèves — leur contenu de
+        // révision. Pendant de la garde de Position (Story 2.4).
+        const utilisee = await req.payload.find({
+          collection: 'enchainements',
+          where: { 'passes.passe': { equals: id } },
+          limit: 5,
+          depth: 0,
+          // La garde protège TOUS les enchaînements, y compris ceux que
+          // l'appelant n'a pas le droit de lire (privés d'autrui).
+          overrideAccess: true,
+        })
+
+        if (utilisee.totalDocs === 0) return
+
+        const titres = utilisee.docs.map((enchainement) => `« ${enchainement.titre} »`)
+        const reste = utilisee.totalDocs - titres.length
+        const liste = titres.join(', ') + (reste > 0 ? ` et ${reste} autre${reste > 1 ? 's' : ''}` : '')
+
+        throw new APIError(
+          `Suppression impossible : cette passe est utilisée par ${utilisee.totalDocs} enchaînement` +
+            `${utilisee.totalDocs > 1 ? 's' : ''} (${liste}). ` +
+            "Retire d'abord la passe de ces enchaînements.",
+          400,
+        )
+      },
+    ],
     beforeValidate: [
       async ({ data, req }) => {
         // AD-5 / FR-5 : une passe ne relie jamais deux danses differentes.
