@@ -87,6 +87,21 @@ img {
   text-transform: uppercase;
 }
 
+/*
+ * Coupe un texte a 3 lignes, avec « … » si ca deborde. Sert aux cartes du
+ * catalogue : des items de hauteur comparable font une grille qu'on balaie,
+ * au lieu d'une liste qu'on deroule. Le texte entier reste sur la fiche.
+ * `-webkit-line-clamp` est la propriete reellement implementee partout ;
+ * `line-clamp` la double pour les moteurs qui l'ont standardisee.
+ */
+.texte-coupe {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
 .donnee {
   font-family: var(--font-mono);
   font-size: var(--data-size);

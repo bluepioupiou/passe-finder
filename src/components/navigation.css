@@ -2,10 +2,9 @@
  * Barre de navigation globale (UX-DR4).
  * Toutes les valeurs viennent des tokens « Lin & Sauge ».
  *
- * Peu d'entrees (deux liens, une recherche, le theme) : elles tiennent sans
- * repli, ce qui evite un bouton « Menu » de plus a comprendre. Sur petit ecran
- * elles passent simplement a la ligne, au lieu de s'empiler une par une —
- * sinon la barre mangerait la moitie de l'ecran avant le contenu.
+ * Sur petit ecran, le contenu (liens, recherche, theme) se replie derriere un
+ * chevron : deplie en permanence, il mangeait le haut de chaque page avant le
+ * contenu. A partir de 768px tout tient sur une ligne et le chevron disparait.
  */
 
 .nav {
@@ -47,11 +46,53 @@
   flex: 0 0 auto;
 }
 
+/* --- Chevron d'ouverture (mobile uniquement) --- */
+
+.nav__bascule {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Cible tactile confortable (UX-DR17). */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-full);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.nav__bascule:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+/* Le chevron pointe vers le bas quand le menu est ferme, vers le haut quand il
+   est ouvert : le sens de la fleche dit ou va le contenu. */
+.nav__chevron {
+  transition: transform 120ms ease;
+}
+
+.nav__bascule[aria-expanded='true'] .nav__chevron {
+  transform: rotate(180deg);
+}
+
 .nav__contenu {
+  /* Le panneau prend sa propre ligne sous la marque, sur petit ecran. */
+  flex: 1 0 100%;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3) var(--space-4);
+}
+
+/* Replie. L'attribut n'existe que lorsque le composant client est monte :
+   sans JavaScript, le menu reste donc deplie et utilisable. */
+.nav__contenu[data-repli='ferme'] {
+  display: none;
 }
 
 .nav__liens {
@@ -88,17 +129,19 @@
   white-space: nowrap;
 }
 
+/* La loupe est POSEE DANS le champ : le bouton est superpose a droite, et le
+   champ se reserve la place correspondante en padding. */
 .nav__recherche-ligne {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
 }
 
 .nav__champ {
   min-height: 44px;
   width: 100%;
   min-width: 0;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
   background: var(--surface-container);
   color: var(--ink);
   border: 1px solid var(--line);
@@ -107,8 +150,31 @@
   font-size: var(--body-size);
 }
 
+/* Croix native de `type="search"` : elle doublerait la loupe et se cognerait a
+   elle dans les navigateurs WebKit. */
+.nav__champ::-webkit-search-cancel-button {
+  display: none;
+}
+
 .nav__envoyer {
-  flex-shrink: 0;
+  position: absolute;
+  right: var(--space-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  border-radius: var(--rounded-full);
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.nav__envoyer:hover {
+  color: var(--accent);
 }
 
 .nav__actions {
@@ -118,11 +184,12 @@
   gap: var(--space-3);
 }
 
-/* --- A partir de 768px : tout tient sur une seule ligne --- */
+/* --- A partir de 768px : tout tient sur une seule ligne, sans repli --- */
 
 @media (min-width: 768px) {
   .nav__barre {
     gap: var(--space-4);
+    flex-wrap: nowrap;
   }
 
   .nav__marque {
@@ -133,7 +200,15 @@
     height: 40px;
   }
 
-  .nav__contenu {
+  /* Le chevron n'a plus lieu d'etre : le contenu reste deplie quoi qu'il
+     arrive, meme si le lecteur avait ferme le menu sur un ecran plus etroit. */
+  .nav__bascule {
+    display: none;
+  }
+
+  .nav__contenu,
+  .nav__contenu[data-repli='ferme'] {
+    display: flex;
     flex: 1;
     gap: var(--space-6);
   }
