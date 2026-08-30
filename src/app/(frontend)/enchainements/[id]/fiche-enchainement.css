@@ -1,0 +1,54 @@
+/* --- Elements partages par les fiches (positions, passes, enchainements) --- */
+
+.fiche-fil {
+  margin-bottom: var(--space-4);
+  font-size: var(--label-caps-size);
+}
+
+.fiche-section {
+  margin-top: var(--space-8);
+}
+
+.fiche-section__titre {
+  margin-bottom: var(--space-4);
+  font-size: var(--headline-size);
+  font-weight: var(--headline-weight);
+}
+
+.fiche-texte {
+  white-space: pre-line; /* le texte d'origine porte ses propres sauts de ligne */
+  line-height: var(--body-line);
+  max-width: 68ch;
+}
+
+/* --- Entete de la fiche enchainement --- */
+
+.fiche-enchainement-entete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fiche-enchainement-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--label-caps-size);
+}
+
+/* Ne s'affiche que pour l'auteur : personne d'autre ne recoit un enchainement
+   prive. Volontairement neutre (pas d'accent, pas de danger) : c'est un etat,
+   pas une alerte. */
+.fiche-enchainement-badge {
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface-container);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-sm);
+  text-transform: uppercase;
+}
+
+.fiche-enchainement-description {
+  font-size: var(--body-size);
+}

@@ -95,6 +95,18 @@ describe('Enchainement', () => {
     })
     expect(anonyme.totalDocs).toBe(0)
 
+    // Meme refus par identifiant : c'est le chemin exact de la fiche publique
+    // (`/enchainements/<id>`), qui repond 404 sur ce `null`. Sans ce test, la
+    // liste pourrait cacher un enchainement prive que son URL laisserait lire.
+    const parIdentifiant = await payload.findByID({
+      collection: 'enchainements',
+      id: idEnchainement,
+      overrideAccess: false,
+      disableErrors: true,
+      depth: 0,
+    })
+    expect(parIdentifiant).toBeNull()
+
     await payload.update({
       collection: 'enchainements',
       id: idEnchainement,

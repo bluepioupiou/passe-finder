@@ -41,6 +41,9 @@ export function Navigation() {
             <Link className="nav__lien" href="/passes">
               Passes
             </Link>
+            <Link className="nav__lien" href="/enchainements">
+              Enchaînements
+            </Link>
           </nav>
 
           <form className="nav__recherche" action="/recherche" role="search">
@@ -58,7 +61,7 @@ export function Navigation() {
                 name="q"
                 type="search"
                 className="nav__champ"
-                placeholder="Une position, une passe…"
+                placeholder="Une position, une passe, un enchaînement…"
               />
               <button type="submit" className="nav__envoyer" aria-label="Lancer la recherche">
                 <IconeLoupe />

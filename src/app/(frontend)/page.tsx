@@ -21,7 +21,7 @@ export default async function HomePage() {
     <div className="contenu-page">
       <h1>{!user || !('email' in user) ? 'Passe Finder' : `Bienvenue, ${user.email}`}</h1>
       <p className="texte-attenue" style={{ marginTop: 'var(--space-2)' }}>
-        Le catalogue des positions et des passes de rock 6 temps.
+        Le catalogue des positions et des passes de rock 6 temps, et les enchaînements du cours.
       </p>
 
       <div
@@ -32,7 +32,10 @@ export default async function HomePage() {
           marginTop: 'var(--space-8)',
         }}
       >
-        <Bouton href="/positions">Voir les positions</Bouton>
+        <Bouton href="/enchainements">Voir les enchaînements</Bouton>
+        <Bouton href="/positions" variante="fantome">
+          Voir les positions
+        </Bouton>
         <Bouton href="/passes" variante="fantome">
           Voir les passes
         </Bouton>

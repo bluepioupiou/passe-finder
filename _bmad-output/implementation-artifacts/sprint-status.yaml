@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-30 (point releve sur les cartes du catalogue)
+# last_updated: 2026-08-30 (tranche lecture des enchainements)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -163,6 +163,51 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# TRANCHE LECTURE DES ENCHAINEMENTS (2026-08-30)
+# ---------------------------------------------------------------------------
+# Suite immediate de la tranche precedente : les 119 enchainements etaient en
+# base mais invisibles hors /admin. Alain a demande « le menu pour y aller, la
+# liste des cards avec recherche, la fiche ». Livre : entree de navigation,
+# /enchainements (cartes filtrables par titre), /enchainements/<id> (entete,
+# chaine deroulee, reprises nommees), et le groupe « Enchainements » qui
+# manquait a la recherche globale.
+# Voir 4-4-5-5-tranche-lecture-enchainements.md.
+#
+# La visibilite n'est filtree NULLE PART dans l'interface : les pages lisent
+# avec `overrideAccess: false`, donc ce sont les `access` de la collection qui
+# decident (ADD-5). Un anonyme voit les 107 partages ; les 12 prives repondent
+# 404, y compris par URL directe.
+#
+# RESTE A FAIRE sur 4-4, et cela DEPEND DE L'EPIC 3 : basculer prive/partage,
+# copier le lien, editer, supprimer, mettre en favori. Aucun de ces controles
+# n'est pose en placeholder inerte dans la page — meme raison que pour la zone
+# de compte de la barre de navigation.
+#
+# RENDU DE LA CHAINE — 2e passe, decidee avec Alain a l'ecran le 2026-08-30.
+# Le premier rendu (grande chaine verticale, une vignette par position) a ete
+# refuse : c'est la POSITION qu'on voyait, alors que ce qui est enchaine, ce
+# sont les passes ; le desktop gachait sa largeur ; la reprise, en encart plein
+# format, criait plus fort que l'evenement qu'elle decrit.
+# Retenu : un SERPENTIN de cartes de largeur egale (une carte par passe), la
+# position reduite a une bulle posee a cheval sur le bord entre deux cartes et
+# dessinee une seule fois. La ligne 1 va a droite, on descend a l'extremite, la
+# ligne 2 repart a gauche ; sur telephone il ne reste qu'un fil vertical.
+# La reprise est un RECOUVREMENT (la position d'ou l'on repart ecrase celle sur
+# laquelle on arrivait) avec une marque discrete et une info-bulle.
+# Les typologies de cartes enumerees par Alain (gauche->droite, gauche->bas,
+# haut->droite, droite->gauche, droite->bas, haut->gauche, haut->bas) sont
+# devenues la fonction pure `typologie()` dans src/enchainements.ts, sous tests.
+# La page d'experimentation qui a servi a trancher a ete supprimee.
+#
+# A INSTRUIRE (releve en regardant les vraies donnees a l'ecran) :
+#   - quelques descriptions historiques contiennent du HTML brut
+#     (<a href='musiques/...mp3'>) qui s'affiche en toutes lettres. A nettoyer
+#     a la main, ou a reprendre comme un champ « musique » a part entiere ;
+#   - l'auteur n'est pas affiche dans l'entete, contrairement a UX-DR10 : la
+#     collection users n'a que l'email, qu'on ne publie pas. A rouvrir avec 3-1.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # ACTION ITEMS
 # ---------------------------------------------------------------------------
 action_items:
@@ -201,6 +246,38 @@ action_items:
         a son schema avant d'en lire le nom. Plus petite oui, trop petite et la
         carte perd ce qui la rend identifiable d'un coup d'oeil.
     taille_estimee: "petite — CSS et ordre du balisage, pas de changement de modele"
+
+  # Releve par Alain le 2026-08-30, en lancant les tests pendant que le serveur
+  # de dev tournait.
+  - id: tests-separer-back-et-front
+    status: open
+    titre: "Separer les tests back et front pour les piloter independamment"
+    concerne: [outillage]
+    constat: >
+      `npm run test:int` melange deux natures de tests : ceux qui parlent a
+      Payload et a la base (api, enchainement) et ceux qui n'exercent que des
+      fonctions pures (recherche, enchainements, analytique). Les premiers
+      ouvrent une connexion SQLite et poussent le schema ; quand le serveur de
+      dev tourne en meme temps, ils tombent par intermittence sur
+      SQLITE_BUSY/`database is locked` — alors que les seconds n'ont besoin de
+      rien et durent quelques millisecondes.
+    demande:
+      - "Deux commandes distinctes : les tests purs, lancables en boucle sans
+         base ni serveur, et les tests d'integration, qui prennent la base."
+      - "Rendre les tests d'integration robustes a la contention (base de test
+         dediee, ou attente/reessai sur le verrou) plutot que dependants de
+         l'etat de la machine."
+    nuances_a_instruire:
+      - >
+        Ne pas transformer les tests d'integration en tests a doublures : leur
+        valeur vient justement de ce qu'ils passent par le vrai Payload et le
+        vrai schema (c'est ce qui a attrape le defaut prive et le blocage de
+        suppression). C'est l'ISOLATION qu'il faut, pas le remplacement.
+      - >
+        La CI ne voit pas le probleme (rien d'autre n'y touche la base) : le
+        gain est pour le confort de developpement local, pas pour la fiabilite
+        du pipeline. A doser en consequence.
+    taille_estimee: "petite a moyenne — configuration vitest, pas de code applicatif"
 
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
@@ -244,7 +321,9 @@ development_status:
   # volet COLLECTION livre (schema, defaut prive, acces) ; l'enregistrement
   # depuis le compositeur attend 4-1/4-2
   4-3-enregistrer-un-enchainement-metadonnees-defaut-prive-sauvegarde-fiable: in-progress
-  4-4-vue-lecture-partage-par-url-controles-de-partage: backlog
+  # vue lecture publique livree (entete, chaine, reprises, acces prive 404) ;
+  # les controles d'auteur et le favori attendent l'Epic 3
+  4-4-vue-lecture-partage-par-url-controles-de-partage: in-progress
   # dernier AC livre en avance : blocage de suppression d'une passe utilisee
   # par un enchainement (FR-8 / ADD-8). Edition et suppression restent a faire.
   4-5-editer-supprimer-ses-propres-enchainements: in-progress
@@ -258,10 +337,12 @@ development_status:
   5-3-accueil-fil-des-nouveautes: backlog
   # recherche par nom, filtre difficulte, etat sans resultat. Pas d'onglets :
   # le choix Positions/Passes vit dans la barre de navigation, a un seul endroit.
+  # Etendu le 2026-08-30 : /enchainements, meme grille filtrable, meme rythme
+  # de carte (titre d'abord, description coupee).
   5-4-catalogue-navigable-positions-passes: review
-  # page /recherche livree : groupes Positions et Passes, « voir tout » vers le
-  # catalogue pre-filtre. Le groupe Enchainements attend l'Epic 4.
-  5-5-recherche-globale-groupee-par-categorie: in-progress
+  # page /recherche livree : les trois groupes prevus par UX-DR14 (Positions,
+  # Passes, Enchainements partages), « voir tout » vers le catalogue pre-filtre.
+  5-5-recherche-globale-groupee-par-categorie: review
   5-6-fiche-passe-complete-enchainements-videos-reverse-lookup: backlog
   epic-5-retrospective: optional
 
