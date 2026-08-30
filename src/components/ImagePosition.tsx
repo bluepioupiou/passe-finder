@@ -1,5 +1,6 @@
 import React from 'react'
 
+import type { VuePosition } from '@/composition'
 import type { Position } from '@/payload-types'
 import { imageDePosition } from '@/positions'
 import './image-position.css'
@@ -15,7 +16,7 @@ export function ImagePosition({
   position,
   className,
 }: {
-  position: Position
+  position: Position | VuePosition
   className?: string
 }) {
   const { src, alt } = imageDePosition(position)

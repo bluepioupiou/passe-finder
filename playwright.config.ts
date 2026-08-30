@@ -25,8 +25,17 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /*
+   * Un seul worker, partout.
+   *
+   * Les tests qui ont besoin d'une session ecrivent dans SQLite (creation puis
+   * suppression de leur compte). Deux fichiers joues en parallele, avec en plus
+   * le serveur de dev qui tient la base, se heurtent a « database is locked » :
+   * un echec qui ne dit rien du produit, seulement de la machine. La suite
+   * entiere tient en une vingtaine de secondes en serie — c'est moins cher
+   * qu'un test qui tombe une fois sur deux.
+   */
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI ? 'list' : 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */

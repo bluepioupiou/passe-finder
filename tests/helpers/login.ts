@@ -26,6 +26,9 @@ export async function login({
 
   await page.waitForURL(`${serverURL}/admin`)
 
-  const dashboardArtifact = page.locator('.step-nav__first')
-  await expect(dashboardArtifact).toBeVisible()
+  // Preuve de session : le lien de deconnexion de la barre laterale. On
+  // s'appuyait auparavant sur `.step-nav__first`, un detail de mise en page du
+  // back-office que Payload a depuis renomme — l'assertion tombait alors que la
+  // connexion, elle, avait bien reussi.
+  await expect(page.getByRole('link', { name: 'Se déconnecter' })).toBeVisible()
 }

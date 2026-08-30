@@ -1,0 +1,77 @@
+/*
+ * Menu « + » de la barre de navigation (Story 4.2).
+ * Meme vocabulaire que le reste de la barre : cible de 44px, rond, accent au
+ * survol — il se pose a cote de la loupe sans crier plus fort qu'elle.
+ */
+
+.menu-creation {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.menu-creation__bascule {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Cible tactile confortable (UX-DR17). */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-full);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.menu-creation__bascule:hover,
+.menu-creation__bascule[aria-expanded='true'] {
+  background: var(--accent-soft);
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+/*
+ * Le panneau flotte SOUS le bouton et par-dessus la page : il ne pousse rien,
+ * donc l'ouvrir ne fait pas sauter la barre ni le contenu.
+ */
+.menu-creation__panneau {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: 20;
+  min-width: 220px;
+  padding: var(--space-1);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-creation__item {
+  display: block;
+  padding: var(--space-3);
+  color: var(--ink);
+  text-decoration: none;
+  border-radius: var(--rounded-sm);
+  font-weight: 600;
+}
+
+.menu-creation__item:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+/*
+ * Sur grand ecran la barre se lit de gauche a droite et le panneau tomberait
+ * hors cadre a droite s'il debordait : on l'ancre a droite du bouton, cote
+ * duquel il reste de la place.
+ */
+@media (min-width: 768px) {
+  .menu-creation__panneau {
+    left: auto;
+    right: 0;
+  }
+}

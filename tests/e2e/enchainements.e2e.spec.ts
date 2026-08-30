@@ -62,6 +62,20 @@ test.describe('Enchaînements', () => {
     await expect(page).toHaveURL(/\/passes\/\d+$/)
   })
 
+  test('la création est invisible et fermée pour un visiteur anonyme', async ({ page }) => {
+    // Le « + » n'est pas rendu du tout : montrer une porte fermee se lit comme
+    // une panne, pas comme une fonction a venir (meme regle que la zone de
+    // compte de la barre).
+    await page.goto('/enchainements')
+    await expect(page.getByRole('button', { name: 'Créer' })).toHaveCount(0)
+
+    // La porte reelle est cote serveur : connaitre l'URL ne suffit pas.
+    await page.goto('/enchainements/nouveau')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Composer un enchaînement')
+    await expect(page.getByRole('link', { name: 'Se connecter' })).toBeVisible()
+    await expect(page.getByLabel("D'où part l'enchaînement ?")).toHaveCount(0)
+  })
+
   test("un enchaînement inexistant répond 404, sans fuite d'information", async ({ request }) => {
     // Meme reponse qu'un enchainement prive (FR-17) : rien ne distingue
     // « n'existe pas » de « ne vous est pas destine ».

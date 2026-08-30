@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-30 (tranche lecture des enchainements)
+# last_updated: 2026-08-30 (tranche creation d'un enchainement)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -208,6 +208,68 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# TRANCHE CREATION D'UN ENCHAINEMENT (2026-08-30)
+# ---------------------------------------------------------------------------
+# Suite immediate de la tranche lecture. Demande d'Alain : « l'US sur la
+# creation d'un enchainement. Uniquement les comptes connectes, pas de gestion
+# des ruptures de position pour le moment. Un bouton "+" dans la barre de menu,
+# juste avant la recherche, ouvre un menu "creer un enchainement" ; absent si on
+# n'est pas connecte. Pas d'ecole ni de cours : date (aujourd'hui par defaut),
+# description, etc. »
+# Livre : moteur de composition, entree « + », page /enchainements/nouveau,
+# action serveur d'enregistrement.
+# Voir 4-1-4-2-4-3-tranche-creation-enchainement.md.
+#
+# LA PORTE EST COTE SERVEUR. L'absence du « + » n'est qu'un confort d'affichage :
+# la page ET l'action verifient la session, independamment l'une de l'autre, et
+# l'ecriture passe par les `access` de la collection (`overrideAccess: false`).
+#
+# AUCUNE RUPTURE N'EST COMPOSABLE, comme demande : le rail ne propose que les
+# passes qui partent de la position courante. Les enchainements crees dans
+# l'app sont donc continus par construction, ce qui laisse intact l'historique
+# migre et ses 59 chaines discontinues (transitions de main, toujours a
+# instruire).
+#
+# DECISIONS a valider a l'ecran avec Alain :
+#   - la chaine EN CONSTRUCTION est verticale, la ou la vue lecture deroule un
+#     serpentin. Pendant la composition, chaque ajout doit se poser au bout sans
+#     deplacer ce qui precede ; un serpentin se recompose a chaque clic et fait
+#     sauter ailleurs la carte qu'on vient de poser. Si le serpentin est prefere
+#     ici aussi, il faudra faire accepter a `ChaineEnchainement` les vues
+#     legeres (il exige aujourd'hui les types Payload complets) ;
+#   - pas de toast « Enregistre » : on atterrit sur la fiche, la confirmation
+#     c'est de voir son travail. Les controles de partage (copier le lien,
+#     basculer prive/partage) relevent de 4-4 et attendent l'Epic 3 ;
+#   - le champ VIDEO n'est pas propose par le compositeur (Story 4.6) : la
+#     demande disait « la date, une description, etc. ». Un champ suffit a
+#     l'ajouter, la fiche l'affiche deja.
+#
+# Le compositeur ne recoit pas le catalogue mais sa PROJECTION (~10 Ko au lieu
+# de ~130 Ko) : il n'affiche ni description ni deroule. Consequence : la chaine
+# du compositeur ne peut pas reutiliser `ChaineEnchainement` en l'etat.
+#
+# Effet de bord assume : la barre de navigation lit la session, donc TOUTE page
+# devient dynamique. Chacune portait deja `force-dynamic`, et une barre mise en
+# cache montrerait l'etat du premier visiteur venu.
+#
+# FILET E2E REPARE EN PASSANT (il etait rouge AVANT cette tranche) :
+#   - `login.ts` et `admin.e2e.spec.ts` attendaient `.step-nav__first`, renomme
+#     depuis par Payload : la connexion reussissait, l'assertion tombait ;
+#   - `seedTestUser`/`cleanupTestUser` prennent des identifiants, pour que deux
+#     fichiers ne se suppriment plus mutuellement leur compte ;
+#   - Playwright tourne avec UN SEUL worker partout : deux fichiers ecrivant en
+#     parallele dans SQLite, avec le serveur de dev qui tient la base, tombaient
+#     sur « database is locked ». Recoupe l'action item
+#     `tests-separer-back-et-front`, qui reste ouvert pour les tests
+#     d'integration (vitest).
+#   17 tests e2e verts, 42 tests d'integration verts, build de prod OK.
+#
+# RESTE A FAIRE sur l'Epic 4 : editer/supprimer (4-5), la video (4-6), et les
+# controles d'auteur de 4-4 — tous dependants de l'Epic 3 pour la connexion
+# publique. L'invitation a se connecter pointe aujourd'hui vers /admin.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # ACTION ITEMS
 # ---------------------------------------------------------------------------
 action_items:
@@ -250,7 +312,7 @@ action_items:
   # Releve par Alain le 2026-08-30, en lancant les tests pendant que le serveur
   # de dev tournait.
   - id: tests-separer-back-et-front
-    status: open
+    status: in-progress
     titre: "Separer les tests back et front pour les piloter independamment"
     concerne: [outillage]
     constat: >
@@ -278,6 +340,10 @@ action_items:
         gain est pour le confort de developpement local, pas pour la fiabilite
         du pipeline. A doser en consequence.
     taille_estimee: "petite a moyenne — configuration vitest, pas de code applicatif"
+    avancement: >
+      2026-08-30 : le volet E2E est traite (un seul worker Playwright, comptes
+      de test distincts par fichier). Il reste le volet VITEST, qui est le
+      constat d'origine : separer les tests purs des tests qui prennent la base."
 
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
@@ -316,11 +382,15 @@ development_status:
 
   # --- Epic 4: Composition & enchaînements (climax du produit) ---
   epic-4: in-progress
-  4-1-moteur-de-composition-passes-possibles-depuis-la-position-courante: backlog
-  4-2-compositeur-composition-guidee-rendu-de-chaine: backlog
-  # volet COLLECTION livre (schema, defaut prive, acces) ; l'enregistrement
-  # depuis le compositeur attend 4-1/4-2
-  4-3-enregistrer-un-enchainement-metadonnees-defaut-prive-sauvegarde-fiable: in-progress
+  # `passesDepuis` / `positionCourante` : fonctions pures partagees par le
+  # serveur et le navigateur, sous tests
+  4-1-moteur-de-composition-passes-possibles-depuis-la-position-courante: review
+  # rendu de chaine VERTICAL pendant la composition (pas le serpentin de la vue
+  # lecture) : a valider a l'ecran avec Alain
+  4-2-compositeur-composition-guidee-rendu-de-chaine: review
+  # enregistrement livre : auteur pris dans la session, defaut prive, echec non
+  # destructif. Toast et copie du lien remplaces par l'atterrissage sur la fiche
+  4-3-enregistrer-un-enchainement-metadonnees-defaut-prive-sauvegarde-fiable: review
   # vue lecture publique livree (entete, chaine, reprises, acces prive 404) ;
   # les controles d'auteur et le favori attendent l'Epic 3
   4-4-vue-lecture-partage-par-url-controles-de-partage: in-progress
