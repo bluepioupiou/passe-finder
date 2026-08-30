@@ -4,7 +4,7 @@ import React from 'react'
  * Icones du produit, en SVG inline.
  *
  * POURQUOI inline plutot qu'une police d'icones ou un paquet externe : le site
- * ne charge aucune ressource externe (UX-DR1), et ces cinq traces tiennent en
+ * ne charge aucune ressource externe (UX-DR1), et ces quelques traces tiennent en
  * quelques lignes. `currentColor` partout : l'icone prend la couleur du texte
  * qui la porte, donc suit les deux themes sans regle supplementaire.
  *
@@ -44,6 +44,16 @@ export function IconeLoupe(proprietes: ProprietesIcone) {
     <Svg {...proprietes}>
       <circle cx="11" cy="11" r="7" />
       <line x1="16.2" y1="16.2" x2="21" y2="21" />
+    </Svg>
+  )
+}
+
+/** Plus : ouvre le menu des creations (reserve aux comptes connectes). */
+export function IconePlus(proprietes: ProprietesIcone) {
+  return (
+    <Svg {...proprietes}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </Svg>
   )
 }

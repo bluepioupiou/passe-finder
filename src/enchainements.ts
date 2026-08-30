@@ -10,7 +10,7 @@ import type { Pass, Position } from './payload-types'
  */
 
 /** Identifiant d'une relation, qu'elle soit résolue ou non. */
-function identifiant(valeur: number | Position | null | undefined): number | null {
+export function identifiant(valeur: number | Position | null | undefined): number | null {
   if (typeof valeur === 'number') return valeur
   if (valeur && typeof valeur === 'object') return valeur.id
   return null

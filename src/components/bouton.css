@@ -43,3 +43,17 @@
   border-color: var(--accent);
   color: var(--ink);
 }
+
+/*
+ * Desactive : le bouton reste lisible mais cesse d'appeler l'action. Rendu avec
+ * les tokens de surface plutot qu'avec une opacite, pour rester contraste dans
+ * les deux themes (UX-DR17).
+ */
+.bouton:disabled,
+.bouton:disabled:hover {
+  background: var(--surface-container);
+  color: var(--muted);
+  border-color: var(--line);
+  cursor: not-allowed;
+  filter: none;
+}

@@ -1,0 +1,263 @@
+/*
+ * Compositeur d'enchainement (Stories 4.2 / 4.3).
+ * Toutes les valeurs viennent des tokens « Lin & Sauge ».
+ *
+ * Quatre blocs empiles, numerotes : depart, chaine, passes possibles,
+ * enregistrement. Un seul fil de lecture du haut vers le bas, le meme sur
+ * telephone et sur grand ecran — composer se fait souvent debout, le telephone
+ * a la main, juste apres le cours.
+ */
+
+.compo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.compo-bloc {
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-lg);
+}
+
+.compo-bloc__titre {
+  margin-bottom: var(--space-4);
+  font-size: var(--headline-size);
+  font-weight: var(--headline-weight);
+}
+
+/* --- Champs --- */
+
+.compo-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--muted);
+}
+
+.compo-saisie {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-container);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+  font-family: var(--font-sans);
+  font-size: var(--body-size);
+}
+
+.compo-saisie:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.compo-saisie--zone {
+  min-height: 0;
+  line-height: var(--body-line);
+  resize: vertical;
+}
+
+.compo-aide {
+  margin-top: var(--space-2);
+  font-size: var(--label-caps-size);
+}
+
+/* --- La chaine en construction --- */
+
+/*
+ * Un fil vertical, position -> passe -> position. Les positions ne sont pas
+ * dessinees deux fois : l'arrivee d'une passe EST le depart de la suivante,
+ * exactement comme dans la vue lecture.
+ */
+.compo-chaine {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.compo-chaine__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.compo-etape {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.compo-etape__image {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+}
+
+.compo-etape__nom {
+  font-weight: 600;
+}
+
+.compo-etape__role {
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-container);
+  color: var(--muted);
+  border-radius: var(--rounded-sm);
+}
+
+/*
+ * La carte d'une passe, decalee sous la bulle de la position dont elle part :
+ * le retrait dit « ceci se passe ENTRE les deux positions », sans qu'aucun
+ * trait n'ait a etre dessine.
+ */
+.compo-passe {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+}
+
+.compo-passe__rang {
+  flex: 0 0 auto;
+}
+
+.compo-passe__nom {
+  font-weight: 600;
+  margin-right: auto;
+}
+
+.compo-passe__difficulte {
+  flex: 0 0 auto;
+}
+
+/*
+ * La croix n'existe que sur le DERNIER maillon : on raccourcit pas a pas
+ * (FR-13). La montrer partout laisserait croire qu'on peut retirer au milieu.
+ */
+.compo-passe__retirer {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Cible tactile confortable (UX-DR17). */
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-full);
+  font-size: var(--headline-size);
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.compo-passe__retirer:hover {
+  background: var(--surface);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* --- Les passes possibles d'ici --- */
+
+.compo-choix {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+}
+
+.compo-choix__bouton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  /* Cible tactile confortable (UX-DR17). */
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-container);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+  font-family: var(--font-sans);
+  font-size: var(--body-size);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.compo-choix__bouton:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.compo-choix__nom {
+  font-weight: 600;
+}
+
+/* La position d'arrivee est la vraie information du choix : c'est elle qui
+   dira quelles passes seront proposees ensuite. */
+.compo-choix__vers {
+  margin-right: auto;
+}
+
+.compo-choix__difficulte {
+  flex: 0 0 auto;
+}
+
+/* --- Barre de sauvegarde --- */
+
+.compo-champs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+.compo-erreur {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--rounded-md);
+}
+
+.compo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.compo-actions .compo-aide {
+  margin-top: 0;
+}
+
+/* --- A partir de 768px : la liste des choix et les champs se mettent en colonnes --- */
+
+@media (min-width: 768px) {
+  .compo-choix {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .compo-champs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Titre, description et notes prennent la largeur : ce sont des phrases,
+     pas des valeurs. */
+  .compo-champ--large {
+    grid-column: 1 / -1;
+  }
+}

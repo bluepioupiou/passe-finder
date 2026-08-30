@@ -21,7 +21,10 @@ test.describe('Admin Panel', () => {
   test('can navigate to dashboard', async () => {
     await page.goto('http://localhost:3000/admin')
     await expect(page).toHaveURL('http://localhost:3000/admin')
-    const dashboardArtifact = page.locator('.step-nav__first').first()
+    // La barre laterale des collections, plutot que `.step-nav__first` : ce
+    // dernier est un detail de mise en page que Payload a renomme, et le test
+    // tombait alors que le tableau de bord s'affichait tres bien.
+    const dashboardArtifact = page.getByRole('link', { name: 'Enchaînements' }).first()
     await expect(dashboardArtifact).toBeVisible()
   })
 
