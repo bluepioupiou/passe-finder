@@ -73,7 +73,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=nextjs:nodejs /app/.npmrc ./.npmrc
 COPY --from=builder --chown=nextjs:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
 COPY --from=builder --chown=nextjs:nodejs /app/deploy ./deploy
-# Sources de l'import du catalogue historique, lu au premier demarrage.
+# Sources des scripts de reprise du catalogue historique. Ils ne tournent PAS
+# au demarrage (cf. docker-entrypoint.sh) : ils se lancent a la main, une fois,
+# via `docker compose exec app npm run migrate:<entite>`.
 COPY --from=builder --chown=nextjs:nodejs /app/migrate ./migrate
 COPY --from=builder --chown=nextjs:nodejs /app/images ./images
 COPY --from=builder --chown=nextjs:nodejs /app/passe-finder-saveDB.gz ./passe-finder-saveDB.gz

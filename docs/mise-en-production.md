@@ -398,24 +398,48 @@ Au bout de quelques minutes : `https://ton-domaine.fr`
 
 ---
 
-## Étape 10 — (rien à faire)
+## Étape 10 — Reprise du catalogue historique (geste manuel, une seule fois)
 
-**L'import du catalogue est automatique.** Au démarrage, le conteneur enchaîne :
+Au démarrage, le conteneur enchaîne deux choses seulement :
 
 1. migrations Payload (schéma de la base) ;
-2. bascule en mode WAL (nécessaire à la sauvegarde) ;
-3. **import du catalogue historique — uniquement si la base est vide**.
+2. bascule en mode WAL (nécessaire à la sauvegarde).
 
-Ce garde-fou est important : sans lui, une position que tu supprimerais depuis
-le back-office **réapparaîtrait** au déploiement suivant. En n'important que sur
-une base vide, on obtient zéro geste manuel au premier déploiement et aucune
-résurrection de contenu supprimé ensuite.
+**La reprise des données historiques n'est PAS automatique** (décision du
+2026-08-30). C'est un geste d'initialisation, fait une fois par entité, puis
+plus jamais. L'automatiser au démarrage supposait un garde-fou « la base
+est-elle vide ? » : une heuristique tout-ou-rien, incapable de voir qu'une
+entité manque alors que les autres sont déjà là — ce qui est précisément arrivé
+quand les enchaînements sont arrivés après les positions et les passes.
 
-L'import reste rejouable à la demande si besoin :
+Les scripts restent embarqués dans l'image et sont **rejouables sans risque**
+(dédoublonnage par `legacyId` : relancer ne crée aucun doublon).
+
+### Comment lancer un import en production
+
+Sur le serveur, dans `/opt/passe-finder` :
 
 ```bash
-sudo docker compose exec app npm run migrate:all
+sudo docker compose exec app npm run migrate:enchainements
 ```
+
+Le script écrit son rapport (créés / déjà présents / comptage source vs cible)
+dans la sortie de la commande. Un second passage doit afficher `Crees : 0`.
+
+**Les enchaînements ont besoin d'un auteur** (les comptes historiques ne sont
+pas repris — FR-36). S'il y a plusieurs utilisateurs en base, le script refuse
+de deviner et réclame l'email du propriétaire :
+
+```bash
+sudo docker compose exec -e MIGRATION_AUTEUR_EMAIL=ton.email@exemple.fr app npm run migrate:enchainements
+```
+
+Les autres scripts s'appellent de la même façon : `migrate:positions`,
+`migrate:passes`, ou `migrate:all` pour les trois dans l'ordre de dépendance.
+
+> Avant un import, vérifie que Litestream réplique bien (section suivante) :
+> c'est le filet qui permet de revenir en arrière si l'import ne donne pas ce
+> que tu attendais.
 
 ## Vérifier que la sauvegarde fonctionne
 
@@ -502,9 +526,10 @@ Trois garde-fous complètent ça :
 1. **Migrations incrémentales** — `payload migrate` ne rejoue que les migrations
    pas encore appliquées (Payload tient une table `payload_migrations`). Le
    schéma évolue, les données restent.
-2. **Import du catalogue conditionnel** — les données historiques ne sont
-   importées que si la base est vide (`deploy/catalogue-vide.mjs`). Sans ce
-   garde-fou, chaque livraison ressusciterait les positions supprimées.
+2. **Aucun import automatique** — le démarrage ne touche pas aux données : il
+   n'applique que le schéma. Une position supprimée depuis le back-office ne
+   peut donc pas ressusciter à la livraison suivante. Les reprises de données
+   sont des gestes manuels, tracés (étape 10).
 3. **Litestream tourne pendant tout ça**, avec 30 jours d'historique. Même une
    migration qui abîmerait des données est rattrapable : Litestream sait
    restaurer à un instant précis, pas seulement au dernier état.
