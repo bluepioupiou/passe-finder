@@ -360,7 +360,6 @@ Dépôt GitHub → *Settings* → *Secrets and variables* → *Actions* → *New
 | `S3_BUCKET` | le nom du bucket | étape 2 |
 | `S3_REGION` | la région, ex. `eu-north-1` | étape 2 |
 | `CLOUDFLARE_ANALYTICS_TOKEN` | le jeton de mesure d'audience | **facultatif**, voir ci-dessous |
-| `ADMIN_EMAIL` | ton email de connexion au site | **facultatif**, voir « Devenir administrateur » |
 
 Pour générer le `PAYLOAD_SECRET` :
 
@@ -603,29 +602,50 @@ s'attribuer depuis l'application : personne ne peut se promouvoir soi-même, et
 c'est volontaire (story 3.4). Sans cette règle, le premier inscrit venu
 pourrait réécrire le catalogue dont dépendent les enchaînements de tes élèves.
 
-Il faut donc une porte extérieure, et c'est le secret `ADMIN_EMAIL` :
+Il faut donc une porte extérieure. C'est une commande, lancée **une fois**, quand
+ton compte existe :
 
 1. crée ton compte sur `https://ton-domaine.fr/admin` ;
-2. ajoute le secret GitHub `ADMIN_EMAIL` avec **cet email exactement** ;
-3. relance le déploiement (un `push` sur `main`, ou *Re-run jobs*).
+2. sur le serveur, dans `/opt/passe-finder` :
 
-Au démarrage, le conteneur pose le drapeau sur ce compte et l'écrit dans ses
-logs. La variable est **idempotente** : elle ne fait plus rien ensuite, et tu
-peux la laisser en place.
+```bash
+sudo docker compose exec app npm run promouvoir:admin
+```
 
-Pour vérifier :
+S'il n'y a qu'un seul compte en base, le script le reconnaît et affiche lequel
+il a promu. **S'il y en a plusieurs, il refuse de deviner** et réclame l'email —
+donner les clés du catalogue au mauvais compte serait silencieux :
+
+```bash
+sudo docker compose exec app npm run promouvoir:admin -- ton.email@exemple.fr
+```
+
+La commande est **idempotente** : relancée sur un compte déjà administrateur,
+elle affiche « Rien à faire ». C'est le même geste, au même endroit, que les
+imports de l'étape 10.
+
+> **Pourquoi pas au démarrage, ou dans une migration ?** Les deux ont été
+> examinés. Une migration tourne *avant* que le serveur démarre : sur une
+> instance neuve la table des comptes est encore vide, la migration ne
+> trouverait personne, ne ferait rien — et Payload l'enregistrerait quand même
+> comme appliquée. L'instance n'aurait alors **jamais** d'administrateur. C'est
+> le même défaut tout-ou-rien que l'ancien import conditionnel du catalogue
+> (étape 10). Une variable d'environnement, elle, imposerait un secret et un
+> redéploiement pour un geste qu'on ne fait qu'une fois.
+
+Tant qu'aucun compte ne porte le drapeau, le démarrage affiche un avertissement
+dans les logs :
 
 ```bash
 sudo docker compose logs app | grep -i administrateur
 ```
 
-> Tant qu'aucun compte ne porte le drapeau, le démarrage affiche un
-> avertissement et le catalogue reste en **lecture seule** pour tout le monde.
 > Le site fonctionne normalement par ailleurs : les visiteurs consultent, les
-> comptes connectés composent leurs enchaînements.
+> comptes connectés composent leurs enchaînements. Seul le **catalogue** est en
+> lecture seule.
 
 Une fois un premier administrateur en place, il peut en désigner d'autres en
-cochant la case depuis `/admin` — sans toucher au déploiement.
+cochant la case depuis `/admin` — sans toucher au serveur.
 
 ## Récapitulatif des coûts
 

@@ -1,6 +1,5 @@
 import type { Payload } from 'payload'
 
-import { ADMIN_EMAIL } from './env'
 import { DANSE_V1 } from './collections/Danse'
 
 /**
@@ -38,73 +37,37 @@ export async function seedDanseV1(payload: Payload): Promise<void> {
 }
 
 /**
- * Attribution du drapeau `admin`, HORS application (Story 3.4, FR-29).
+ * Signale un catalogue que personne ne peut editer (Story 3.4).
  *
- * POURQUOI PASSER PAR LE SEMIS. L'acces de champ sur `users.admin` refuse la
- * valeur a quiconque n'est pas deja administrateur — c'est ce qui interdit
- * l'auto-promotion. Il en decoule un probleme d'amorcage classique : sur une
- * instance neuve, PERSONNE ne peut creer le premier administrateur depuis
- * l'application. Ce semis est la porte prevue pour cela, et elle est hors de
- * portee d'un visiteur : elle exige l'acces au fichier d'environnement du
- * serveur.
+ * CE DEMARRAGE NE PROMEUT PERSONNE, et c'est deliberé : poser le drapeau `admin`
+ * est un geste d'INITIALISATION, fait une fois, a la main
+ * (`npm run promouvoir:admin`). Meme raisonnement que pour la reprise du
+ * catalogue historique — automatiser au demarrage n'apporterait aucune securite
+ * et ajouterait de la magie a chaque boot.
  *
- * Il PROMEUT un compte existant, il n'en cree pas : le compte se cree
- * normalement (assistant /admin, puis inscription a la Story 3.1). Cela evite
- * d'avoir un mot de passe dans une variable d'environnement, et c'est ce qui
- * rend la variable utile en production, ou le compte d'Alain existe deja.
- *
- * IDEMPOTENT : sans effet si le compte est deja administrateur.
+ * Il reste un CONSTAT, parce qu'un verrouillage silencieux est le pire des deux
+ * mondes : une instance sans administrateur fonctionne parfaitement pour les
+ * visiteurs et pour les comptes qui composent, mais le catalogue y est en
+ * lecture seule pour tout le monde. Sans ce message, la cause serait invisible
+ * et se presenterait comme « je n'arrive plus a modifier une position ».
  */
-export async function promouvoirAdmin(payload: Payload): Promise<void> {
+export async function avertirSiAucunAdmin(payload: Payload): Promise<void> {
   if (pendantLaConstruction()) return
 
-  if (!ADMIN_EMAIL) {
-    // Silence si des administrateurs existent deja : la variable n'a alors
-    // aucune raison d'etre renseignee. On n'alerte que sur l'etat reellement
-    // problematique — un catalogue que personne ne peut editer.
-    const admins = await payload.find({
-      collection: 'users',
-      where: { admin: { equals: true } },
-      limit: 0,
-      depth: 0,
-    })
-
-    if (admins.totalDocs === 0) {
-      payload.logger.warn(
-        "Aucun administrateur : le catalogue (danses, positions, passes, fichiers) est en " +
-          'lecture seule pour tout le monde. Renseigne ADMIN_EMAIL avec un compte existant ' +
-          'puis redemarre (voir .env.example).',
-      )
-    }
-    return
-  }
-
-  const comptes = await payload.find({
+  const admins = await payload.find({
     collection: 'users',
-    where: { email: { equals: ADMIN_EMAIL } },
-    limit: 1,
+    where: { admin: { equals: true } },
+    limit: 0,
     depth: 0,
   })
 
-  const compte = comptes.docs[0]
+  if (admins.totalDocs > 0) return
 
-  if (!compte) {
-    payload.logger.warn(
-      `ADMIN_EMAIL vaut « ${ADMIN_EMAIL} » mais aucun compte ne porte cet email. ` +
-        "Cree le compte (assistant /admin), puis redemarre : le drapeau sera pose.",
-    )
-    return
-  }
-
-  if (compte.admin) return
-
-  await payload.update({
-    collection: 'users',
-    id: compte.id,
-    data: { admin: true },
-  })
-
-  payload.logger.info(`Compte promu administrateur : ${ADMIN_EMAIL}`)
+  payload.logger.warn(
+    'Aucun administrateur : le catalogue (danses, positions, passes, fichiers) est en ' +
+      'lecture seule pour tout le monde. Cree ton compte dans /admin puis lance ' +
+      '`npm run promouvoir:admin -- ton.email@exemple.fr`.',
+  )
 }
 
 /**
@@ -116,5 +79,5 @@ export async function promouvoirAdmin(payload: Payload): Promise<void> {
  */
 export async function initialiser(payload: Payload): Promise<void> {
   await seedDanseV1(payload)
-  await promouvoirAdmin(payload)
+  await avertirSiAucunAdmin(payload)
 }

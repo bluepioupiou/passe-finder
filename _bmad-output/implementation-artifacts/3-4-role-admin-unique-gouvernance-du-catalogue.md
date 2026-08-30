@@ -90,24 +90,53 @@ fasse à un seul endroit.
 
 L'accès de champ crée un problème d'amorçage classique : sur une instance neuve,
 **personne** ne peut créer le premier administrateur depuis l'application. La
-porte prévue est la variable **`ADMIN_EMAIL`**, lue par le semis de démarrage
-(`src/seed.ts`). Elle est hors de portée d'un visiteur : elle exige l'accès au
-fichier d'environnement du serveur. L'AC l'autorise explicitement (« s'attribue
-hors application : seed / `/admin` »).
+porte prévue est une **commande lancée à la main, une fois** :
 
-Elle **promeut un compte existant, elle n'en crée pas**. Deux raisons : pas de mot
-de passe dans une variable d'environnement, et cela fonctionne en production où le
-compte d'Alain existe déjà.
+```bash
+docker compose exec app npm run promouvoir:admin -- alain@exemple.fr
+```
 
-Idempotente : sans effet si le compte est déjà admin. Et si **aucun** compte ne
-porte le drapeau, le démarrage **avertit dans les logs** — un catalogue en lecture
-seule est un état voulu, mais il doit être lisible.
+Elle **promeut un compte existant, elle n'en crée pas** : pas de mot de passe
+dans une variable d'environnement, et cela fonctionne en production où le compte
+d'Alain existe déjà. Idempotente — relancée, elle affiche « Rien à faire ».
 
-### 4. Propagation jusqu'à la production
+Sans argument, elle reconnaît le cas « un seul compte en base » et le promeut en
+annonçant lequel. **Avec plusieurs comptes, elle refuse de deviner** : donner les
+clés du catalogue au mauvais compte serait silencieux, et personne ne le
+remarquerait avant un dégât.
 
-`deploy/docker-compose.yml` (variable facultative), `.github/workflows/ci.yml`
-(secret → `.env` distant), `.env.example`, et une section **« Devenir
-administrateur »** dans `docs/mise-en-production.md`.
+#### Pourquoi pas une variable, ni une migration
+
+Trois formes ont été examinées. La première version livrée passait par une
+variable `ADMIN_EMAIL` lue au démarrage ; Alain a proposé à la place une
+**migration promouvant « le compte au premier ID, puisqu'en général il n'y en a
+qu'un »**. Sa critique de la variable était fondée — secret CI et redéploiement
+pour un geste unique, plus un `find` à chaque démarrage. Mais la migration a deux
+défauts rédhibitoires :
+
+1. **Sur une instance neuve, il n'y aurait jamais d'administrateur.** Les
+   migrations tournent *avant* le démarrage du serveur (`docker-entrypoint.sh`),
+   donc la table `users` est encore vide. La migration ne trouverait personne, ne
+   ferait rien — et Payload l'enregistrerait quand même comme appliquée. Elle ne
+   repasserait jamais. C'est exactement le défaut tout-ou-rien de l'ancien import
+   conditionnel du catalogue, rejeté quelques jours plus tôt pour la même raison.
+2. **Elle ne marcherait pas en local.** En développement le schéma est synchronisé
+   en `push` : les migrations n'y tournent pas.
+
+S'y ajoute que « premier ID » ne dit pas *qui* : six mois plus tard, le nom du
+fichier n'apprend rien sur le compte qui détient les clés.
+
+Retenu : le script à la main, même forme et même place que les `migrate:*`, dont
+la reprise du catalogue a montré que la forme convenait. Le cas « un seul compte »
+que visait Alain est bien reconnu — mais par **constat au moment du lancement**,
+pas par pari sur un identifiant.
+
+### 4. Le constat au démarrage
+
+Le démarrage ne promeut personne, mais il **avertit** quand aucun compte ne porte
+le drapeau. Un verrouillage silencieux serait le pire des deux mondes : le site
+fonctionne parfaitement pour les visiteurs et pour les comptes qui composent, et
+la cause se présenterait comme « je n'arrive plus à modifier une position ».
 
 ### Fichiers
 
@@ -117,8 +146,8 @@ administrateur »** dans `docs/mise-en-production.md`.
 | `src/collections/Users.ts` | champ `admin` + accès de champ + libellés FR |
 | `src/collections/{Danse,Position,Passe,Media}.ts` | écriture réservée ; TODO « Story 3.4 » refermés |
 | `src/collections/Enchainement.ts` | TODO **retagués** (4.4 / 4.5), risque explicité |
-| `src/seed.ts` | `promouvoirAdmin` + `initialiser` (point d'entrée unique d'`onInit`) |
-| `src/env.ts` | `ADMIN_EMAIL` (facultative) |
+| `src/seed.ts` | `avertirSiAucunAdmin` + `initialiser` (point d'entrée unique d'`onInit`) |
+| `migrate/promouvoir-admin.ts` | **nouveau** — la commande de promotion |
 | `src/migrations/20260830_202812_drapeau_admin.ts` | une colonne, `ALTER TABLE` |
 | `tests/int/acces.int.spec.ts` | **nouveau** — 7 tests |
 
