@@ -51,11 +51,16 @@ export default async function PositionsPage({
     cle: position.id,
     nom: position.nom,
     carte: (
+      // Ordre : nom, puis image, puis description. Le catalogue se filtre par
+      // nom : quand la grille se reduit, l'oeil cherche le nom, qui doit donc
+      // etre au meme endroit que sur la carte Passe. La description est coupee
+      // a 3 lignes pour que les cartes gardent une hauteur comparable ; elle
+      // reste entiere sur la fiche.
       <Link className="position-carte" href={`/positions/${position.id}`}>
-        <ImagePosition position={position} />
         <h2 className="position-nom">{position.nom}</h2>
+        <ImagePosition position={position} className="position-image" />
         {position.description ? (
-          <p className="position-description texte-attenue">{position.description}</p>
+          <p className="position-description texte-attenue texte-coupe">{position.description}</p>
         ) : null}
       </Link>
     ),

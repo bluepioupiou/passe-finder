@@ -86,8 +86,11 @@ export default async function PassesPage({
             ) : null}
           </div>
 
+          {/* Coupee a 3 lignes, comme sur la carte Position : des items de
+              hauteur comparable font une grille qu'on balaie. La description
+              entiere reste sur la fiche. */}
           {passe.description ? (
-            <p className="passe-description texte-attenue">{passe.description}</p>
+            <p className="passe-description texte-attenue texte-coupe">{passe.description}</p>
           ) : null}
         </Link>
       ),

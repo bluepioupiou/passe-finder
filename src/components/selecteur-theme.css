@@ -1,11 +1,28 @@
-/* Selecteur de theme clair / sombre (UX-DR2). */
+/*
+ * Selecteur de theme (UX-DR2) : un seul bouton, sans intitule visible.
+ *
+ * Volontairement discret — fond transparent, teinte `muted` — pour qu'il ne
+ * rivalise pas avec les liens de navigation. Il ne s'affirme qu'au survol et
+ * au focus. La cible reste a 44px, comme toute cible tactile (UX-DR17).
+ */
 
 .selecteur-theme {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-full);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 
-.selecteur-theme__label {
-  color: var(--muted);
+.selecteur-theme:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+  border-color: var(--line);
 }

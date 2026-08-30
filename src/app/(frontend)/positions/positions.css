@@ -39,6 +39,18 @@
   line-height: var(--headline-line);
 }
 
+/*
+ * L'image vient APRES le nom et reste centree, plus petite que la largeur de
+ * la carte. Un danseur reconnait une position a son schema avant d'en lire le
+ * nom : `min()` garde donc un plancher genereux sur les cartes etroites, et
+ * plafonne a 132px sur les larges pour que la description reste visible sans
+ * defiler.
+ */
+.position-image {
+  width: min(100%, 132px);
+  margin: 0 auto;
+}
+
 .position-description {
   font-size: var(--body-size);
   line-height: var(--body-line);

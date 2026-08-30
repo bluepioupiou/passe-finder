@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useSyncExternalStore } from 'react'
 
+import { IconeLune, IconeMoitieMoitie, IconeSoleil } from './Icones'
 import './selecteur-theme.css'
 
 type Theme = 'systeme' | 'clair' | 'sombre'
@@ -10,58 +11,92 @@ type Theme = 'systeme' | 'clair' | 'sombre'
 export const CLE_THEME = 'passe-finder-theme'
 
 /**
+ * Ordre de bascule. Trois etats seulement : on tourne en rond plutot que
+ * d'ouvrir une liste, ce qui laisse un seul bouton dans la barre.
+ */
+const SUIVANT: Record<Theme, Theme> = { systeme: 'clair', clair: 'sombre', sombre: 'systeme' }
+
+const LIBELLE: Record<Theme, string> = { systeme: 'Système', clair: 'Clair', sombre: 'Sombre' }
+
+const ICONE: Record<Theme, React.ComponentType<{ className?: string }>> = {
+  systeme: IconeMoitieMoitie,
+  clair: IconeSoleil,
+  sombre: IconeLune,
+}
+
+/*
+ * Le theme ne vit PAS dans un etat React : il vit sur <html>, ou le script
+ * anti-flash l'a deja pose avant l'hydratation. Le composant se contente de
+ * lire ce document, via `useSyncExternalStore` — l'outil prevu pour afficher
+ * une donnee exterieure a React sans risquer un ecart d'hydratation.
+ */
+
+const ecouteurs = new Set<() => void>()
+
+function souscrire(ecouteur: () => void) {
+  ecouteurs.add(ecouteur)
+  return () => {
+    ecouteurs.delete(ecouteur)
+  }
+}
+
+function lireDocument(): Theme {
+  const applique = document.documentElement.getAttribute('data-theme')
+  return applique === 'dark' ? 'sombre' : applique === 'light' ? 'clair' : 'systeme'
+}
+
+/** Cote serveur il n'y a pas de document : on rend l'etat neutre, `systeme`. */
+function lireServeur(): Theme {
+  return 'systeme'
+}
+
+/**
  * Selecteur de theme (UX-DR2).
  *
  * Par defaut le site suit la preference du systeme d'exploitation. Le lecteur
  * peut forcer clair ou sombre : le choix pose `data-theme` sur <html>, ce que
  * les tokens interpretent en priorite sur la preference systeme.
  *
- * Le champ est volontairement NON CONTROLE : le theme est deja applique au
- * document par le script anti-flash avant l'hydratation. On se contente
- * d'aligner la valeur affichee sur l'etat reel du document, sans passer par un
- * etat React — ce qui evite a la fois un ecart d'hydratation et un rendu en
- * cascade.
+ * POURQUOI un bouton qui tourne plutot qu'une liste deroulante intitulee :
+ * c'est un reglage de confort, pas une decision de contenu. Il ne doit pas
+ * peser autant qu'un lien de navigation dans la barre. L'icone porte l'etat
+ * courant — soleil, lune, ou cercle moitie-moitie pour « suit le systeme » —
+ * et le mot « Thème » disparait : l'intitule accessible le dit deja pour qui
+ * en a besoin.
  */
 export function SelecteurTheme() {
-  const champ = useRef<HTMLSelectElement>(null)
+  const theme = useSyncExternalStore(souscrire, lireDocument, lireServeur)
 
-  useEffect(() => {
-    const applique = document.documentElement.getAttribute('data-theme')
-    const valeur: Theme = applique === 'dark' ? 'sombre' : applique === 'light' ? 'clair' : 'systeme'
-    if (champ.current) champ.current.value = valeur
-  }, [])
-
-  const changer = (theme: Theme) => {
+  const basculer = () => {
+    const choisi = SUIVANT[theme]
     const racine = document.documentElement
 
-    if (theme === 'systeme') racine.removeAttribute('data-theme')
-    else racine.setAttribute('data-theme', theme === 'clair' ? 'light' : 'dark')
+    if (choisi === 'systeme') racine.removeAttribute('data-theme')
+    else racine.setAttribute('data-theme', choisi === 'clair' ? 'light' : 'dark')
 
     try {
-      if (theme === 'systeme') window.localStorage.removeItem(CLE_THEME)
-      else window.localStorage.setItem(CLE_THEME, theme)
+      if (choisi === 'systeme') window.localStorage.removeItem(CLE_THEME)
+      else window.localStorage.setItem(CLE_THEME, choisi)
     } catch {
       // Stockage indisponible (navigation privee, site data bloque) :
       // le choix vaut pour la session en cours, sans casser la page.
     }
+
+    ecouteurs.forEach((ecouteur) => ecouteur())
   }
 
+  const Icone = ICONE[theme]
+  const intitule = `Thème : ${LIBELLE[theme]}. Passer en ${LIBELLE[SUIVANT[theme]].toLowerCase()}.`
+
   return (
-    <div className="selecteur-theme">
-      <label className="selecteur-theme__label label-caps" htmlFor="selecteur-theme">
-        Thème
-      </label>
-      <select
-        id="selecteur-theme"
-        ref={champ}
-        className="bouton bouton--fantome"
-        defaultValue="systeme"
-        onChange={(evenement) => changer(evenement.target.value as Theme)}
-      >
-        <option value="systeme">Système</option>
-        <option value="clair">Clair</option>
-        <option value="sombre">Sombre</option>
-      </select>
-    </div>
+    <button
+      type="button"
+      className="selecteur-theme"
+      onClick={basculer}
+      aria-label={intitule}
+      title={intitule}
+    >
+      <Icone />
+    </button>
   )
 }
