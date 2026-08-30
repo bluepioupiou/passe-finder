@@ -21,6 +21,11 @@ services:
       # fournie ICI, a l'execution, et non a la construction de l'image : le
       # jeton n'existe pas dans GitHub Actions au moment du build.
       CLOUDFLARE_ANALYTICS_TOKEN: ${CLOUDFLARE_ANALYTICS_TOKEN:-}
+      # Compte a promouvoir administrateur au demarrage (story 3.4).
+      # Facultative et idempotente : le semis pose le drapeau sur le compte
+      # portant cet email, puis ne fait plus rien. Sans elle, une instance
+      # neuve n a aucun administrateur et le catalogue reste en lecture seule.
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
     volumes:
       - donnees:/data
       - medias:/app/media

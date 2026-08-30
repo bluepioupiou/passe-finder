@@ -12,7 +12,7 @@ import { Enchainement } from './collections/Enchainement'
 import { Media } from './collections/Media'
 import { Passe } from './collections/Passe'
 import { Position } from './collections/Position'
-import { seedDanseV1 } from './seed'
+import { initialiser } from './seed'
 import { Users } from './collections/Users'
 
 const filename = fileURLToPath(import.meta.url)
@@ -45,10 +45,11 @@ export default buildConfig({
     // évolution de collection nécessite un `npm run payload -- migrate:create`.
   }),
   sharp,
-  // Semis des donnees de reference au demarrage (idempotent).
+  // Semis de demarrage, idempotent : danse de reference (v1 mono-danse) et
+  // attribution du drapeau `admin` hors application (Story 3.4, ADMIN_EMAIL).
   // En production, l'entrypoint applique d'abord les migrations, donc le schema
   // existe deja ; en developpement, Payload synchronise le schema avant onInit.
-  onInit: seedDanseV1,
+  onInit: initialiser,
   // NFR-7 : back-office en français (identifiants de code en anglais,
   // libellés/domaine/UI en français).
   i18n: {

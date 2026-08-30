@@ -44,11 +44,17 @@ export const Enchainement: CollectionConfig = {
     // partagés. La règle est une contrainte de requête, pas un filtre d'UI :
     // elle s'applique aussi à l'API et à la recherche (AD-3).
     read: ({ req }) => {
-      if (req.user) return true // TODO (Stories 3.4 / 4.4) : limiter aux siens + partagés d'autrui.
+      if (req.user) return true // TODO (Story 4.4) : limiter aux siens + partagés d'autrui.
       return { visibilite: { equals: 'partage' } }
     },
-    // TODO (Story 3.4) : l'auteur seul (ou l'admin) modifie/supprime.
+    // Tout compte connecté crée SON enchaînement : c'est le geste central du
+    // produit, il n'est pas réservé à l'admin (contrairement au catalogue).
     create: ({ req }) => Boolean(req.user),
+    // TODO (Story 4.5) : restreindre à l'auteur. AUJOURD'HUI TOUT COMPTE
+    // CONNECTÉ PEUT MODIFIER L'ENCHAÎNEMENT D'UN AUTRE. Inoffensif tant que
+    // personne ne peut se connecter hors /admin, mais cette règle DOIT être
+    // posée avant la Story 3.1 (inscription publique), sinon le premier
+    // inscrit peut réécrire le travail des autres élèves.
     update: ({ req }) => Boolean(req.user),
     delete: ({ req }) => Boolean(req.user),
   },

@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
+import { adminSeul } from './acces'
 import { DANSE_V1 } from './Danse'
 
 /**
@@ -25,11 +26,11 @@ export const Position: CollectionConfig = {
   access: {
     // Catalogue de reference : lecture publique, visiteur anonyme inclus (FR-21).
     read: () => true,
-    // TODO (Story 3.4) : restreindre au drapeau `admin`. En attendant, ecriture
-    // reservee aux utilisateurs authentifies. Regles ici uniquement (AD-3).
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    // Story 3.4 (FR-29) : l'ecriture du catalogue de reference est reservee au
+    // drapeau `admin`. Regles ici uniquement, jamais dans l'UI (AD-3 / ADD-5).
+    create: adminSeul,
+    update: adminSeul,
+    delete: adminSeul,
   },
   hooks: {
     beforeDelete: [
