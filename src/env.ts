@@ -85,20 +85,3 @@ function optionalEnv(name: string): string | undefined {
  */
 export const CLOUDFLARE_ANALYTICS_TOKEN = optionalEnv('CLOUDFLARE_ANALYTICS_TOKEN')
 
-/**
- * Email du compte a promouvoir administrateur au demarrage (Story 3.4, FR-29).
- *
- * FACULTATIF, et c'est le point important : le drapeau `admin` ne s'attribue
- * PAS depuis l'application (aucune auto-promotion possible, cf. l'acces de champ
- * sur la collection users). Il faut donc un canal exterieur, et c'en est un —
- * l'autre etant un administrateur deja en place qui coche la case depuis /admin.
- *
- * Sans cette variable, une instance neuve n'a aucun administrateur : le
- * catalogue est en lecture seule pour tout le monde, y compris pour le premier
- * compte cree. Ce n'est pas une panne, c'est le comportement voulu — mais le
- * semis le signale dans les logs pour que la cause soit lisible.
- *
- * Idempotent : le semis promeut le compte s'il existe et ne fait rien sinon.
- * Laisser la variable en place apres coup est sans effet.
- */
-export const ADMIN_EMAIL = optionalEnv('ADMIN_EMAIL')?.toLowerCase()

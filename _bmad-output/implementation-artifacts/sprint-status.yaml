@@ -309,15 +309,35 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 #   - MEDIA EST INCLUS deliberement : laisser le televersement ouvert rendrait le
 #     verrou des positions decoratif. On ne pourrait pas modifier la position,
 #     mais on pourrait remplacer l'image qu'elle affiche ;
-#   - amorcage par ADMIN_EMAIL (semis au demarrage, cf. src/seed.ts). Il PROMEUT
-#     un compte existant, il n'en cree pas : pas de mot de passe dans une
-#     variable, et cela fonctionne en prod ou le compte existe deja. Sans
-#     administrateur, le demarrage AVERTIT dans les logs (un catalogue en
-#     lecture seule est un etat voulu, mais il doit etre lisible) ;
+#   - amorcage par un SCRIPT LANCE A LA MAIN, une fois :
+#       docker compose exec app npm run promouvoir:admin -- email@exemple.fr
+#     Il promeut un compte existant, il n'en cree pas (pas de mot de passe dans
+#     une variable). Sans argument, il reconnait le cas « un seul compte » mais
+#     REFUSE DE DEVINER s il y en a plusieurs. Idempotent. Sans administrateur,
+#     le demarrage AVERTIT dans les logs (un catalogue en lecture seule est un
+#     etat voulu, mais il doit etre lisible) ;
 #   - migration 20260830_202812_drapeau_admin (une colonne, ALTER TABLE) ;
-#   - variable propagee jusqu a la prod (docker-compose + secret GitHub) et
-#     procedure ecrite dans docs/mise-en-production.md (« Devenir
+#   - procedure ecrite dans docs/mise-en-production.md (« Devenir
 #     administrateur »).
+#
+# CHOIX DU MECANISME D AMORCAGE (revu avec Alain le 2026-08-30, apres coup).
+# La premiere version passait par une variable ADMIN_EMAIL lue au demarrage.
+# Alain a propose a la place une MIGRATION promouvant « le compte au premier
+# ID, puisqu en general il n y en a qu un ». Sa critique de la variable etait
+# fondee (secret CI + redeploiement pour un geste unique, et du travail a
+# chaque boot), mais la migration a deux defauts redhibitoires :
+#   1. les migrations tournent AVANT le demarrage du serveur
+#      (docker-entrypoint.sh) : sur une instance neuve la table users est VIDE.
+#      La migration ne trouverait personne, ne ferait rien, et Payload
+#      l enregistrerait quand meme comme appliquee — donc plus JAMAIS
+#      d administrateur possible. C'est exactement le defaut tout-ou-rien de
+#      l ancien import conditionnel du catalogue, deja rejete le 2026-08-30 ;
+#   2. en developpement le schema est synchronise en `push` : les migrations
+#      n y tournent pas, le poste local ne serait donc jamais promu.
+# Retenu : le script a la main, meme forme et meme place que migrate:*, dont la
+# reprise du catalogue a montre que la forme convenait. Le cas « un seul
+# compte » que visait Alain est bien reconnu, mais par CONSTAT au moment du
+# lancement, pas par pari sur un ID.
 #   7 tests d integration ajoutes (49 verts), 17 e2e verts, build de prod OK.
 #
 # NON FAIT, VOLONTAIREMENT :
@@ -479,7 +499,7 @@ development_status:
   3-2-connexion-deconnexion-etat-connecte-dans-la-nav: backlog
   3-3-recuperation-d-acces-mot-de-passe-oublie: backlog
   # drapeau `admin` sur users (acces de CHAMP : aucune auto-promotion), ecriture
-  # du catalogue + Media reservee, amorcage hors application par ADMIN_EMAIL
+  # du catalogue + Media reservee, amorcage par `npm run promouvoir:admin`
   3-4-role-admin-unique-gouvernance-du-catalogue: review
   3-5-porte-d-acces-aux-actions-reservees-retour-apres-connexion: backlog
   epic-3-retrospective: optional

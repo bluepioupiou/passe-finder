@@ -46,7 +46,8 @@ export default buildConfig({
   }),
   sharp,
   // Semis de demarrage, idempotent : danse de reference (v1 mono-danse) et
-  // attribution du drapeau `admin` hors application (Story 3.4, ADMIN_EMAIL).
+  // constat d'absence d'administrateur (Story 3.4 : la promotion, elle, est un
+  // geste manuel — `npm run promouvoir:admin`).
   // En production, l'entrypoint applique d'abord les migrations, donc le schema
   // existe deja ; en developpement, Payload synchronise le schema avant onInit.
   onInit: initialiser,
