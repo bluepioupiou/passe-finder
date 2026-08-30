@@ -1,9 +1,11 @@
+import { headers as getHeaders } from 'next/headers.js'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
 import { ImagePosition } from '@/components/ImagePosition'
 import { libelleDifficulte } from '@/collections/Passe'
+import { formaterDate } from '@/enchainements'
 import config from '@/payload.config'
 import type { Pass, Position } from '@/payload-types'
 import { correspondAuNom } from '@/recherche'
@@ -13,7 +15,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Recherche — Passe Finder',
-  description: 'Retrouver une position ou une passe du catalogue.',
+  description: 'Retrouver une position, une passe ou un enchaînement.',
 }
 
 /** Nombre de resultats montres par categorie avant le lien « voir tout ». */
@@ -39,9 +41,10 @@ function positionDe(valeur: Pass['positionDebut']): Position | null {
  * le catalogue changera d'ordre de grandeur, il faudra une vraie recherche
  * indexee.
  *
- * Les enchainements (troisieme categorie prevue par UX-DR14) n'existent pas
- * encore : ils arrivent avec l'Epic 4. On n'affiche pas de section vide en
- * attendant.
+ * Les enchainements forment la troisieme categorie prevue par UX-DR14. Leur
+ * selection n'est PAS filtree ici : `overrideAccess: false` laisse les `access`
+ * de la collection decider (ADD-5), donc un anonyme ne voit que les partages
+ * (FR-17). Un groupe sans resultat ne s'affiche pas.
  */
 export default async function RecherchePage({
   searchParams,
@@ -56,23 +59,37 @@ export default async function RecherchePage({
       <div className="contenu-page">
         <h1>Recherche</h1>
         <p className="texte-attenue recherche-invite">
-          Tape le nom d&apos;une position ou d&apos;une passe dans la barre de recherche.
+          Tape le nom d&apos;une position, d&apos;une passe ou d&apos;un enchaînement dans la barre
+          de recherche.
         </p>
       </div>
     )
   }
 
   const payload = await getPayload({ config: await config })
+  const { user } = await payload.auth({ headers: await getHeaders() })
 
-  const [{ docs: positions }, { docs: passes }] = await Promise.all([
+  const [{ docs: positions }, { docs: passes }, { docs: enchainements }] = await Promise.all([
     payload.find({ collection: 'positions', limit: 200, depth: 1, sort: 'nom' }),
     // depth 1 : suffit a resoudre les positions de debut/fin pour leur nom.
     payload.find({ collection: 'passes', limit: 300, depth: 1, sort: 'nom' }),
+    // depth 0 : le resultat n'affiche que titre, date et longueur de la chaine.
+    payload.find({
+      collection: 'enchainements',
+      limit: 300,
+      depth: 0,
+      sort: '-date',
+      overrideAccess: false,
+      user,
+    }),
   ])
 
   const positionsTrouvees = positions.filter((position) => correspondAuNom(position.nom, requete))
   const passesTrouvees = passes.filter((passe) => correspondAuNom(passe.nom, requete))
-  const total = positionsTrouvees.length + passesTrouvees.length
+  const enchainementsTrouves = enchainements.filter((enchainement) =>
+    correspondAuNom(enchainement.titre, requete),
+  )
+  const total = positionsTrouvees.length + passesTrouvees.length + enchainementsTrouves.length
 
   return (
     <div className="contenu-page">
@@ -111,7 +128,10 @@ export default async function RecherchePage({
           {positionsTrouvees.length > APERCU ? (
             // La recherche du catalogue accepte la meme requete en URL :
             // « voir tout » y renvoie avec le filtre deja applique.
-            <Link className="recherche-voir-tout" href={`/positions?q=${encodeURIComponent(requete)}`}>
+            <Link
+              className="recherche-voir-tout"
+              href={`/positions?q=${encodeURIComponent(requete)}`}
+            >
               Voir les {positionsTrouvees.length} positions
             </Link>
           ) : null}
@@ -151,6 +171,45 @@ export default async function RecherchePage({
           {passesTrouvees.length > APERCU ? (
             <Link className="recherche-voir-tout" href={`/passes?q=${encodeURIComponent(requete)}`}>
               Voir les {passesTrouvees.length} passes
+            </Link>
+          ) : null}
+        </section>
+      ) : null}
+
+      {enchainementsTrouves.length > 0 ? (
+        <section className="recherche-groupe">
+          <h2 className="recherche-groupe__titre">
+            Enchaînements <span className="texte-attenue">({enchainementsTrouves.length})</span>
+          </h2>
+
+          <ul className="resultats">
+            {enchainementsTrouves.slice(0, APERCU).map((enchainement) => {
+              const date = formaterDate(enchainement.date)
+              const nombre = enchainement.passes.length
+
+              return (
+                <li key={enchainement.id}>
+                  <Link
+                    className="resultat resultat--passe"
+                    href={`/enchainements/${enchainement.id}`}
+                  >
+                    <span className="resultat__nom">{enchainement.titre}</span>
+                    <span className="resultat__meta texte-attenue">
+                      {date ? `${date} · ` : ''}
+                      {nombre} passe{nombre > 1 ? 's' : ''}
+                    </span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+
+          {enchainementsTrouves.length > APERCU ? (
+            <Link
+              className="recherche-voir-tout"
+              href={`/enchainements?q=${encodeURIComponent(requete)}`}
+            >
+              Voir les {enchainementsTrouves.length} enchaînements
             </Link>
           ) : null}
         </section>

@@ -1,0 +1,69 @@
+/*
+ * Liste des enchaînements. Valeurs issues des tokens « Lin & Sauge ».
+ *
+ * La carte suit le rythme des cartes Position et Passe — titre, contenu,
+ * description coupée — sans copier leur contenu : un enchaînement n'a pas
+ * d'image propre, il a un TRAJET (d'où l'on part, où l'on arrive).
+ */
+
+.enchainements-entete {
+  margin-bottom: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.enchainements-grille {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-6);
+}
+
+.enchainement-carte {
+  height: 100%;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-lg);
+}
+
+.enchainement-carte:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.enchainement-titre {
+  font-size: var(--headline-size);
+  font-weight: var(--headline-weight);
+  line-height: var(--headline-line);
+}
+
+.enchainement-meta {
+  font-size: var(--label-caps-size);
+}
+
+.enchainement-trajet {
+  font-size: var(--body-size);
+}
+
+/* Seul point de couleur de la carte : l'arête du graphe (DESIGN.md). */
+.enchainement-fleche {
+  color: var(--accent);
+}
+
+.enchainement-description {
+  margin-top: var(--space-1);
+  font-size: var(--body-size);
+  line-height: var(--body-line);
+}

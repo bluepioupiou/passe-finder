@@ -1,0 +1,391 @@
+/*
+ * Chaîne d'un enchaînement (UX-DR10). Toutes les valeurs viennent des tokens
+ * « Lin & Sauge ».
+ *
+ * Le principe : une carte par PASSE, toutes de même largeur, et la position
+ * réduite à une bulle posée à cheval sur le bord entre deux cartes. La lecture
+ * se fait en serpentin — une ligne vers la droite, on descend, la suivante
+ * repart vers la gauche — pour que l'œil n'ait jamais à retraverser l'écran.
+ */
+
+/* ------------------------------------------------------------------ */
+/* La bulle de position, et la pile d'une reprise                      */
+/* ------------------------------------------------------------------ */
+
+.bulle {
+  --bulle-taille: 40px;
+  position: relative;
+  display: inline-block;
+  width: var(--bulle-taille);
+  line-height: 0;
+}
+
+.bulle__lien {
+  display: block;
+  border-radius: var(--rounded-full);
+}
+
+.bulle__image {
+  width: 100%;
+}
+
+.bulle__lien:hover .bulle__image {
+  border-color: var(--accent);
+}
+
+/* Info-bulle : le nom de la position — ou l'explication de la reprise — au
+   survol comme au clavier. */
+.bulle__info {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  max-width: 210px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: var(--rounded-sm);
+  font-size: var(--label-caps-size);
+  line-height: 1.4;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.bulle:hover .bulle__info,
+.bulle:focus-within .bulle__info {
+  opacity: 1;
+}
+
+/*
+ * Centrée, elle sortait de l'écran dès que la bulle touchait le bord de la
+ * page. Elle s'ouvre donc VERS L'INTÉRIEUR de la carte, et par en dessous
+ * quand la bulle est posée sur le bord haut.
+ */
+.seg--gauche .bulle__info {
+  left: 0;
+  right: auto;
+  transform: none;
+}
+
+.seg--droite .bulle__info {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.seg--haut .bulle__info {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
+/*
+ * Reprise : la position d'où l'on repart RECOUVRE celle sur laquelle on
+ * arrivait, décalée en bas à droite. Le geste raconte « on n'enchaîne pas
+ * d'ici » sans encadré ni phrase — le détail vient au survol.
+ *
+ * Ce n'est pas une anomalie : l'ancienne appli notait ainsi les transitions de
+ * main, et 59 des 119 enchaînements repris en portent (voir `Maillon`).
+ */
+.pile {
+  --decalage: calc(var(--bulle-taille) * 0.36);
+  width: calc(var(--bulle-taille) + var(--decalage));
+  height: calc(var(--bulle-taille) + var(--decalage));
+}
+
+/* Celle qu'on écrase : effacée, mais toujours lisible. */
+.pile__dessous {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--bulle-taille);
+  opacity: 0.4;
+}
+
+.pile__dessus {
+  position: absolute;
+  top: var(--decalage);
+  left: var(--decalage);
+  display: block;
+  width: var(--bulle-taille);
+  border-radius: var(--rounded-full);
+  /* Le liseré de fond décolle la vignette de celle qu'elle recouvre. */
+  box-shadow: 0 0 0 2px var(--carte-fond, var(--surface));
+}
+
+/* Petite marque, dans le coin que le décalage laisse libre. */
+.pile__marque {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--bulle-taille) * 0.46);
+  height: calc(var(--bulle-taille) * 0.46);
+  background: var(--carte-fond, var(--surface));
+  color: var(--accent);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-full);
+  font-size: calc(var(--bulle-taille) * 0.3);
+  line-height: 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Le ruban de cartes, en serpentin                                    */
+/* ------------------------------------------------------------------ */
+
+.chaine {
+  list-style: none;
+  margin: 0;
+  /* Les bulles débordent de la moitié de leur diamètre, dans les quatre
+     directions : la marge de la liste les loge. */
+  padding: 22px;
+  display: grid;
+  grid-template-columns: 1fr;
+  /*
+   * `dense` est INDISPENSABLE au serpentin : les cartes de la ligne retour
+   * demandent explicitement leur colonne (3, puis 2, puis 1). Sans lui, le
+   * placement automatique n'accepte jamais de revenir en arrière et ouvre une
+   * ligne par carte — la chaîne se désagrège en escalier.
+   */
+  grid-auto-flow: row dense;
+  /* Colonnes SERRÉES : c'est ce qui met la bulle vraiment à cheval sur les
+     deux cartes qu'elle relie. Les lignes, elles, s'écartent pour laisser
+     passer la bulle du changement de ligne. */
+  column-gap: var(--space-2);
+  row-gap: 40px;
+}
+
+/*
+ * Serpentin : une ligne sur deux se range à l'envers, pour que la lecture
+ * reparte de là où elle s'est arrêtée au lieu de retraverser l'écran.
+ * Le sens des traits, lui, est calculé côté serveur (voir `typologie`).
+ */
+@media (min-width: 560px) and (max-width: 899.98px) {
+  .chaine {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pas:nth-child(4n + 3) {
+    grid-column: 2;
+  }
+
+  .pas:nth-child(4n + 4) {
+    grid-column: 1;
+  }
+}
+
+@media (min-width: 900px) {
+  .chaine {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .pas:nth-child(6n + 4) {
+    grid-column: 3;
+  }
+
+  .pas:nth-child(6n + 5) {
+    grid-column: 2;
+  }
+
+  .pas:nth-child(6n + 6) {
+    grid-column: 1;
+  }
+}
+
+/*
+ * Cartes de largeur égale, adoucies : un aplat posé sur le fond de page, sans
+ * trait de contour. Serrées les unes contre les autres, elles se lisent comme
+ * un ruban continu plutôt que comme une collection de vignettes.
+ */
+.pas {
+  --carte-fond: var(--surface);
+  position: relative;
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) var(--space-5);
+  background: var(--carte-fond);
+  /* Transparente plutôt qu'absente : la mise en page ne bouge pas au survol. */
+  border: 1px solid transparent;
+  border-radius: var(--rounded-lg);
+  transition: border-color 120ms ease;
+}
+
+.pas:hover {
+  border-color: var(--accent);
+}
+
+/* --- Les voies : un demi-trait d'un bord jusqu'au centre de la carte --- */
+
+.pas__voie {
+  position: absolute;
+  display: none;
+}
+
+/* Seule la version qui correspond au nombre de colonnes du moment s'affiche.
+   Les autres restent en `display: none` : invisibles, et hors de l'arbre
+   d'accessibilité, donc rien n'est annoncé en double. */
+@media (max-width: 559.98px) {
+  .pas__voie[data-colonnes='1'] {
+    display: block;
+  }
+}
+
+@media (min-width: 560px) and (max-width: 899.98px) {
+  .pas__voie[data-colonnes='2'] {
+    display: block;
+  }
+}
+
+@media (min-width: 900px) {
+  .pas__voie[data-colonnes='3'] {
+    display: block;
+  }
+}
+
+/* Le trait, atténué : l'accent par petites touches (DESIGN.md). */
+.pas__voie::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0.35;
+}
+
+/* Seule la voie de SORTIE porte une tête : c'est elle qui dit où l'on va. */
+.pas__voie--sortie::after {
+  content: '';
+  position: absolute;
+  border: 5px solid transparent;
+  opacity: 0.35;
+}
+
+/*
+ * Quatre orientations, écrites une seule fois. La bulle se pose au BOUT du
+ * trait, centrée sur le bord de la carte : elle appartient autant à la carte
+ * qu'elle quitte qu'à celle qu'elle rejoint.
+ */
+.seg--gauche {
+  left: 0;
+  right: 50%;
+  top: calc(50% - 1px);
+  height: 2px;
+}
+
+.seg--droite {
+  left: 50%;
+  right: 0;
+  top: calc(50% - 1px);
+  height: 2px;
+}
+
+/*
+ * Les deux voies verticales débordent jusqu'au MILIEU de l'écart entre les
+ * lignes (la moitié de `row-gap`) : elles s'y rejoignent, et la bulle du
+ * changement de ligne s'y pose, à égale distance des deux cartes. Arrêtées au
+ * bord de la carte, elles laissaient un blanc au milieu du saut de ligne.
+ */
+.seg--haut {
+  top: -20px;
+  bottom: 50%;
+  left: calc(50% - 1px);
+  width: 2px;
+}
+
+.seg--bas {
+  top: 50%;
+  bottom: -20px;
+  left: calc(50% - 1px);
+  width: 2px;
+}
+
+.pas__ancre {
+  position: absolute;
+  z-index: 3;
+}
+
+.seg--gauche .pas__ancre {
+  left: 0;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.seg--droite .pas__ancre {
+  right: 0;
+  top: 50%;
+  transform: translate(50%, -50%);
+}
+
+.seg--haut .pas__ancre {
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.seg--bas .pas__ancre {
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+
+/* La tête s'arrête AVANT la bulle : posée dessous, elle disparaissait. */
+.pas__voie--sortie.seg--droite::after {
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 0 5px 8px;
+  border-left-color: var(--accent);
+}
+
+.pas__voie--sortie.seg--gauche::after {
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 8px 5px 0;
+  border-right-color: var(--accent);
+}
+
+.pas__voie--sortie.seg--bas::after {
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 5px 0 5px;
+  border-top-color: var(--accent);
+}
+
+/* Le nom est POSÉ sur le trait : son fond opaque ménage la coupure. */
+.pas__etiquette {
+  position: relative;
+  z-index: 1;
+  /*
+   * Le nom ne prend JAMAIS toute la largeur utile : il faut qu'il reste de
+   * quoi voir le trait de part et d'autre, sinon un nom long (« Changement de
+   * côté changement de main ») recouvre la flèche et la carte perd son sens de
+   * lecture. Un nom trop long passe à la ligne — la carte grandit, le trait
+   * reste visible.
+   */
+  max-width: calc(100% - var(--space-8));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 var(--space-2);
+  background: var(--carte-fond);
+  color: var(--ink);
+  text-align: center;
+  text-decoration: none;
+}
+
+.pas__nom {
+  font-weight: 600;
+}
+
+.pas__etiquette:hover .pas__nom {
+  color: var(--accent);
+}
