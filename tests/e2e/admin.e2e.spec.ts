@@ -31,7 +31,9 @@ test.describe('Admin Panel', () => {
   test('can navigate to list view', async () => {
     await page.goto('http://localhost:3000/admin/collections/users')
     await expect(page).toHaveURL('http://localhost:3000/admin/collections/users')
-    const listViewArtifact = page.locator('h1', { hasText: 'Users' }).first()
+    // « Utilisateurs », pas « Users » : la collection porte desormais des
+    // libelles francais comme les autres (NFR-7, back-office en francais).
+    const listViewArtifact = page.locator('h1', { hasText: 'Utilisateurs' }).first()
     await expect(listViewArtifact).toBeVisible()
   })
 

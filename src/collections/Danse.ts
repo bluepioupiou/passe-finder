@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { adminSeul } from './acces'
+
 /**
  * Danse — dimension de premier ordre du modele (FR-6).
  *
@@ -21,12 +23,11 @@ export const Danse: CollectionConfig = {
   access: {
     // Le catalogue de reference est public en lecture (FR-7, FR-21).
     read: () => true,
-    // TODO (Story 3.4) : restreindre au drapeau `admin` une fois celui-ci
-    // introduit sur la collection users. En attendant, ecriture reservee aux
-    // utilisateurs authentifies. Les regles vivent ici, jamais dans l'UI (AD-3).
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    // Story 3.4 (FR-29) : l'ecriture du catalogue de reference est reservee au
+    // drapeau `admin`. Regles ici uniquement, jamais dans l'UI (AD-3 / ADD-5).
+    create: adminSeul,
+    update: adminSeul,
+    delete: adminSeul,
   },
   fields: [
     {

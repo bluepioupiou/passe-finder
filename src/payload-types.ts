@@ -131,6 +131,10 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  /**
+   * Donne le droit d'editer le catalogue (danses, positions, passes, fichiers). S'attribue hors de l'application : ne peut etre coche que par un administrateur.
+   */
+  admin?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -392,6 +396,7 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  admin?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

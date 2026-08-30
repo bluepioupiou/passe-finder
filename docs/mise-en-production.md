@@ -360,6 +360,7 @@ Dépôt GitHub → *Settings* → *Secrets and variables* → *Actions* → *New
 | `S3_BUCKET` | le nom du bucket | étape 2 |
 | `S3_REGION` | la région, ex. `eu-north-1` | étape 2 |
 | `CLOUDFLARE_ANALYTICS_TOKEN` | le jeton de mesure d'audience | **facultatif**, voir ci-dessous |
+| `ADMIN_EMAIL` | ton email de connexion au site | **facultatif**, voir « Devenir administrateur » |
 
 Pour générer le `PAYLOAD_SECRET` :
 
@@ -586,12 +587,45 @@ sudo docker run --rm -v "$(sudo docker volume ls -q | grep _donnees$)":/data alp
 
 ## Et après ?
 
-- **Créer ton compte admin** : va sur `https://ton-domaine.fr/admin`, l'assistant
-  de premier utilisateur t'attend.
+- **Créer ton compte** : va sur `https://ton-domaine.fr/admin`, l'assistant
+  de premier utilisateur t'attend. Attention : créer le compte ne suffit pas à
+  te rendre administrateur, voir juste en dessous.
 - **Vérifier la sauvegarde** : le bucket S3 doit se remplir dans les minutes qui
   suivent le premier démarrage.
 - **Tester la restauration** au moins une fois — une sauvegarde jamais testée
   n'est pas une sauvegarde.
+
+## Devenir administrateur
+
+Créer un compte ne donne **aucun** droit sur le catalogue. Le drapeau `admin`
+— qui autorise à éditer danses, positions, passes et fichiers — ne peut pas
+s'attribuer depuis l'application : personne ne peut se promouvoir soi-même, et
+c'est volontaire (story 3.4). Sans cette règle, le premier inscrit venu
+pourrait réécrire le catalogue dont dépendent les enchaînements de tes élèves.
+
+Il faut donc une porte extérieure, et c'est le secret `ADMIN_EMAIL` :
+
+1. crée ton compte sur `https://ton-domaine.fr/admin` ;
+2. ajoute le secret GitHub `ADMIN_EMAIL` avec **cet email exactement** ;
+3. relance le déploiement (un `push` sur `main`, ou *Re-run jobs*).
+
+Au démarrage, le conteneur pose le drapeau sur ce compte et l'écrit dans ses
+logs. La variable est **idempotente** : elle ne fait plus rien ensuite, et tu
+peux la laisser en place.
+
+Pour vérifier :
+
+```bash
+sudo docker compose logs app | grep -i administrateur
+```
+
+> Tant qu'aucun compte ne porte le drapeau, le démarrage affiche un
+> avertissement et le catalogue reste en **lecture seule** pour tout le monde.
+> Le site fonctionne normalement par ailleurs : les visiteurs consultent, les
+> comptes connectés composent leurs enchaînements.
+
+Une fois un premier administrateur en place, il peut en désigner d'autres en
+cochant la case depuis `/admin` — sans toucher au déploiement.
 
 ## Récapitulatif des coûts
 

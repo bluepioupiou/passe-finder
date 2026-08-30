@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-30 (tranche creation d'un enchainement)
+# last_updated: 2026-08-30 (story 3-4 : role admin & gouvernance du catalogue)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -100,8 +100,9 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 #
 # Prochaine bascule produit a trancher : Epic 3 (comptes) puis Epic 4
 # (composition). Attention a l'ordre : 3-4 (drapeau admin) DOIT preceder 3-1
-# (inscription), sinon tout inscrit peut editer le catalogue — voir les TODO
-# « Story 3.4 » dans les collections Danse/Position/Passe.
+# (inscription), sinon tout inscrit peut editer le catalogue.
+# FAIT le 2026-08-30 : 3-4 est livree, les TODO « Story 3.4 » des collections
+# Danse/Position/Passe sont refermes. Voir la note dediee plus bas.
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
@@ -158,8 +159,9 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # supprime ; scripts migrate/* conserves dans l'image, lances a la main
 # (`docker compose exec app npm run migrate:<entite>`), procedure ecrite dans
 # docs/mise-en-production.md (etape 10).
-# RESTE A FAIRE : lancer `migrate:enchainements` en prod (avec
-# MIGRATION_AUTEUR_EMAIL si plusieurs comptes existent).
+# FAIT (2026-08-30, Alain) : `migrate:enchainements` a ete lance en prod. Les
+# 119 enchainements y sont ; la reprise du catalogue legacy est donc complete
+# en production (danses, positions, passes, enchainements).
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
@@ -270,12 +272,105 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# STORY 3-4 : ROLE ADMIN & GOUVERNANCE DU CATALOGUE (2026-08-30)
+# ---------------------------------------------------------------------------
+# Premiere story de l'Epic 3. Choisie en tete parce qu'elle est le prerequis de
+# 3-1 : sans le drapeau, tout inscrit pourrait editer le catalogue.
+#
+# QUESTION POSEE PAR ALAIN AVANT DE LANCER : « pas un service AWS simple pour
+# eviter de gerer creation de comptes, envoi de mail, mot de passe oublie ? »
+# Reponse retenue, qui CONFIRME AD-9 apres examen (la decision a ete rouverte,
+# pas subie) : la question melangeait deux choses.
+#   - L'AUTHENTIFICATION est deja acquise et gratuite : `auth: true` sur la
+#     collection users fournit comptes, sessions, hachage, et les operations
+#     forgot-password / reset-password. Il ne reste qu a poser des ecrans.
+#   - L'ACHEMINEMENT DU MAIL est le seul vrai trou : Payload fabrique le
+#     message mais ne le livre pas (au demarrage : « No email adapter
+#     provided. Email will be written to console »).
+# Cognito ne fermerait PAS ce trou : son envoi integre est plafonne et AWS
+# renvoie vers SES des qu on veut son propre domaine. On aurait deux systemes
+# au lieu d un. Et Cognito couterait cher sur les invariants : identite hors de
+# Payload a resynchroniser avec `enchainement.auteur`, `access` a reecrire
+# autour d un jeton externe, double connexion avec /admin, deuxieme plan de
+# controle a operer (CM-1, le risque n 1 du projet).
+# CONSEQUENCE DE SEQUENCE : seule 3-3 a besoin d un expediteur. 3-4, 3-1, 3-2 et
+# 3-5 n'en ont pas besoin, a condition de ne pas activer la verification
+# d'adresse a l'inscription. Le choix SES / Resend est donc REPORTE a 3-3, et il
+# est reversible (meme SMTP derriere @payloadcms/email-nodemailer).
+#
+# LIVRE :
+#   - champ `admin` (case a cocher) sur users, avec un acces de CHAMP qui refuse
+#     la valeur a quiconque n'est pas deja admin. C'est ce qui interdit
+#     l'auto-promotion, y compris via l'API REST/GraphQL et y compris glissee
+#     dans le corps d'une future inscription (3-1) ;
+#   - ecriture de Danse / Position / Passe / Media reservee au drapeau, via le
+#     predicat partage `adminSeul` (src/collections/acces.ts). Un seul endroit,
+#     pour que « admin » veuille dire la meme chose partout (ADD-5 / AD-3) ;
+#   - MEDIA EST INCLUS deliberement : laisser le televersement ouvert rendrait le
+#     verrou des positions decoratif. On ne pourrait pas modifier la position,
+#     mais on pourrait remplacer l'image qu'elle affiche ;
+#   - amorcage par ADMIN_EMAIL (semis au demarrage, cf. src/seed.ts). Il PROMEUT
+#     un compte existant, il n'en cree pas : pas de mot de passe dans une
+#     variable, et cela fonctionne en prod ou le compte existe deja. Sans
+#     administrateur, le demarrage AVERTIT dans les logs (un catalogue en
+#     lecture seule est un etat voulu, mais il doit etre lisible) ;
+#   - migration 20260830_202812_drapeau_admin (une colonne, ALTER TABLE) ;
+#   - variable propagee jusqu a la prod (docker-compose + secret GitHub) et
+#     procedure ecrite dans docs/mise-en-production.md (« Devenir
+#     administrateur »).
+#   7 tests d integration ajoutes (49 verts), 17 e2e verts, build de prod OK.
+#
+# NON FAIT, VOLONTAIREMENT :
+#   - /admin reste ouvert a tout compte connecte. Le fermer aux seuls admins
+#     serait coherent, mais /admin est AUJOURD HUI la seule porte de connexion
+#     du site (le compositeur y renvoie) : la fermer maintenant priverait les
+#     eleves de tout moyen de se connecter. A trancher AVEC 3-2, quand une page
+#     de connexion publique existera.
+#   - la collection users garde les acces par defaut de Payload sur create et
+#     update. A reprendre avec 3-1 (inscription ouverte) et 3-2 (un compte ne
+#     doit pouvoir modifier QUE le sien).
+#
+# DANGER RELEVE EN PASSANT, A TRAITER AVANT 3-1 :
+#   Enchainement.update / delete acceptent encore TOUT compte connecte. Le TODO
+#   portait « Story 3.4 » alors que la regle appartient a 4-5 ; il est retague et
+#   son commentaire dit desormais explicitement le risque. Inoffensif tant que
+#   personne ne peut se connecter, mais le jour ou 3-1 livre l inscription, le
+#   premier inscrit peut reecrire le travail des autres eleves. 3-1 NE DOIT PAS
+#   PARTIR SANS CETTE REGLE.
+#
+# EFFET DE BORD ASSUME : la collection users prend des libelles francais
+# (« Utilisateurs »), comme toutes les autres (NFR-7). Le test e2e herite du
+# scaffold attendait « Users » : assertion corrigee, c'est le libelle qui a
+# raison.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# CONVENTION DE STATUT — QUAND UNE STORY PASSE `done` (decision Alain, 2026-08-30)
+# ---------------------------------------------------------------------------
+# Constat : 22 stories sont en `review` et AUCUNE en `done`. Ce n'est pas un
+# oubli de suivi.
+#
+# Decision : une story ne passe `done` qu'apres confrontation a de VRAIS
+# UTILISATEURS — les eleves d'Alain — ce qui joue ici le role de la demo de fin
+# de sprint. `review` signifie donc « livre, en production, mais pas encore
+# valide par l'usage ». Tant que personne d'autre qu'Alain n'a utilise le site,
+# rien ne bascule.
+#
+# Consequence a garder en tete : le taux de `done` ne mesure PAS l'avancement du
+# code. Pour savoir ou en est le produit, lire `review` comme « fait ». La
+# bascule en masse se fera en une fois, apres les premiers retours d'eleves.
+# Rappel : c'est aussi le critere de succes v1 du brief — « Alain et ses propres
+# eleves utilisent reellement l'appli ». La convention de statut colle donc a la
+# definition de succes du produit, elle ne s'y ajoute pas.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # ACTION ITEMS
 # ---------------------------------------------------------------------------
 action_items:
   # Releve par Alain le 2026-08-30, en regardant le catalogue livre (5.4).
   - id: cartes-catalogue-harmoniser
-    status: open
+    status: done
     titre: "Harmoniser les cartes Position et Passe dans le catalogue"
     concerne: [5-4-catalogue-navigable-positions-passes]
     constat: >
@@ -308,6 +403,13 @@ action_items:
         a son schema avant d'en lire le nom. Plus petite oui, trop petite et la
         carte perd ce qui la rend identifiable d'un coup d'oeil.
     taille_estimee: "petite — CSS et ordre du balisage, pas de changement de modele"
+    resolution: >
+      2026-08-30, commit 8a1a3128 (« mise a plat des cards »). Les deux cartes
+      suivent desormais le meme rythme : nom, puis image, puis description. La
+      nuance « 2 ou 3 lignes » a ete tranchee A L'ECRAN a 3 lignes, via un
+      utilitaire partage `.texte-coupe` (-webkit-line-clamp) dans styles.css.
+      La difference de fond est conservee comme demande : une passe porte ses
+      deux images (l'arete du graphe), une position n'en porte qu'une (le noeud).
 
   # Releve par Alain le 2026-08-30, en lancant les tests pendant que le serveur
   # de dev tournait.
@@ -372,11 +474,13 @@ development_status:
   epic-2-retrospective: optional
 
   # --- Epic 3: Comptes & accès ---
-  epic-3: backlog
+  epic-3: in-progress
   3-1-inscription-creer-un-compte: backlog
   3-2-connexion-deconnexion-etat-connecte-dans-la-nav: backlog
   3-3-recuperation-d-acces-mot-de-passe-oublie: backlog
-  3-4-role-admin-unique-gouvernance-du-catalogue: backlog
+  # drapeau `admin` sur users (acces de CHAMP : aucune auto-promotion), ecriture
+  # du catalogue + Media reservee, amorcage hors application par ADMIN_EMAIL
+  3-4-role-admin-unique-gouvernance-du-catalogue: review
   3-5-porte-d-acces-aux-actions-reservees-retour-apres-connexion: backlog
   epic-3-retrospective: optional
 
@@ -396,6 +500,8 @@ development_status:
   4-4-vue-lecture-partage-par-url-controles-de-partage: in-progress
   # dernier AC livre en avance : blocage de suppression d'une passe utilisee
   # par un enchainement (FR-8 / ADD-8). Edition et suppression restent a faire.
+  # ATTENTION : le volet « seul l auteur modifie/supprime » est un PREREQUIS de
+  # 3-1, pas un confort. Cf. le danger releve dans la note 3-4 ci-dessus
   4-5-editer-supprimer-ses-propres-enchainements: in-progress
   4-6-lier-une-video-youtube-a-un-enchainement: backlog
   epic-4-retrospective: optional

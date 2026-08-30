@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { adminSeul } from './acces'
+
 /**
  * Media — collection technique portant les fichiers televerses.
  *
@@ -24,9 +26,14 @@ export const Media: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    // Story 3.4 : un fichier n'existe ici que pour illustrer une position, donc
+    // il suit le meme regime que le catalogue. Laisser le televersement ouvert
+    // a tout compte rendrait le verrou des positions decoratif : on ne pourrait
+    // pas modifier la position, mais on pourrait remplacer l'image qu'elle
+    // affiche.
+    create: adminSeul,
+    update: adminSeul,
+    delete: adminSeul,
   },
   fields: [
     {
