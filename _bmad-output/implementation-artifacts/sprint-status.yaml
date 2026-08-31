@@ -560,6 +560,14 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # LE FILTRE « MES FAVORIS » n apparait que pour un compte connecte AYANT au
 # moins un favori : une case qui ne peut rien donner est pire que pas de case.
 #
+# ECART ASSUME AVEC UN AC (decision Alain, 2026-08-31). L AC de 5-1 prevoyait
+# qu'un visiteur anonyme se voie proposer de se connecter depuis la fiche, puis
+# soit ramene dessus. Le bouton a ete RETIRE : il encombrait la lecture pour un
+# geste que personne ne vient chercher en consultant. La porte n est pas perdue
+# — la barre de navigation propose « Se connecter » sur toutes les pages, et le
+# favori apparait des qu on l est. L AC reste dans epics.md : il est ecarte
+# sciemment, pas oublie.
+#
 # NON FAIT : la liste « mes enchainements » du profil (5-2), qui reste annoncee
 # comme a venir dans le menu. La page /favoris en est la premiere moitie.
 #

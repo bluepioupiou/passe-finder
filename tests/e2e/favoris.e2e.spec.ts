@@ -132,16 +132,22 @@ test.describe('Favoris', () => {
     await expect(page.getByText('Pas encore de favori.')).toBeVisible()
   })
 
-  test('un visiteur anonyme est invité à se connecter, et revient sur la fiche', async () => {
+  test('un visiteur anonyme ne voit aucun contrôle de favori', async () => {
     test.skip(idEnchainement === null, 'Aucun enchaînement partagé sur cette cible.')
 
+    // Decision d'Alain (2026-08-31) : la fiche ne propose RIEN a un anonyme, pas
+    // meme une invitation a se connecter — elle encombrait la lecture. La porte
+    // reste ouverte par la barre de navigation, qui offre « Se connecter »
+    // partout.
     const contexte = await page.context().browser()!.newContext()
     const visiteur = await contexte.newPage()
 
     await visiteur.goto(`/enchainements/${idEnchainement}`)
-    await visiteur.getByRole('link', { name: 'Se connecter pour mettre en favori' }).click()
 
-    await expect(visiteur).toHaveURL(new RegExp(`suite=%2Fenchainements%2F${idEnchainement}$`))
+    await expect(visiteur.getByRole('button', { name: 'Mettre en favori' })).toHaveCount(0)
+    await expect(visiteur.getByRole('link', { name: /favori/i })).toHaveCount(0)
+    // La fiche reste lisible : on ne lui a rien retire de son contenu.
+    await expect(visiteur.getByRole('heading', { level: 1 })).toBeVisible()
 
     await contexte.close()
   })
