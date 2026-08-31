@@ -757,7 +757,7 @@ action_items:
   # Demande d Alain le 2026-08-31. Formalise la note « HTML brut dans les
   # descriptions » laissee ouverte dans la TRANCHE LECTURE DES ENCHAINEMENTS.
   - id: musique-enchainement-champ
-    status: open
+    status: done
     titre: "Champ « musique » libre sur l enchainement"
     concerne:
       - 4-3-enregistrer-un-enchainement-metadonnees-defaut-prive-sauvegarde-fiable
@@ -805,6 +805,81 @@ action_items:
         (« Gene Vincent — Be-Bop-A-Lula ») ? Le nom du morceau se lit mieux
         qu une URL sur la fiche, et survit a un lien mort. A trancher a l ecran.
     taille_estimee: "petite — un champ, une migration de schema, la reprise de 5 fiches a la main"
+    resolution: >
+      2026-08-31. Champ `musique` pose comme un GROUPE de deux champs
+      facultatifs — `titre` et `lien` — et non comme un champ libre unique
+      (tranche avec Alain a l ecran). Le titre est ce qui SURVIT au lien mort,
+      le lien evite de retaper le nom dans une appli de streaming ; la fiche
+      rend le TITRE cliquable, jamais l URL brute.
+      Reconnaissance du fournisseur par l HOTE, en pur (`src/musique.ts`) :
+      Spotify, Deezer, YouTube, Apple Music, SoundCloud, Bandcamp, avec repli
+      sur le nom d hote pour un hebergeur inconnu — un lien inconnu reste
+      cliquable. Comparaison par suffixe de label et non `includes`, sans quoi
+      `spotify.com.exemple.net` se ferait passer pour Spotify.
+      AUCUN APPEL AU RENDU : la fiche que lisent les eleves ne charge aucun
+      tiers (FR-39, UX-DR1).
+      A L ECRITURE, en revanche, le TITRE est demande au fournisseur par oEmbed
+      quand le lien est seul (ajoute le 2026-08-31 sur demande d Alain, apres
+      avoir constate a l usage qu un lien seul n affichait que « Ecouter sur
+      Spotify »). oEmbed resout une URL qu on a DEJA : ni cle, ni application
+      enregistree, ni secret a porter jusqu au deploiement — teste en vrai,
+      Spotify rend « Africa » pour le lien correspondant. Quatre points
+      publics : Spotify, Deezer, YouTube, SoundCloud ; Apple Music et Bandcamp
+      n en publient pas, leurs liens restent sans titre automatique, ce qui
+      n est pas une regression.
+      Pose en `beforeChange` SUR LA COLLECTION et non dans l action du
+      compositeur : /admin, l API et le compositeur ecrivent tous les trois, et
+      une regle ecrite trois fois derive. Il ne se declenche que si l ecriture
+      porte un lien ET qu aucun titre n est connu — une saisie humaine n est
+      JAMAIS recouverte. Toute panne du tiers (reseau, 404, charge illisible,
+      lenteur au-dela de 3 s) se solde par « pas de titre » et l enregistrement
+      continue : un enregistrement ne doit jamais echouer a cause d un tiers.
+      L artiste est ignore meme quand le fournisseur le donne (Deezer, YouTube) :
+      le titre suffit, et une regle unique vaut mieux qu un libelle qui
+      changerait de forme selon l hebergeur.
+      L autre sens — « chercher le morceau par son TITRE via l API Spotify » —
+      reste ECARTE : il demande une application enregistree et deux secrets de
+      plus, et une recherche par titre renvoie des candidats (originaux,
+      remasters, reprises) ; accrocher le premier silencieusement collerait un
+      mauvais enregistrement, ce qui compte pour une choregraphie (tempo,
+      montage, duree). S il revient, ce sera comme un SELECTEUR de propositions
+      remplissant les deux memes champs, donc sans rien jeter de ce lot.
+      Une seule icone (note au trait, `IconeNote`) plutot qu un logo par
+      fournisseur : les logos de marque sont des formes pleines aux couleurs
+      imposees, etrangeres a un jeu d icones qui suit `currentColor` et les deux
+      themes. Le fournisseur est nomme en toutes lettres a cote.
+      Garde sur le lien a TROIS endroits independants : la validation du champ
+      (collection), l action serveur, et l affichage (`presenterMusique`). Seuls
+      http(s) passent — ce champ sera rempli par les eleves et rendu en `<a>`.
+      Sortie en `rel="noopener noreferrer"`, verifiee en e2e.
+      NUANCE « les mp3 existent-ils encore ? » : TRANCHEE PAR LA MESURE, pas par
+      hypothese. `passe-finder.fr/Choregraphie_2011_ENSAM-Gene_Vincent.mp3`
+      redirige vers le nouveau site et repond 404 — les deux fiches 2011 gardent
+      donc un TITRE et aucun lien. Les deux chemins relatifs `musiques/*.mp3`
+      (2012) n ont rien a pointer : titre seul aussi. Le lien Deezer, lui, est
+      VIVANT : il redirige vers `deezer.com/track/4200101`, et l API publique de
+      Deezer nomme le morceau — Elvis Presley, « All Shook Up ». Reheberger les
+      montages reste une decision a part (stockage, droits).
+      REPRISE DES 5 FICHES : A LA MAIN, dans /admin (decision d Alain,
+      2026-08-31). Un script avait ete ecrit puis RETIRE : pour cinq
+      occurrences faites une seule fois, il coutait plus a relire et a
+      maintenir qu il ne faisait gagner. Les cinq fiches (ids 37, 71, 72, 99,
+      100) ont ete reprises EN LOCAL par ce script avant son retrait — la base
+      de developpement porte donc deja le resultat, la PRODUCTION non. Ce qu il
+      reste a faire a la main sur chacune : sortir le lien de la description
+      vers le champ musique, et effacer le HTML brut (`<a>`, `</br>`) des fiches
+      99 et 100 avec la phrase qui le portait.
+      DANS LA GRILLE, la carte d enchainement porte la note seule, a la suite de
+      la date et du nombre de passes, dans l accent DEJA utilise par la fleche du
+      trajet — la carte garde donc une seule couleur (DESIGN.md). Le morceau
+      lui-meme ne s y ecrit pas : au balayage, ce qu on veut savoir c est
+      « celui-ci en a une ». L intitule est porte, invisible, pour les lecteurs
+      d ecran : ici l icone EST l information.
+      Deux corrections venues de l ecran : la ligne de musique de la fiche etait
+      en `flex`, ce qui renvoyait tout le titre a la ligne sous une note
+      esseulee sur telephone (repassee en flux de texte, l icone se comportant
+      comme un caractere) ; et la carte affichait d abord le morceau en toutes
+      lettres, ce qui allongeait la ligne sans rien apprendre.
 
   # Demande d Alain le 2026-08-31. DEUX SUJETS distincts dans une meme demande :
   # l identifiant public, et le modele de visibilite. Ils se tiennent, mais ils

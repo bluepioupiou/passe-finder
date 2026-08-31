@@ -11,6 +11,7 @@ import {
   type VuePasse,
   type VuePosition,
 } from '@/composition'
+import { lienEcoutable } from '@/musique'
 import { correspondAuNom } from '@/recherche'
 import { Bouton } from './Bouton'
 import { ImagePosition } from './ImagePosition'
@@ -87,6 +88,8 @@ export function Compositeur({
   const [titre, setTitre] = useState('')
   const [date, setDate] = useState(dateParDefaut)
   const [description, setDescription] = useState('')
+  const [musiqueTitre, setMusiqueTitre] = useState('')
+  const [musiqueLien, setMusiqueLien] = useState('')
   const [notes, setNotes] = useState('')
   const [visibilite, setVisibilite] = useState(visibilites[0]?.value ?? 'prive')
 
@@ -98,6 +101,9 @@ export function Compositeur({
   const idTitre = useId()
   const idDate = useId()
   const idDescription = useId()
+  const idMusiqueTitre = useId()
+  const idMusiqueLien = useId()
+  const idMusiqueErreur = useId()
   const idNotes = useId()
   const idVisibilite = useId()
 
@@ -117,6 +123,11 @@ export function Compositeur({
   const possibles = useMemo(() => passesDepuis(passes, courante), [passes, courante])
   const proposees = possibles.filter((passe) => correspondAuNom(passe.nom, filtre))
 
+  // Signale le lien inutilisable DES LA SAISIE plutot qu'au retour du serveur :
+  // l'action revalide de son cote (c'est elle qui decide), mais decouvrir la
+  // faute apres avoir compose vingt passes serait une punition.
+  const lienInvalide = musiqueLien.trim() !== '' && lienEcoutable(musiqueLien) === null
+
   const ajouter = (passe: VuePasse) => {
     setChaine((precedente) => [...precedente, passe])
     // Le filtre valait pour la position qu'on vient de quitter : le garder
@@ -128,7 +139,7 @@ export function Compositeur({
 
   const soumettre = async (evenement: React.FormEvent) => {
     evenement.preventDefault()
-    if (enCours || chaine.length === 0) return
+    if (enCours || chaine.length === 0 || lienInvalide) return
 
     setEnCours(true)
     setErreur(null)
@@ -138,6 +149,7 @@ export function Compositeur({
         titre: titre.trim(),
         date,
         description,
+        musique: { titre: musiqueTitre, lien: musiqueLien },
         notes,
         visibilite,
         passes: chaine.map((passe) => passe.id),
@@ -392,6 +404,50 @@ export function Compositeur({
             />
           </div>
 
+          {/* La musique appartient a l'enchainement : on danse une choregraphie
+              SUR un morceau. Deux champs et non un, parce que le TITRE survit au
+              lien mort — quatre des cinq musiques de l'historique pointaient
+              vers des fichiers de l'ancien site, disparus avec lui. */}
+          <div className="compo-champ">
+            <label className="compo-label label-caps" htmlFor={idMusiqueTitre}>
+              Musique
+            </label>
+            <input
+              id={idMusiqueTitre}
+              type="text"
+              className="compo-saisie"
+              placeholder="Gene Vincent — Be-Bop-A-Lula"
+              value={musiqueTitre}
+              onChange={(evenement) => setMusiqueTitre(evenement.target.value)}
+            />
+            <p className="compo-indice texte-attenue">
+              Laisse vide et colle un lien : le titre est récupéré tout seul, quand le fournisseur
+              le publie.
+            </p>
+          </div>
+
+          <div className="compo-champ">
+            <label className="compo-label label-caps" htmlFor={idMusiqueLien}>
+              Lien de la musique
+            </label>
+            <input
+              id={idMusiqueLien}
+              type="url"
+              inputMode="url"
+              className="compo-saisie"
+              placeholder="https://open.spotify.com/…"
+              value={musiqueLien}
+              onChange={(evenement) => setMusiqueLien(evenement.target.value)}
+              aria-invalid={lienInvalide || undefined}
+              aria-describedby={lienInvalide ? idMusiqueErreur : undefined}
+            />
+            {lienInvalide ? (
+              <p id={idMusiqueErreur} className="compo-erreur-champ" role="alert">
+                Il faut une adresse web (http:// ou https://).
+              </p>
+            ) : null}
+          </div>
+
           <div className="compo-champ compo-champ--large">
             <label className="compo-label label-caps" htmlFor={idNotes}>
               Notes
@@ -414,14 +470,16 @@ export function Compositeur({
         ) : null}
 
         <div className="compo-actions">
-          <Bouton type="submit" disabled={enCours || chaine.length === 0}>
+          <Bouton type="submit" disabled={enCours || chaine.length === 0 || lienInvalide}>
             {enCours ? 'Enregistrement…' : "Enregistrer l'enchaînement"}
           </Bouton>
 
           <p className="compo-aide texte-attenue" role="status" aria-live="polite">
-            {chaine.length === 0
-              ? 'Ajoute au moins une passe pour pouvoir enregistrer.'
-              : `${chaine.length} passe${chaine.length > 1 ? 's' : ''} dans la chaîne.`}
+            {lienInvalide
+              ? 'Corrige le lien de la musique pour pouvoir enregistrer.'
+              : chaine.length === 0
+                ? 'Ajoute au moins une passe pour pouvoir enregistrer.'
+                : `${chaine.length} passe${chaine.length > 1 ? 's' : ''} dans la chaîne.`}
           </p>
         </div>
       </section>

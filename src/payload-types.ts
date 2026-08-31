@@ -258,6 +258,19 @@ export interface Enchainement {
    */
   description?: string | null;
   /**
+   * Le morceau sur lequel l'enchaînement se danse. Un titre, un lien, ou les deux.
+   */
+  musique?: {
+    /**
+     * Ex. « Gene Vincent — Be-Bop-A-Lula ». Survit au lien mort. Laissé vide, il est récupéré depuis le lien quand le fournisseur le publie.
+     */
+    titre?: string | null;
+    /**
+     * Spotify, Deezer, YouTube… Facultatif.
+     */
+    lien?: string | null;
+  };
+  /**
    * Notes personnelles (points de vigilance, variantes).
    */
   notes?: string | null;
@@ -498,6 +511,12 @@ export interface PassesSelect<T extends boolean = true> {
 export interface EnchainementsSelect<T extends boolean = true> {
   titre?: T;
   description?: T;
+  musique?:
+    | T
+    | {
+        titre?: T;
+        lien?: T;
+      };
   notes?: T;
   date?: T;
   auteur?: T;

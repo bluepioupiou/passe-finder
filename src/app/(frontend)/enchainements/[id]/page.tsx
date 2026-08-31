@@ -7,9 +7,11 @@ import React from 'react'
 import { basculerFavori } from '@/app/(frontend)/favoris/actions'
 import { BoutonFavori } from '@/components/BoutonFavori'
 import { ChaineEnchainement } from '@/components/ChaineEnchainement'
+import { IconeNote } from '@/components/Icones'
 import { chargerCatalogue } from '@/catalogue'
 import { chaineDe, construireChaine, formaterDate } from '@/enchainements'
 import { idsFavoris, peutEtreMisEnFavori } from '@/favoris'
+import { presenterMusique } from '@/musique'
 import config from '@/payload.config'
 import './fiche-enchainement.css'
 
@@ -87,6 +89,7 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
   )
 
   const date = formaterDate(enchainement.date)
+  const musique = presenterMusique(enchainement.musique)
   const nombre = enchainement.passes.length
 
   return (
@@ -113,6 +116,28 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
 
         {enchainement.description ? (
           <p className="fiche-texte fiche-enchainement-description">{enchainement.description}</p>
+        ) : null}
+
+        {/* La musique se pose dans l'entête, avec le titre et la date, et non
+            en section plus bas : on danse SUR un morceau, il fait partie de
+            l'identité de l'enchaînement. Sur téléphone, c'est aussi ce qui le
+            rend visible sans dérouler.
+            Comme la vidéo, c'est un simple lien (FR-39) : aucun lecteur
+            intégré, donc aucun tiers chargé sur la page de révision. */}
+        {musique ? (
+          <p className="fiche-enchainement-musique">
+            <IconeNote taille={18} />
+            {musique.lien ? (
+              <a href={musique.lien} target="_blank" rel="noopener noreferrer">
+                {musique.texte}
+              </a>
+            ) : (
+              <span>{musique.texte}</span>
+            )}
+            {musique.complement ? (
+              <span className="texte-attenue">sur {musique.complement}</span>
+            ) : null}
+          </p>
         ) : null}
 
         {favorisable ? (

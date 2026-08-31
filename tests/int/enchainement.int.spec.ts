@@ -131,6 +131,45 @@ describe('Enchainement', () => {
     expect(relu.passes.map((maillon) => maillon.passe)).toEqual([idPasse])
   })
 
+  it('accepte une musique, titre et lien', async () => {
+    const avec = await payload.update({
+      collection: 'enchainements',
+      id: idEnchainement,
+      data: {
+        musique: {
+          titre: 'Elvis Presley — All Shook Up',
+          lien: 'https://www.deezer.com/track/4200101',
+        },
+      },
+    })
+
+    expect(avec.musique?.titre).toBe('Elvis Presley — All Shook Up')
+    expect(avec.musique?.lien).toBe('https://www.deezer.com/track/4200101')
+  })
+
+  it('refuse un lien de musique qui n est pas une adresse web', async () => {
+    // La garde qui compte : ce champ est rempli par les eleves et rendu en
+    // `<a href>` sur une fiche que d'autres ouvrent. L'affichage se protege de
+    // son cote (`presenterMusique`), mais la collection tranche — sans quoi une
+    // valeur pareille pourrait entrer par l'API sans jamais passer par le
+    // compositeur.
+    await expect(
+      payload.update({
+        collection: 'enchainements',
+        id: idEnchainement,
+        data: { musique: { lien: 'javascript:alert(1)' } },
+      }),
+    ).rejects.toThrow()
+
+    // Et la valeur precedente est intacte : le refus n'a rien ecrit au passage.
+    const relu = await payload.findByID({
+      collection: 'enchainements',
+      id: idEnchainement,
+      depth: 0,
+    })
+    expect(relu.musique?.lien).toBe('https://www.deezer.com/track/4200101')
+  })
+
   it('empeche de supprimer une passe utilisee', async () => {
     await expect(payload.delete({ collection: 'passes', id: idPasse })).rejects.toThrow(
       /Suppression impossible/,

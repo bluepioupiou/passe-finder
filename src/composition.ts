@@ -66,6 +66,12 @@ export type SaisieEnchainement = {
   /** Jour au format `AAAA-MM-JJ`, tel que le rend un `<input type="date">`. */
   date: string
   description: string
+  /**
+   * Le morceau sur lequel l'enchainement se danse — les deux moities
+   * facultatives. Le TITRE est ce qui survit au lien mort, le LIEN ce qui
+   * evite de retaper le nom dans une appli de streaming.
+   */
+  musique: { titre: string; lien: string }
   notes: string
   visibilite: string
   /** Identifiants des passes, DANS L'ORDRE : l'index EST l'ordre (ADD-18). */
