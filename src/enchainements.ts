@@ -1,4 +1,4 @@
-import type { Pass, Position } from './payload-types'
+import type { Enchainement, Pass, Position, User } from './payload-types'
 
 /**
  * Lecture d'un enchaînement : la chaîne et ses ruptures (Stories 4.4 / 6.3).
@@ -9,8 +9,38 @@ import type { Pass, Position } from './payload-types'
  * chaîne avec les mêmes règles plutôt qu'avec une seconde implémentation.
  */
 
-/** Identifiant d'une relation, qu'elle soit résolue ou non. */
-export function identifiant(valeur: number | Position | null | undefined): number | null {
+/**
+ * Peut-on MODIFIER cet enchainement (Story 4.5, FR-18 / ADD-5) ?
+ *
+ * Son auteur, ou un administrateur — exactement la regle que la collection
+ * applique (`auteurOuAdmin`). DOUBLON DELIBERE, et il faut savoir lequel des
+ * deux decide : la collection tranche, ce predicat evite seulement de PROPOSER
+ * un lien qui menerait a une porte fermee. L'ecrire dans l'interface ne
+ * securise rien — c'est pourquoi la page de modification revalide, et
+ * l'action aussi.
+ *
+ * Reconnait l'auteur que la relation soit resolue ou non : selon la profondeur
+ * de lecture, `auteur` est un identifiant ou l'objet complet, et la reponse ne
+ * doit pas dependre d'un detail de requete.
+ */
+export function peutModifier(
+  enchainement: Pick<Enchainement, 'auteur'>,
+  utilisateur: User | null,
+): boolean {
+  if (!utilisateur) return false
+  if (utilisateur.admin) return true
+
+  return identifiant(enchainement.auteur) === utilisateur.id
+}
+
+/**
+ * Identifiant d'une relation, qu'elle soit résolue ou non.
+ *
+ * Volontairement typée sur `{ id }` et non sur `Position` : la même question se
+ * pose pour l'auteur d'un enchaînement (`peutModifier`), et une relation reste
+ * une relation quelle que soit la collection au bout.
+ */
+export function identifiant(valeur: number | { id: number } | null | undefined): number | null {
   if (typeof valeur === 'number') return valeur
   if (valeur && typeof valeur === 'object') return valeur.id
   return null

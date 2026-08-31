@@ -5,11 +5,12 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import { basculerFavori } from '@/app/(frontend)/favoris/actions'
+import { Bouton } from '@/components/Bouton'
 import { BoutonFavori } from '@/components/BoutonFavori'
 import { ChaineEnchainement } from '@/components/ChaineEnchainement'
 import { IconeNote } from '@/components/Icones'
 import { chargerCatalogue } from '@/catalogue'
-import { chaineDe, construireChaine, formaterDate } from '@/enchainements'
+import { chaineDe, construireChaine, formaterDate, peutModifier } from '@/enchainements'
 import { idsFavoris, peutEtreMisEnFavori } from '@/favoris'
 import { presenterMusique } from '@/musique'
 import config from '@/payload.config'
@@ -79,6 +80,10 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
 
   const chemin = `/enchainements/${enchainement.id}`
   const favorisable = peutEtreMisEnFavori(enchainement, user)
+  // Proposer, pas autoriser : la page de modification revalide, l'action aussi,
+  // et la collection tranche (ADD-5). Ici on evite seulement d'offrir un lien
+  // qui menerait a une porte fermee.
+  const modifiable = peutModifier(enchainement, user)
   // On ne charge les favoris que si le bouton peut apparaitre : inutile de
   // poser une requete pour un visiteur anonyme ou sur son propre enchainement.
   const dejaFavori = favorisable ? (await idsFavoris(payload, user)).has(enchainement.id) : false
@@ -99,7 +104,20 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
       </p>
 
       <header className="fiche-enchainement-entete">
-        <h1>{enchainement.titre}</h1>
+        {/* Le titre et, EN HAUT A DROITE, le geste de l'auteur : c'est la que
+            l'oeil va chercher l'action sur une page qu'on relit souvent, et il
+            reste visible sans derouler, meme sur telephone. */}
+        <div className="fiche-enchainement-ligne-titre">
+          <h1>{enchainement.titre}</h1>
+
+          {/* Visible du seul auteur (ou d'un administrateur) : les autres ne
+              verraient qu'une porte fermee. */}
+          {modifiable ? (
+            <Bouton variante="fantome" href={`${chemin}/modifier`}>
+              Modifier
+            </Bouton>
+          ) : null}
+        </div>
 
         <p className="fiche-enchainement-meta texte-attenue">
           {date ? <span className="donnee">{date}</span> : null}

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   dateDuJour,
+  isoVersJour,
   jourVersISO,
   passesDepuis,
   positionCourante,
@@ -81,5 +82,29 @@ describe('dateDuJour', () => {
     // minuit doit porter la date du jour ou l'on est, pas celle du serveur.
     expect(dateDuJour(new Date('2026-08-30T23:00:00.000Z'))).toBe('2026-08-31')
     expect(dateDuJour(new Date('2026-08-30T12:00:00.000Z'))).toBe('2026-08-30')
+  })
+})
+
+describe('isoVersJour', () => {
+  it('rend le jour à remettre dans le champ date', () => {
+    expect(isoVersJour('2026-03-12T00:00:00.000Z')).toBe('2026-03-12')
+  })
+
+  it('lit en UTC, donc ne fait pas reculer une date d hiver', () => {
+    // Lue dans le fuseau du serveur, cette date deviendrait le 11 pour tout
+    // lecteur a l ouest de Greenwich : rouvrir un enchaînement pour changer son
+    // titre ferait glisser sa date au passage.
+    expect(isoVersJour('2026-01-05T00:00:00.000Z')).toBe('2026-01-05')
+    expect(isoVersJour('2026-07-05T00:00:00.000Z')).toBe('2026-07-05')
+  })
+
+  it('rend une chaîne vide quand il n y a pas de date', () => {
+    expect(isoVersJour(null)).toBe('')
+    expect(isoVersJour(undefined)).toBe('')
+    expect(isoVersJour('pas une date')).toBe('')
+  })
+
+  it('fait l aller-retour avec jourVersISO', () => {
+    expect(isoVersJour(jourVersISO('2026-03-12'))).toBe('2026-03-12')
   })
 })

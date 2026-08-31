@@ -60,8 +60,16 @@ export function positionCourante(depart: number | null, chaine: VuePasse[]): num
   return chaine[chaine.length - 1].fin
 }
 
-/** Ce que le compositeur envoie au serveur pour enregistrer (Story 4.3). */
-export type SaisieEnchainement = {
+/**
+ * Les informations d'un enchainement : tout ce qui se SAISIT (Stories 4.3/4.5).
+ *
+ * A part de la chaine, et ce decoupage porte une distinction reelle : ceci se
+ * tape dans des champs, la chaine se COMPOSE (le compositeur ne propose que des
+ * passes qui partent de la position courante, FR-10). La page de modification
+ * reprend donc les informations sans toucher a la chaine, et le formulaire est
+ * le meme des deux cotes (`ChampsEnchainement`).
+ */
+export type SaisieMetadonnees = {
   titre: string
   /** Jour au format `AAAA-MM-JJ`, tel que le rend un `<input type="date">`. */
   date: string
@@ -74,6 +82,10 @@ export type SaisieEnchainement = {
   musique: { titre: string; lien: string }
   notes: string
   visibilite: string
+}
+
+/** Ce que le compositeur envoie au serveur pour enregistrer (Story 4.3). */
+export type SaisieEnchainement = SaisieMetadonnees & {
   /** Identifiants des passes, DANS L'ORDRE : l'index EST l'ordre (ADD-18). */
   passes: number[]
 }
@@ -120,4 +132,25 @@ export function jourVersISO(jour: string): string | undefined {
 
   const date = new Date(`${jour}T00:00:00.000Z`)
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString()
+}
+
+/**
+ * Instant stocke -> jour a remettre dans `<input type="date">` (Story 4.5).
+ *
+ * Le retour de `jourVersISO`, et LU EN UTC pour la meme raison que
+ * `formaterDate` : la date d'un cours est un JOUR, stocke a minuit UTC. Relue
+ * dans le fuseau du serveur, une date d'hiver reculerait d'un jour — rouvrir un
+ * enchainement pour changer son titre ferait glisser sa date au passage, sans
+ * que personne ne s'en apercoive.
+ *
+ * Une date absente ou illisible rend une chaine vide : le champ s'ouvre vide,
+ * ce qui est exactement ce que l'on veut montrer.
+ */
+export function isoVersJour(valeur?: string | null): string {
+  if (!valeur) return ''
+
+  const date = new Date(valeur)
+  if (Number.isNaN(date.getTime())) return ''
+
+  return date.toISOString().slice(0, 10)
 }
