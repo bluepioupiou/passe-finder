@@ -69,15 +69,11 @@ test.describe('Enchaînements', () => {
     await page.goto('/enchainements')
     await expect(page.getByRole('button', { name: 'Créer' })).toHaveCount(0)
 
-    // La porte reelle est cote serveur : connaitre l'URL ne suffit pas.
+    // La porte reelle est cote serveur : connaitre l'URL ne suffit pas. Depuis
+    // la Story 3.5 elle EMMENE vers la connexion au lieu d afficher une
+    // invitation, en emportant le chemin d origine.
     await page.goto('/enchainements/nouveau')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Composer un enchaînement')
-    // Portee au CONTENU : depuis la Story 3.2 la barre de navigation propose
-    // elle aussi « Se connecter », et un selecteur global en trouverait deux.
-    const inviteDeLaPage = page.locator('.contenu-page').getByRole('link', {
-      name: 'Se connecter',
-    })
-    await expect(inviteDeLaPage).toBeVisible()
+    await expect(page).toHaveURL(/\/connexion\?suite=%2Fenchainements%2Fnouveau$/)
     await expect(page.getByLabel("D'où part l'enchaînement ?")).toHaveCount(0)
   })
 

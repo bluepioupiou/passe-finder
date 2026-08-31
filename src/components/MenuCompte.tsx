@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 
 import { IconeCompte } from './Icones'
@@ -19,9 +18,14 @@ type Proprietes = {
  * Il remplace la zone laissee vide depuis la Story 1.6 : tant qu'on ne pouvait
  * pas se connecter, un bouton « Se connecter » se serait lu comme une panne.
  *
- * Meme mecanique que le « + » (`MenuCreation`) : fermeture au clic exterieur et
- * a « Echap ». Un menu qui reste ouvert par-dessus la page oblige a revenir
- * cliquer la bascule pour s'en debarrasser.
+ * IL NE PROPOSE PAS DE CREER. Le « + » voisin (`MenuCreation`) est la seule
+ * porte de creation. Deux entrees pour le meme geste, a quelques dizaines de
+ * pixels l'une de l'autre, n'ouvrent aucun chemin de plus : elles obligent
+ * seulement a choisir entre deux portes identiques.
+ *
+ * Meme mecanique que le « + » : fermeture au clic exterieur et a « Echap ».
+ * Un menu qui reste ouvert par-dessus la page oblige a revenir cliquer la
+ * bascule pour s'en debarrasser.
  *
  * « Mes enchaînements » et « Mes favoris » sont annonces comme A VENIR plutot
  * que poses en liens morts : leurs destinations arrivent a l'Epic 5, et un lien
@@ -67,22 +71,19 @@ export function MenuCompte({ email, seDeconnecter }: Proprietes) {
         <div className="menu-compte__panneau" role="menu">
           <p className="menu-compte__identite texte-attenue">{email}</p>
 
-          <Link
-            className="menu-compte__item"
-            role="menuitem"
-            href="/enchainements/nouveau"
-            onClick={() => setOuvert(false)}
-          >
-            Créer un enchaînement
-          </Link>
-
-          <p className="menu-compte__avenir texte-attenue">Mes enchaînements et mes favoris : bientôt.</p>
+          <p className="menu-compte__avenir texte-attenue">
+            Mes enchaînements et mes favoris : bientôt.
+          </p>
 
           {/* Un FORMULAIRE, pas un lien : la deconnexion change l'etat du
               serveur, elle ne doit pas partir sur une simple visite d'URL
               (prechargement, robot d'indexation, bouton « precedent »). */}
           <form action={seDeconnecter}>
-            <button type="submit" className="menu-compte__item menu-compte__item--action" role="menuitem">
+            <button
+              type="submit"
+              className="menu-compte__item menu-compte__item--action"
+              role="menuitem"
+            >
               Se déconnecter
             </button>
           </form>

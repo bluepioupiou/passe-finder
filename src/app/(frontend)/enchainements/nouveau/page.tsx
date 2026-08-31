@@ -1,14 +1,13 @@
-import { headers as getHeaders } from 'next/headers.js'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
-import { Bouton } from '@/components/Bouton'
 import { Compositeur } from '@/components/Compositeur'
 import { chargerCatalogue, vuesDuCatalogue } from '@/catalogue'
 import { VISIBILITES } from '@/collections/Enchainement'
 import { dateDuJour } from '@/composition'
 import config from '@/payload.config'
+import { exigerSession } from '@/porte'
 import { enregistrerEnchainement } from './actions'
 import './nouvel-enchainement.css'
 
@@ -21,47 +20,19 @@ export const metadata = {
 /**
  * Composer un enchainement (E6, Stories 4.2 / 4.3) — reserve aux connectes.
  *
- * La porte est ici, cote SERVEUR : l'absence du « + » dans la barre de
- * navigation n'est qu'un confort d'affichage, elle ne protege rien. Un anonyme
- * qui connait l'URL tombe donc sur l'invitation a se connecter, et l'action
- * d'enregistrement refuse de son cote (les deux verifient, independamment).
+ * La porte passe par `exigerSession` (Story 3.5) : c'est le contrat commun,
+ * pas une regle propre a cette page. Un anonyme est donc EMMENE vers la
+ * connexion, avec le chemin d'ou il vient, plutot que de tomber sur une page
+ * d'invitation qui lui demandait un clic de plus pour la meme chose.
  *
- * Le lien de connexion renvoie vers /connexion en emportant `suite` : apres
- * s'etre connecte, on revient ICI plutot que sur l'accueil, et on reprend ce
- * qu'on etait venu faire.
+ * Cette porte soigne le parcours, elle ne le securise pas : l'action
+ * d'enregistrement verifie de son cote, et les `access` de la collection
+ * decident en dernier ressort (ADD-5). Les trois verifient, independamment.
  */
 export default async function NouvelEnchainement() {
+  await exigerSession('/enchainements/nouveau')
+
   const payload = await getPayload({ config: await config })
-  const { user } = await payload.auth({ headers: await getHeaders() })
-
-  if (!user) {
-    return (
-      <div className="contenu-page">
-        <p className="fiche-fil">
-          <Link href="/enchainements">Enchaînements</Link>
-        </p>
-
-        <header className="nouveau-entete">
-          <h1>Composer un enchaînement</h1>
-          <p className="texte-attenue">
-            Composer demande un compte : c&apos;est ce compte qui devient l&apos;auteur de
-            l&apos;enchaînement, et qui décide ensuite de le garder privé ou de le partager.
-          </p>
-        </header>
-
-        <div className="nouveau-actions">
-          <Bouton href="/connexion?suite=%2Fenchainements%2Fnouveau">Se connecter</Bouton>
-          <Bouton href="/inscription?suite=%2Fenchainements%2Fnouveau" variante="fantome">
-            Créer un compte
-          </Bouton>
-          <Bouton href="/enchainements" variante="fantome">
-            Voir les enchaînements partagés
-          </Bouton>
-        </div>
-      </div>
-    )
-  }
-
   // Le catalogue entier tient en memoire (30 positions, ~110 passes) et se lit
   // en deux requetes ; le compositeur n'en recoit que la projection dont il a
   // besoin (voir `vuesDuCatalogue`).

@@ -106,6 +106,36 @@ test.describe('Compte', () => {
     await contexte.close()
   })
 
+  test("la porte emmène un anonyme vers la connexion, puis le ramène", async () => {
+    // Story 3.5 : le contrat complet, sur une route protegee. On repart d un
+    // contexte neuf pour etre reellement anonyme.
+    const contexte = await page.context().browser()!.newContext()
+    const visiteur = await contexte.newPage()
+
+    await visiteur.goto('/enchainements/nouveau')
+    await expect(visiteur).toHaveURL(/\/connexion\?suite=%2Fenchainements%2Fnouveau$/)
+
+    // La page dit POURQUOI elle demande un compte, sinon elle se lit comme un refus.
+    await expect(visiteur.getByText('Cette page demande un compte.')).toBeVisible()
+
+    await visiteur.fill('#email', compte.email)
+    await visiteur.fill('#motDePasse', compte.motDePasse)
+    await visiteur.getByRole('button', { name: 'Se connecter' }).click()
+
+    // Ramene a ce qu il voulait faire, et le compositeur est bien la.
+    await expect(visiteur).toHaveURL(/\/enchainements\/nouveau$/)
+    await expect(visiteur.getByLabel("D'où part l'enchaînement ?")).toBeVisible()
+
+    await contexte.close()
+  })
+
+  test("un compte déjà connecté n'est pas renvoyé vers la connexion", async () => {
+    await page.goto('/enchainements/nouveau')
+
+    await expect(page).toHaveURL(/\/enchainements\/nouveau$/)
+    await expect(page.getByLabel("D'où part l'enchaînement ?")).toBeVisible()
+  })
+
   test("le back-office refuse un compte ordinaire", async () => {
     // Decision du 2026-08-31 : /admin est reserve aux administrateurs. Un eleve
     // connecte ne doit pas y entrer, meme en connaissant l'URL.

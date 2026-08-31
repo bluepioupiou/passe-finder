@@ -39,8 +39,12 @@ export default async function Connexion({
     <div className="contenu-page">
       <header className="compte-entete">
         <h1>Se connecter</h1>
+        {/* Arrive par la porte d acces (Story 3.5) : on explique la demande,
+            sinon l'ecran de connexion se lit comme un refus. */}
         <p className="texte-attenue">
-          Un compte sert à composer tes enchaînements et à les retrouver, ici ou sur ton téléphone.
+          {suite
+            ? 'Cette page demande un compte. Connecte-toi, et tu reprendras où tu allais.'
+            : 'Un compte sert à composer tes enchaînements et à les retrouver, ici ou sur ton téléphone.'}
         </p>
       </header>
 
@@ -49,7 +53,7 @@ export default async function Connexion({
         libelle="Se connecter"
         suite={suite}
         alternative={{
-          texte: "Pas encore de compte ?",
+          texte: 'Pas encore de compte ?',
           lien: suite ? `/inscription?suite=${encodeURIComponent(suite)}` : '/inscription',
           libelleLien: 'En créer un',
         }}

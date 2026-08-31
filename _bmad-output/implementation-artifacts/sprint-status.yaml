@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-31 (stories 3-1 et 3-2 : inscription et connexion)
+# last_updated: 2026-08-31 (story 3-5 : porte d acces aux actions reservees)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -424,6 +424,53 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# STORY 3-5 : PORTE D ACCES AUX ACTIONS RESERVEES (2026-08-31)
+# ---------------------------------------------------------------------------
+# Derniere story faisable de l Epic 3 (3-3 attend un expediteur d email).
+#
+# LE CONTRAT est dans src/porte.ts, sous DEUX FORMES, et cette distinction est
+# tout l interet du module :
+#   - `exigerSession(retour)` pour une PAGE : redirige vers /connexion en
+#     emportant le chemin d origine. La personne n a encore rien fait,
+#     l emmener ne lui coute rien ;
+#   - `sessionCourante()` pour une ACTION : RENVOIE la session sans rediriger.
+#     Une action est appelee alors qu un travail est deja a l ecran (une chaine
+#     composee) ; rediriger le jetterait. Elle decide donc elle-meme quoi
+#     afficher, en gardant le travail (NFR-4, UX-DR16).
+#
+# DEMONTRE ET BRANCHE, comme l exige le dernier AC :
+#   - /enchainements/nouveau passe par `exigerSession`. Il affichait jusqu ici
+#     une page d invitation avec un bouton « Se connecter » : un clic de plus
+#     pour le meme resultat. Il emmene desormais directement ;
+#   - l action d enregistrement passe par `sessionCourante` ;
+#   - la barre de navigation aussi — trois copies du meme `payload.auth` sont
+#     devenues un seul appel.
+# Favori (5-1) et profil (5-2) s y brancheront sans rien reecrire.
+#
+# LA PORTE NE SECURISE RIEN, et c est ecrit dans le module : elle soigne le
+# PARCOURS. Les `access` de la collection decident en dernier ressort (ADD-5).
+# Page, action et collection verifient, independamment.
+#
+# `retour` EST PASSE EXPLICITEMENT plutot que devine : Next ne donne pas l URL
+# courante a un composant serveur de facon fiable, et une valeur devinee qui se
+# trompe renverrait la personne ailleurs que la ou elle voulait aller — pire
+# que de ne pas la renvoyer du tout.
+#
+# L ecran de connexion DIT POURQUOI il demande un compte quand on arrive par la
+# porte. Sans cela, il se lit comme un refus plutot que comme une etape.
+#
+# RETIRE EN PASSANT (demande d Alain) : l entree « Créer un enchaînement » du
+# menu de compte. Le « + » voisin est la seule porte de creation ; deux entrees
+# pour le meme geste, a quelques dizaines de pixels l une de l autre, n ouvrent
+# aucun chemin de plus.
+#
+# 37 unitaires, 21 integration, 25 e2e (2 ajoutes), build de prod OK.
+#
+# L EPIC 3 EST DESORMAIS COMPLETE SAUF 3-3, qui attend la decision SES /
+# Resend — la seule story du projet a dependre d un envoi d email.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # CONVENTION DE STATUT — QUAND UNE STORY PASSE `done` (decision Alain, 2026-08-30)
 # ---------------------------------------------------------------------------
 # Constat : 22 stories sont en `review` et AUCUNE en `done`. Ce n'est pas un
@@ -561,6 +608,182 @@ action_items:
       VOULU : ils exercent la vraie application, qui a besoin du catalogue migre.
       Chaque fichier e2e nettoie derriere lui (titres horodates, comptes
       dedies). A surveiller si un scenario futur oublie son menage.
+  # Releve par Alain le 2026-08-31, en regardant une fiche passe.
+  - id: deroule-passe-mise-en-forme
+    status: open
+    titre: "Mettre en forme le deroule d une passe"
+    concerne: [2-6-fiche-passe-publique-navigation-vers-les-positions]
+    constat: >
+      Le deroule est aujourd hui un simple paragraphe. Il porte pourtant une
+      STRUCTURE FORTE que le rendu aplatit : le texte est ecrit temps par temps
+      (« 1,2 : … », « 3 et 4 : … », « 5 et 6 : … »), c est-a-dire sur les 6
+      temps du rock. Constate sur les vraies donnees : 110 passes sur 110 ont
+      un deroule, et 105 sur 110 sont multi-lignes. Ce n est donc pas un cas
+      marginal, c est ce qu on lit sur chaque fiche.
+      Ce qui existe deja et ne doit pas etre perdu : `white-space: pre-line`
+      preserve bien les sauts de ligne d origine. Rien n est casse — il manque
+      la mise en forme qui ferait VOIR les temps au lieu de les laisser couler
+      dans un bloc de texte.
+    demande:
+      - "Donner au deroule une forme qui montre les temps, plutot qu un
+         paragraphe continu. Forme exacte a trancher a l ecran."
+    nuances_a_instruire:
+      - >
+        LES TEMPS SONT DU TEXTE LIBRE, PAS UN CHAMP. Les rendre visuellement
+        distincts suppose soit de les ANALYSER a l affichage (fragile : les
+        formes varient — « 1,2 : », « 3 et 4 : », « 5 et 6 : » — et 5 deroules
+        n ont aucun saut de ligne), soit de changer le modele (une liste de
+        temps sur la Passe, avec reprise des 110 deroules existants). Le
+        premier est reversible et ne touche pas aux donnees ; le second est
+        plus juste mais engage une migration. A trancher AVANT de coder.
+      - >
+        Le plus long deroule fait 1706 caracteres. Toute mise en forme doit
+        tenir sur telephone sans devenir un mur : c est la que la fiche est
+        lue, en cours ou juste apres.
+      - >
+        Ne pas transformer le deroule en tableau des 6 temps : une passe ne
+        remplit pas toujours les 6, et certaines en debordent. La forme doit
+        suivre le texte reel, pas une grille theorique.
+    a_signaler: >
+      Une passe porte « A décrire » en guise de deroule — donnee historique
+      incomplete, pas un defaut d affichage. A corriger dans /admin.
+    taille_estimee: "petite si mise en forme seule (CSS et balisage) ; moyenne si on structure le modele"
+
+  # Demande d Alain le 2026-08-31. Formalise la note « HTML brut dans les
+  # descriptions » laissee ouverte dans la TRANCHE LECTURE DES ENCHAINEMENTS.
+  - id: musique-enchainement-champ
+    status: open
+    titre: "Champ « musique » libre sur l enchainement"
+    concerne:
+      - 4-3-enregistrer-un-enchainement-metadonnees-defaut-prive-sauvegarde-fiable
+      - 6-3-migrer-les-enchainements-liaisons-ordonnees
+    constat: >
+      La musique n a pas de place dans le modele, alors qu elle appartient a
+      l enchainement : on danse une choregraphie SUR un morceau. Faute de
+      champ, l information a ete glissee dans la description, et l historique
+      en porte la trace. Constate sur les vraies donnees : 5 enchainements sur
+      120 embarquent un lien dans leur description, et 2 d entre eux
+      contiennent du balisage HTML brut (<a>, </br>) qui s affiche en toutes
+      lettres sur la fiche.
+      Les 5 liens disent d eux-memes ce que le champ doit accepter :
+        - 2 chemins relatifs « musiques/*.mp3 » — fichiers de l ANCIEN site ;
+        - 2 URL absolues vers www.passe-finder.fr/*.mp3 — ancien domaine ;
+        - 1 lien DEEZER (deezer.com/listen-4200101).
+      Autrement dit le cas « fournisseur de streaming » existe DEJA dans le
+      catalogue, il n a simplement jamais eu de champ ou se poser.
+    demande:
+      - "Ajouter un champ « musique » LIBRE sur l enchainement : on doit
+         pouvoir y mettre une URL, ou un lien de reference vers un fournisseur
+         (Spotify ou autre)."
+      - "Reprendre les 5 descriptions historiques : sortir le lien vers le
+         nouveau champ et nettoyer le HTML brut qui reste affiche."
+    nuances_a_instruire:
+      - >
+        LIBRE veut dire libre, mais un champ libre qui sera RENDU COMME UN LIEN
+        est une saisie utilisateur affichee : il faudra n ouvrir que http(s)
+        (un « javascript: » ne doit jamais devenir un lien cliquable) et poser
+        rel="noopener noreferrer" sur la sortie. Ce champ sera rempli par les
+        eleves des la Story 4.5, pas seulement par Alain.
+      - >
+        4 des 5 liens sont probablement MORTS : les deux chemins relatifs
+        pointent vers des fichiers de l ancien site, et les deux URL absolues
+        vers l ancien domaine en http. Question a trancher AVANT la reprise :
+        ces mp3 existent-ils encore quelque part ? Les heberger est une autre
+        decision (stockage, droits) que celle d ajouter un champ.
+      - >
+        Ne pas confondre avec la VIDEO (Story 4.6, FR-16/FR-37), qui est un
+        champ distinct et deja prevu : la video montre l execution, la musique
+        est ce sur quoi on danse. Deux champs, deux usages — ne pas les fondre
+        en un « media » generique.
+      - >
+        Un champ texte libre suffit-il, ou faut-il un libelle en plus de l URL
+        (« Gene Vincent — Be-Bop-A-Lula ») ? Le nom du morceau se lit mieux
+        qu une URL sur la fiche, et survit a un lien mort. A trancher a l ecran.
+    taille_estimee: "petite — un champ, une migration de schema, la reprise de 5 fiches a la main"
+
+  # Demande d Alain le 2026-08-31. DEUX SUJETS distincts dans une meme demande :
+  # l identifiant public, et le modele de visibilite. Ils se tiennent, mais ils
+  # ne coutent pas du tout la meme chose.
+  - id: identifiant-opaque-et-visibilites
+    status: open
+    titre: "Identifiant opaque et modele de visibilite elargi"
+    concerne:
+      - 4-4-vue-lecture-partage-par-url-controles-de-partage
+      - 4-3-enregistrer-un-enchainement-metadonnees-defaut-prive-sauvegarde-fiable
+    constat: >
+      Aujourd hui l URL d un enchainement est /enchainements/<id>, ou id est
+      l entier auto-incremente de la base : les 120 enchainements migres vont
+      de 1 a 120. On passe donc de l un a l autre en changeant un chiffre.
+      Le modele de visibilite, lui, est BINAIRE (FR-17 / ADD-6) : prive ou
+      partage, ou partage veut dire « lisible sans connexion ».
+    demande:
+      - "Remplacer l identifiant qui se suit par un HASH, plus difficile a
+         deviner."
+      - "Elargir la visibilite a quatre cas : public, totalement prive, partage
+         au sein d une ecole ou d un cours, et LIEN DE PARTAGE genere (modele
+         YouTube)."
+    nuances_a_instruire:
+      - >
+        LE HASH NE PROTEGE PAS LE PRIVE, ET LE PRIVE N EST PAS EXPOSE
+        AUJOURD HUI. Un enchainement prive repond deja 404 a qui n en est pas
+        l auteur, y compris par URL directe et par l API : ce sont les `access`
+        de la collection qui le decident, et c est couvert par des tests
+        (integration et e2e). Deviner un identifiant ne donne donc acces a
+        rien. Ce que l identifiant qui se suit laisse fuir est plus modeste :
+        le NOMBRE d enchainements et le rythme de creation.
+        Le hash est en revanche le PREREQUIS du lien de partage : dans le
+        modele YouTube, c est l URL elle-meme qui fait office de cle. Avec un
+        identifiant sequentiel, ce lien serait devinable par simple comptage.
+        A retenir dans cet ordre : on ne fait pas le hash pour reparer une
+        fuite, on le fait pour rendre le lien de partage possible.
+      - >
+        C EST MAINTENANT LE MOMENT LE MOINS CHER. Les URL publiques
+        /enchainements/<id> n existent que depuis le 2026-08-30 et le site n a
+        pas encore de vrais utilisateurs : personne n a mis un lien en favori
+        ni ne l a colle dans une conversation. Chaque semaine d usage rendra ce
+        changement plus couteux, puisqu il faudra alors garder les anciennes URL
+        vivantes.
+      - >
+        NE PAS CHANGER LA CLE PRIMAIRE. Sous Payload/Drizzle, l entier ancre
+        toutes les relations (auteur, maillons de passes, et les favoris a
+        venir). Le geste peu couteux et reversible est d AJOUTER un champ
+        d identifiant public, indexe et unique, et de router dessus — la cle
+        primaire reste ce qu elle est. Prevoir la reprise des 120 existants.
+      - >
+        LES QUATRE CAS DEMANDES NE SONT PAS UN SEUL AXE, et c est la vraie
+        difficulte de conception. Il y en a deux :
+          (1) QUI a le droit de lire — moi seul / mon cours ou mon ecole / tout
+              le monde ;
+          (2) COMMENT on arrive dessus — en naviguant et en cherchant (liste),
+              ou uniquement parce qu on a le lien (non liste).
+        Le « partage » actuel confond les deux : il rend lisible ET il fait
+        apparaitre dans les listes et la recherche. Le lien de partage YouTube,
+        c est exactement « lisible par qui a le lien, absent des listes ».
+        Separer ces deux questions avant de dessiner l enum evitera de repeindre
+        la regle a chaque nouveau cas.
+      - >
+        « ECOLE OU COURS » RESTE HORS V1 — TRANCHE PAR ALAIN LE 2026-08-31.
+        La question avait ete soulevee parce que le PRD range la visibilite
+        multi-ecoles hors perimetre v1 et la place en Vision (§8), et que le
+        brief dit que le succes du v1 ne se mesure PAS a l adoption par d
+        autres ecoles. Reponse d Alain : « pas pour maintenant, ce n est pas
+        une priorisation hors v1, on reverra ca plus tard ». La decision du
+        brief tient donc, elle n est pas rouverte.
+        Pourquoi c est note ici plutot qu oublie : le jour ou on y reviendra,
+        ce ne sera pas un champ de plus. Il faudra des entites Ecole et Cours,
+        une appartenance (qui est dans quel cours, qui l y ajoute), et la regle
+        se propagera a la recherche, aux listes, aux favoris et au profil.
+        C est un epic a instruire, pas une tache.
+        A RETENIR POUR LA SUITE : les trois autres cas (public, prive, lien de
+        partage) sont a portee du modele actuel et ne dependent pas de celui-la.
+        Ils peuvent donc avancer seuls — a condition que l enum de visibilite
+        soit dessinee en laissant la place au cas « ecole », plutot qu en
+        supposant qu il n existera jamais.
+    taille_estimee: >
+      Identifiant opaque + lien de partage : moyenne (un champ, une migration,
+      le routage, la reprise de 120 fiches) — et c est la partie faisable.
+      Ecole/cours : epic a instruire, HORS V1, reporte sciemment (2026-08-31).
+
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
   epic-1: in-progress
@@ -597,7 +820,9 @@ development_status:
   # drapeau `admin` sur users (acces de CHAMP : aucune auto-promotion), ecriture
   # du catalogue + Media reservee, amorcage par `npm run promouvoir:admin`
   3-4-role-admin-unique-gouvernance-du-catalogue: review
-  3-5-porte-d-acces-aux-actions-reservees-retour-apres-connexion: backlog
+  # contrat reutilisable dans src/porte.ts : `exigerSession` (pages, redirige)
+  # et `sessionCourante` (actions, ne redirige pas). Demontre sur le compositeur
+  3-5-porte-d-acces-aux-actions-reservees-retour-apres-connexion: review
   epic-3-retrospective: optional
 
   # --- Epic 4: Composition & enchaînements (climax du produit) ---

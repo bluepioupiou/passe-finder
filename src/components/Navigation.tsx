@@ -1,10 +1,8 @@
-import { headers as getHeaders } from 'next/headers.js'
 import Link from 'next/link'
-import { getPayload } from 'payload'
 import React from 'react'
 
-import config from '@/payload.config'
 import { seDeconnecter } from '@/app/(frontend)/compte/actions'
+import { sessionCourante } from '@/porte'
 import { IconeLoupe } from './Icones'
 import { Logo } from './Logo'
 import { MenuCompte } from './MenuCompte'
@@ -39,8 +37,7 @@ import './navigation.css'
  * cache montrerait de toute facon la barre du premier visiteur venu.
  */
 export async function Navigation() {
-  const payload = await getPayload({ config: await config })
-  const { user } = await payload.auth({ headers: await getHeaders() })
+  const user = await sessionCourante()
 
   return (
     <header className="nav">
