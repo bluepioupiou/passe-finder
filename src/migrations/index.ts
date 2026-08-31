@@ -6,6 +6,7 @@ import * as migration_20260827_200955_passe from './20260827_200955_passe';
 import * as migration_20260830_072052_enchainement from './20260830_072052_enchainement';
 import * as migration_20260830_202812_drapeau_admin from './20260830_202812_drapeau_admin';
 import * as migration_20260831_165326_favoris from './20260831_165326_favoris';
+import * as migration_20260831_195957_musique_enchainement from './20260831_195957_musique_enchainement';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20260831_165326_favoris.up,
     down: migration_20260831_165326_favoris.down,
-    name: '20260831_165326_favoris'
+    name: '20260831_165326_favoris',
+  },
+  {
+    up: migration_20260831_195957_musique_enchainement.up,
+    down: migration_20260831_195957_musique_enchainement.down,
+    name: '20260831_195957_musique_enchainement'
   },
 ];

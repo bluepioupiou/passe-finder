@@ -20,6 +20,8 @@ import { cleanupTestUser, seedTestUser, type Identifiants } from '../helpers/see
  */
 
 const TITRE = `Test compositeur — ${Date.now()}`
+const MUSIQUE = 'Gene Vincent — Be-Bop-A-Lula'
+const LIEN_MUSIQUE = 'https://open.spotify.com/track/test'
 
 /**
  * Compte dedie a ce fichier : partager celui de `admin.e2e.spec.ts` reviendrait
@@ -100,7 +102,24 @@ test.describe('Compositeur', () => {
     await expect(maillons).toHaveCount(1)
 
     await page.getByLabel('Titre').fill(TITRE)
-    await page.getByRole('button', { name: "Enregistrer l'enchaînement" }).click()
+
+    // La musique appartient a l'enchainement : on danse une choregraphie SUR un
+    // morceau. Deux champs, dont le titre survit au lien mort.
+    await page.getByLabel('Musique', { exact: true }).fill(MUSIQUE)
+    const lien = page.getByLabel('Lien de la musique')
+    const enregistrer = page.getByRole('button', { name: "Enregistrer l'enchaînement" })
+
+    // Une saisie qui n'est pas une adresse web BLOQUE l'enregistrement des la
+    // frappe : decouvrir la faute apres avoir compose la chaine entiere serait
+    // une punition. L'action serveur et la collection refusent aussi, de leur
+    // cote — c'est ici seulement qu'on evite l'aller-retour.
+    await lien.fill('pas une adresse')
+    await expect(enregistrer).toBeDisabled()
+
+    await lien.fill(LIEN_MUSIQUE)
+    await expect(enregistrer).toBeEnabled()
+
+    await enregistrer.click()
 
     // On atterrit sur la fiche : la confirmation, c'est de voir son travail.
     await expect(page).toHaveURL(/\/enchainements\/\d+$/)
@@ -108,5 +127,22 @@ test.describe('Compositeur', () => {
     // Ne s'affiche que pour l'auteur, et dit que ce lien ne mene nulle part
     // pour ses eleves tant qu'il ne l'a pas partage.
     await expect(page.getByText('Privé')).toBeVisible()
+
+    // Sur la fiche, c'est le NOM du morceau qui est cliquable, jamais l'URL
+    // brute, et l'hebergeur est nomme en toutes lettres a cote.
+    const musique = page.getByRole('link', { name: MUSIQUE })
+    await expect(musique).toHaveAttribute('href', LIEN_MUSIQUE)
+    await expect(musique).toHaveAttribute('rel', 'noopener noreferrer')
+    await expect(page.getByText('sur Spotify')).toBeVisible()
+
+    // Dans la grille, la carte dit qu'il y a une musique — la note seule, a la
+    // suite de la date et du nombre de passes. L'intitule est porte pour les
+    // lecteurs d'ecran : ici l'icone EST l'information, elle n'accompagne pas
+    // un texte deja la.
+    await page.goto('/enchainements')
+    await page.getByLabel('Rechercher un enchaînement').fill(TITRE)
+    const carte = page.locator('.enchainement-carte', { hasText: TITRE })
+    await expect(carte.locator('.enchainement-musique svg')).toBeVisible()
+    await expect(carte.locator('.enchainement-musique')).toHaveText(/Avec musique/)
   })
 })

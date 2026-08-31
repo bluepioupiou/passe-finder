@@ -3,6 +3,7 @@
 import { getPayload } from 'payload'
 
 import { jourVersISO, type ResultatEnregistrement, type SaisieEnchainement } from '@/composition'
+import { lienEcoutable } from '@/musique'
 import { VISIBILITES } from '@/collections/Enchainement'
 import config from '@/payload.config'
 import { sessionCourante } from '@/porte'
@@ -31,6 +32,19 @@ export async function enregistrerEnchainement(
     return { ok: false, message: 'Un enchaînement contient au moins une passe.' }
   }
 
+  // Le lien de la musique est revalide ICI, jamais seulement dans le
+  // compositeur : il finira en `<a href>` sur une fiche que d'autres lisent.
+  // La collection le refuse aussi de son cote — trois gardes, independantes.
+  const musiqueTitre = saisie.musique.titre.trim()
+  const musiqueLienSaisi = saisie.musique.lien.trim()
+  const musiqueLien = lienEcoutable(musiqueLienSaisi)
+  if (musiqueLienSaisi !== '' && musiqueLien === null) {
+    return {
+      ok: false,
+      message: 'Le lien de la musique doit être une adresse web (http:// ou https://).',
+    }
+  }
+
   const visibilite = VISIBILITES.some((option) => option.value === saisie.visibilite)
     ? (saisie.visibilite as (typeof VISIBILITES)[number]['value'])
     : 'prive'
@@ -55,6 +69,7 @@ export async function enregistrerEnchainement(
       data: {
         titre,
         description: saisie.description.trim() || undefined,
+        musique: { titre: musiqueTitre || undefined, lien: musiqueLien ?? undefined },
         notes: saisie.notes.trim() || undefined,
         date: jourVersISO(saisie.date),
         auteur: user.id,

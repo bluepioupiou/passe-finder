@@ -1,5 +1,7 @@
-import type { CollectionConfig, Where } from 'payload'
+import type { CollectionBeforeChangeHook, CollectionConfig, Where } from 'payload'
 
+import { lienEcoutable } from '../musique'
+import { titreDuMorceau } from '../musique-oembed'
 import { auteurOuAdmin, estAdmin, peutCreerEnchainement } from './acces'
 
 /** Visibilité d'un enchaînement (FR-17, AD-6). */
@@ -7,6 +9,41 @@ export const VISIBILITES = [
   { label: 'Privé', value: 'prive' },
   { label: 'Partagé', value: 'partage' },
 ] as const
+
+/** Les deux moitiés du champ musique, telles qu'elles arrivent à l'écriture. */
+type SaisieMusique = { titre?: string | null; lien?: string | null }
+
+/**
+ * Complète le TITRE de la musique quand seul le lien a été donné (demande
+ * d'Alain, 2026-08-31).
+ *
+ * POSÉ SUR LA COLLECTION, et non dans l'action du compositeur : /admin, l'API
+ * et le compositeur écrivent tous les trois, et une règle écrite trois fois
+ * dérive. Ici elle vaut pour toute écriture, quelle que soit la porte.
+ *
+ * Il ne se déclenche QUE si l'écriture porte un lien et qu'aucun titre n'est
+ * connu — ni dans la saisie, ni sur le document existant. Autrement dit : on
+ * ne recouvre jamais ce qu'un humain a écrit, et une modification qui ne
+ * touche pas à la musique n'appelle personne.
+ *
+ * L'échec est un NON-ÉVÉNEMENT : `titreDuMorceau` ne lève jamais et rend `null`
+ * si le fournisseur ne répond pas. L'enregistrement continue avec le lien seul,
+ * la fiche affiche « Écouter sur Spotify » comme avant.
+ */
+const completerTitreMusique: CollectionBeforeChangeHook = async ({ data, originalDoc }) => {
+  const saisie = (data as { musique?: SaisieMusique | null }).musique
+  const lien = saisie?.lien
+  if (!lien) return data
+
+  const existant = (originalDoc as { musique?: SaisieMusique | null } | undefined)?.musique
+  const dejaConnu = (saisie?.titre ?? existant?.titre ?? '').trim()
+  if (dejaConnu !== '') return data
+
+  const titre = await titreDuMorceau(lien)
+  if (titre === null) return data
+
+  return { ...data, musique: { ...saisie, titre } }
+}
 
 /**
  * Enchaînement — suite ORDONNÉE de passes (FR-14, ADD-18).
@@ -73,6 +110,9 @@ export const Enchainement: CollectionConfig = {
     update: auteurOuAdmin,
     delete: auteurOuAdmin,
   },
+  hooks: {
+    beforeChange: [completerTitreMusique],
+  },
   fields: [
     {
       name: 'titre',
@@ -87,6 +127,47 @@ export const Enchainement: CollectionConfig = {
       admin: {
         description: "Ce qu'il faut retenir de l'enchaînement.",
       },
+    },
+    {
+      name: 'musique',
+      type: 'group',
+      label: 'Musique',
+      admin: {
+        description:
+          "Le morceau sur lequel l'enchaînement se danse. Un titre, un lien, ou les deux.",
+      },
+      fields: [
+        {
+          name: 'titre',
+          type: 'text',
+          label: 'Titre',
+          admin: {
+            description:
+              'Ex. « Gene Vincent — Be-Bop-A-Lula ». Survit au lien mort. Laissé vide, il est ' +
+              'récupéré depuis le lien quand le fournisseur le publie.',
+          },
+        },
+        {
+          name: 'lien',
+          type: 'text',
+          label: 'Lien',
+          admin: {
+            description: 'Spotify, Deezer, YouTube… Facultatif.',
+          },
+          // Ce champ sera rempli par les élèves, et il est RENDU COMME UN LIEN :
+          // on refuse ici tout ce qui n'est pas http(s) plutôt que de compter sur
+          // l'affichage pour s'en méfier. La fiche reverifie de son côté
+          // (`presenterMusique`) — les deux, indépendamment.
+          validate: (valeur: string | null | undefined) => {
+            if (!valeur || valeur.trim() === '') return true
+
+            return (
+              lienEcoutable(valeur) !== null ||
+              'Le lien doit être une adresse web (commençant par http:// ou https://).'
+            )
+          },
+        },
+      ],
     },
     {
       name: 'notes',

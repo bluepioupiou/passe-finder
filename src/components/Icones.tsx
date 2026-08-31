@@ -142,3 +142,23 @@ export function IconeEtoile({ rempli = false, ...proprietes }: ProprietesIcone &
     </svg>
   )
 }
+
+/**
+ * Note de musique : le morceau sur lequel l'enchainement se danse.
+ *
+ * UNE SEULE icone pour TOUS les fournisseurs, decide avec Alain le 2026-08-31 :
+ * les logos de marque sont des formes pleines, avec leurs couleurs imposees et
+ * leurs regles d'usage propres — ils jureraient au milieu d'un jeu d'icones au
+ * trait qui suit `currentColor` et les deux themes. Le fournisseur est donc
+ * nomme en toutes lettres a cote (« Ecouter sur Spotify »), ce qui a l'avantage
+ * de marcher aussi pour ceux qu'on ne connait pas.
+ */
+export function IconeNote(proprietes: ProprietesIcone) {
+  return (
+    <Svg {...proprietes}>
+      <path d="M9 18V5.5l11-2V16" />
+      <circle cx="6.5" cy="18" r="2.6" />
+      <circle cx="17.5" cy="16" r="2.6" />
+    </Svg>
+  )
+}

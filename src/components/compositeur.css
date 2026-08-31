@@ -261,3 +261,30 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Indice sous un champ : dit ce que le champ fait tout seul, sans encombrer son
+   intitule. Meme discretion que `.compo-erreur-champ`, sans l'alarme. */
+.compo-indice {
+  margin-top: var(--space-2);
+  font-size: var(--label-caps-size);
+  line-height: var(--body-line);
+}
+
+/* La saisie fautive se signale elle-meme, en plus du message : sans cela, le
+   champ garde une bordure normale et l'oeil doit relier le texte rouge au bon
+   endroit. La couleur n'est jamais SEULE a porter l'information — le message
+   sous le champ le dit en toutes lettres, et `aria-invalid` le dit aux lecteurs
+   d'ecran. */
+.compo-saisie[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+/* Erreur portee par UN champ (le lien de la musique), a distinguer de
+   `.compo-erreur` qui porte l'echec de l'enregistrement entier : celle-ci se
+   glisse sous la saisie fautive, sans encadre, pour ne pas hurler sur une
+   faute de frappe. */
+.compo-erreur-champ {
+  margin-top: var(--space-2);
+  color: var(--danger);
+  font-size: var(--label-caps-size);
+}
