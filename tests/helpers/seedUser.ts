@@ -4,6 +4,8 @@ import config from '../../src/payload.config.js'
 export interface Identifiants {
   email: string
   password: string
+  /** Drapeau admin (Story 3.4). Necessaire pour entrer dans /admin. */
+  admin?: boolean
 }
 
 export const testUser: Identifiants = {
@@ -33,6 +35,9 @@ export async function seedTestUser(user: Identifiants = testUser): Promise<void>
   })
 
   // Create fresh test user
+  // `admin` porte un acces de CHAMP qui le refuse a qui n'est pas deja
+  // administrateur. Le semis passe par l'API Local sans `overrideAccess:
+  // false`, donc les droits sont court-circuites : le drapeau est bien pose.
   await payload.create({
     collection: 'users',
     data: user,

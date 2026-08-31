@@ -240,3 +240,12 @@
     width: 220px;
   }
 }
+
+/*
+ * « Se connecter » de la barre (Story 3.2), pour un visiteur anonyme.
+ * Un LIEN et non un bouton plein : la barre n'a qu'un seul accent, le « + »
+ * des creations. Proposer la connexion ne doit pas crier plus fort que composer.
+ */
+.nav__connexion {
+  white-space: nowrap;
+}

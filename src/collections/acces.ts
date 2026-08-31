@@ -41,3 +41,39 @@ export const adminSeul: Access = ({ req }) => estAdmin(req.user)
  * d'une valeur, pas la selection de documents.
  */
 export const champAdminSeul: FieldAccess = ({ req }) => estAdmin(req.user)
+
+/**
+ * Acces reserve a l'AUTEUR du document (ou a un administrateur).
+ *
+ * Renvoie une CONTRAINTE DE REQUETE plutot qu'un booleen, et c'est la
+ * difference qui compte : Payload l'applique a la selection des documents, donc
+ * la regle vaut aussi pour une mise a jour ou une suppression par lot, et pour
+ * l'API REST/GraphQL. Un booleen `true` autoriserait l'operation sur N'IMPORTE
+ * QUEL document.
+ *
+ * Pose la regle attendue par la Story 4.5, mais c'est un PREREQUIS de la
+ * Story 3.1 : le jour ou l'inscription s'ouvre, sans elle, le premier inscrit
+ * peut reecrire les enchainements des autres eleves.
+ */
+export const auteurOuAdmin: Access = ({ req }) => {
+  if (estAdmin(req.user)) return true
+  if (!req.user) return false
+
+  return { auteur: { equals: req.user.id } }
+}
+
+/**
+ * Acces reserve a SON PROPRE compte (ou a un administrateur).
+ *
+ * Sans cela, les droits par defaut de Payload autorisent tout compte connecte a
+ * lire et modifier TOUS les comptes : la liste des emails de la classe d'un
+ * cote, le changement de mot de passe d'autrui de l'autre. Inoffensif tant que
+ * personne ne peut se connecter ; indispensable des l'ouverture de
+ * l'inscription (Story 3.1).
+ */
+export const soiMemeOuAdmin: Access = ({ req }) => {
+  if (estAdmin(req.user)) return true
+  if (!req.user) return false
+
+  return { id: { equals: req.user.id } }
+}

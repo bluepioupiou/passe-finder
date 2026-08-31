@@ -4,8 +4,10 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import config from '@/payload.config'
+import { seDeconnecter } from '@/app/(frontend)/compte/actions'
 import { IconeLoupe } from './Icones'
 import { Logo } from './Logo'
+import { MenuCompte } from './MenuCompte'
 import { MenuCreation } from './MenuCreation'
 import { MenuMobile } from './MenuMobile'
 import { SelecteurTheme } from './SelecteurTheme'
@@ -25,10 +27,12 @@ import './navigation.css'
  * Sur petit ecran, tout ce bloc se replie derriere un chevron (`MenuMobile`) :
  * seule la marque reste visible tant qu'on ne l'ouvre pas.
  *
- * La zone de compte est vide en attendant l'authentification (Epic 3) : un
- * bouton « Se connecter » desactive se lisait comme une panne plutot que comme
- * une fonction a venir. Meme regle pour le « + » : il n'apparait QUE pour un
- * compte connecte, plutot que de proposer une porte fermee.
+ * La zone de compte montre desormais l'etat de session (Story 3.2, UX-DR4) :
+ * connecte, un menu de compte ; anonyme, « Se connecter ». Elle est restee vide
+ * jusqu'ici a dessein — un bouton desactive se serait lu comme une panne plutot
+ * que comme une fonction a venir. Meme regle pour le « + » : il continue de
+ * n'apparaitre que pour un compte connecte, plutot que de proposer une porte
+ * fermee.
  *
  * La barre lit donc la session, ce qui rend tout le site dynamique — c'etait
  * deja le cas de chaque page (`dynamic = 'force-dynamic'`), et une page mise en
@@ -90,6 +94,13 @@ export async function Navigation() {
           </div>
 
           <div className="nav__actions">
+            {user ? (
+              <MenuCompte email={user.email} seDeconnecter={seDeconnecter} />
+            ) : (
+              <Link className="nav__lien nav__connexion" href="/connexion">
+                Se connecter
+              </Link>
+            )}
             <SelecteurTheme />
           </div>
         </MenuMobile>

@@ -11,9 +11,39 @@ export interface LoginOptions {
 }
 
 /**
- * Logs the user into the admin panel via the login page.
+ * Connexion par l'ECRAN PUBLIC (/connexion, Story 3.2).
+ *
+ * C'est desormais la porte des comptes ordinaires : depuis la Story 3.4 et la
+ * decision du 2026-08-31, `/admin` est reserve aux administrateurs, et un
+ * eleve ne peut plus s'y connecter du tout. Les scenarios qui exercent
+ * l'application passent donc par ici — ce qui a l'avantage de tester le chemin
+ * que les vraies personnes empruntent.
  */
 export async function login({
+  page,
+  serverURL = 'http://localhost:3000',
+  user,
+}: LoginOptions): Promise<void> {
+  await page.goto(`${serverURL}/connexion`)
+
+  await page.fill('#email', user.email)
+  await page.fill('#motDePasse', user.password)
+  await page.getByRole('button', { name: 'Se connecter' }).click()
+
+  // Preuve de session : le menu de compte remplace « Se connecter » dans la
+  // barre. On attend l'ETAT et non l'URL : la destination depend de `suite`.
+  await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()
+}
+
+/**
+ * Connexion au BACK-OFFICE Payload (/admin/login).
+ *
+ * Reservee aux comptes portant le drapeau `admin` : depuis la Story 3.4,
+ * `access.admin` de la collection users refuse les autres. Un compte ordinaire
+ * qui tenterait cette porte serait refuse — c'est le comportement voulu, et le
+ * scenario d'administration doit donc semer un compte administrateur.
+ */
+export async function loginBackOffice({
   page,
   serverURL = 'http://localhost:3000',
   user,
