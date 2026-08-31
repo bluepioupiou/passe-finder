@@ -4,6 +4,7 @@ import Link from 'next/link'
 import React, { useActionState } from 'react'
 
 import type { EtatFormulaire } from '@/app/(frontend)/compte/actions'
+import { Bouton } from './Bouton'
 import './formulaire-compte.css'
 
 type Proprietes = {
@@ -83,9 +84,12 @@ export function FormulaireCompte({
         ) : null}
       </div>
 
-      <button type="submit" className="bouton bouton--primaire" disabled={enCours}>
+      {/* Le composant `Bouton`, et non les classes recopiees : elles seules
+          n'entrainent pas le chargement de la feuille de style, et le bouton
+          se retrouvait sans aucun habillage sur ces deux pages. */}
+      <Bouton type="submit" disabled={enCours}>
         {enCours ? 'Un instant…' : libelle}
-      </button>
+      </Bouton>
 
       <p className="formulaire-compte__alternative texte-attenue">
         {alternative.texte} <Link href={alternative.lien}>{alternative.libelleLien}</Link>
