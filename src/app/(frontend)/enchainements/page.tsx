@@ -3,9 +3,10 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { CarteEnchainement } from '@/components/CarteEnchainement'
 import { GrilleFiltrable } from '@/components/GrilleFiltrable'
 import { chargerCatalogue } from '@/catalogue'
-import { chaineDe, extremites, formaterDate } from '@/enchainements'
+import { idsFavoris } from '@/favoris'
 import config from '@/payload.config'
 import './enchainements.css'
 
@@ -54,44 +55,16 @@ export default async function EnchainementsPage({
     chargerCatalogue(payload),
   ])
 
-  const elements = enchainements.map((enchainement) => {
-    const passes = chaineDe(enchainement.passes, catalogue.passes, catalogue.positions)
-    const { depart, arrivee } = extremites(passes)
-    const date = formaterDate(enchainement.date)
-    const nombre = enchainement.passes.length
+  // Les favoris de la personne connectee, en UNE requete : la grille en a
+  // besoin par carte pour le filtre « mes favoris ».
+  const favoris = await idsFavoris(payload, user)
 
-    return {
-      cle: enchainement.id,
-      nom: enchainement.titre,
-      carte: (
-        // Même ordre que les cartes Position et Passe : le titre d'abord, car
-        // c'est lui qu'on cherche des yeux quand la grille se réduit à la
-        // frappe. Puis le trajet, puis la description coupée.
-        <Link className="enchainement-carte" href={`/enchainements/${enchainement.id}`}>
-          <h2 className="enchainement-titre">{enchainement.titre}</h2>
-
-          <p className="enchainement-meta texte-attenue">
-            {date ? <span className="donnee">{date}</span> : null}
-            {date ? ' · ' : null}
-            {nombre} passe{nombre > 1 ? 's' : ''}
-          </p>
-
-          {depart && arrivee ? (
-            <p className="enchainement-trajet texte-attenue">
-              {depart.nom} <span className="enchainement-fleche">→</span> {arrivee.nom}
-            </p>
-          ) : null}
-
-          {enchainement.description ? (
-            <p className="enchainement-description texte-attenue texte-coupe">
-              {enchainement.description}
-            </p>
-          ) : null}
-        </Link>
-      ),
-    }
-  })
-
+  const elements = enchainements.map((enchainement) => ({
+    cle: enchainement.id,
+    nom: enchainement.titre,
+    favori: favoris.has(enchainement.id),
+    carte: <CarteEnchainement enchainement={enchainement} catalogue={catalogue} />,
+  }))
   return (
     <div className="contenu-page">
       <header className="enchainements-entete">
@@ -119,6 +92,9 @@ export default async function EnchainementsPage({
           invite="Titre de l'enchaînement…"
           singulier="enchaînement"
           pluriel="enchaînements"
+          // Le filtre n'a de sens que pour qui a des favoris : le proposer a un
+          // visiteur anonyme afficherait une case qui ne peut rien donner.
+          filtreFavoris={user ? favoris.size > 0 : false}
         />
       )}
     </div>

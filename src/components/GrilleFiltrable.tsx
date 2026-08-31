@@ -18,6 +18,8 @@ export type ElementCatalogue = {
   nom: string
   /** Valeur brute de difficulte ('1' a '4'), utilisee par le filtre des passes. */
   difficulte?: string | null
+  /** Cet element est-il dans les favoris de la personne connectee (Story 5.1) ? */
+  favori?: boolean
   carte: React.ReactNode
 }
 
@@ -42,6 +44,7 @@ export function GrilleFiltrable({
   singulier,
   pluriel,
   optionsDifficulte,
+  filtreFavoris = false,
   requeteInitiale = '',
 }: {
   elements: ElementCatalogue[]
@@ -58,6 +61,12 @@ export function GrilleFiltrable({
    */
   optionsDifficulte?: OptionDifficulte[]
   /**
+   * Propose la case « Mes favoris ». La page en decide : elle seule sait s'il
+   * y a une session ET au moins un favori. Une case qui ne peut rien donner
+   * est pire que pas de case.
+   */
+  filtreFavoris?: boolean
+  /**
    * Requete pre-remplie, venant de l'URL (`?q=`). C'est ce qui permet au
    * « voir tout » de la page de resultats d'arriver ici avec le filtre deja
    * applique, sans que le lecteur ait a retaper sa recherche.
@@ -66,24 +75,28 @@ export function GrilleFiltrable({
 }) {
   const [requete, setRequete] = useState(requeteInitiale)
   const [difficulte, setDifficulte] = useState('')
+  const [favorisSeuls, setFavorisSeuls] = useState(false)
   const idRecherche = useId()
   const idDifficulte = useId()
+  const idFavoris = useId()
 
   const resultats = useMemo(
     () =>
       elements.filter(
         (element) =>
           correspondAuNom(element.nom, requete) &&
-          (difficulte === '' || element.difficulte === difficulte),
+          (difficulte === '' || element.difficulte === difficulte) &&
+          (!favorisSeuls || element.favori === true),
       ),
-    [elements, requete, difficulte],
+    [elements, requete, difficulte, favorisSeuls],
   )
 
-  const filtreActif = requete.trim() !== '' || difficulte !== ''
+  const filtreActif = requete.trim() !== '' || difficulte !== '' || favorisSeuls
 
   const effacer = () => {
     setRequete('')
     setDifficulte('')
+    setFavorisSeuls(false)
   }
 
   return (
@@ -124,6 +137,21 @@ export function GrilleFiltrable({
           </div>
         ) : null}
 
+        {filtreFavoris ? (
+          <div className="filtres__champ filtres__champ--case">
+            <input
+              id={idFavoris}
+              type="checkbox"
+              className="filtres__case"
+              checked={favorisSeuls}
+              onChange={(evenement) => setFavorisSeuls(evenement.target.checked)}
+            />
+            <label className="filtres__label-case" htmlFor={idFavoris}>
+              Mes favoris
+            </label>
+          </div>
+        ) : null}
+
         {filtreActif ? (
           <Bouton variante="fantome" type="button" className="filtres__effacer" onClick={effacer}>
             Tout afficher
@@ -142,7 +170,9 @@ export function GrilleFiltrable({
         <p className="texte-attenue">
           {requete.trim() !== ''
             ? `Rien trouvé pour « ${requete.trim()} ». Essaie un autre mot, ou retire les filtres.`
-            : 'Rien à cette difficulté. Choisis-en une autre, ou retire les filtres.'}
+            : favorisSeuls
+              ? 'Aucun favori ici. Décoche « Mes favoris » pour tout revoir.'
+              : 'Rien à cette difficulté. Choisis-en une autre, ou retire les filtres.'}
         </p>
       ) : (
         <ul className={classeGrille}>

@@ -9,6 +9,7 @@ import sharp from 'sharp'
 import { DATABASE_URI, PAYLOAD_SECRET } from './env'
 import { Danse } from './collections/Danse'
 import { Enchainement } from './collections/Enchainement'
+import { Favori } from './collections/Favori'
 import { Media } from './collections/Media'
 import { Passe } from './collections/Passe'
 import { Position } from './collections/Position'
@@ -26,8 +27,9 @@ export default buildConfig({
     },
   },
   // v1 : une seule collection d'authentification. Les collections métier
-  // arrivent aux Epics 2/4 ; Favori suivra à l'Epic 5.
-  collections: [Users, Danse, Media, Position, Passe, Enchainement],
+  // suivent l'ordre des dépendances : Danse → Position → Passe → Enchaînement,
+  // et Favori qui pointe vers Enchaînement et Users.
+  collections: [Users, Danse, Media, Position, Passe, Enchainement, Favori],
   editor: lexicalEditor(),
   secret: PAYLOAD_SECRET,
   typescript: {

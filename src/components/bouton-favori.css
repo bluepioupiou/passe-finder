@@ -1,0 +1,65 @@
+/*
+ * Bascule « mettre en favori » (Story 5.1).
+ *
+ * Elle vit dans l'entete de la fiche, a cote du titre. Volontairement en
+ * variante FANTOME et non en accent plein : sur la vue lecture, l'action
+ * principale reste de lire l'enchainement. Le favori se pose une fois, il ne
+ * doit pas crier plus fort que le contenu.
+ */
+
+.bouton-favori__zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.bouton-favori {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* Cible tactile confortable (UX-DR17). */
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-full);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.bouton-favori:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.bouton-favori:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+/*
+ * Pose : l'etoile prend l'accent, le bouton garde son fond. C'est l'ICONE qui
+ * porte l'etat, pas le bouton entier — un bouton entierement colore se lirait
+ * comme une action a faire plutot que comme un etat acquis.
+ */
+.bouton-favori[aria-pressed='true'] {
+  border-color: var(--accent);
+}
+
+.bouton-favori[aria-pressed='true'] .bouton-favori__icone {
+  color: var(--accent);
+}
+
+.bouton-favori__icone {
+  flex-shrink: 0;
+}
+
+.bouton-favori__erreur {
+  margin: 0;
+  font-size: var(--data-size);
+  color: var(--danger);
+}
