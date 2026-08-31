@@ -5,7 +5,6 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import { basculerFavori } from '@/app/(frontend)/favoris/actions'
-import { Bouton } from '@/components/Bouton'
 import { BoutonFavori } from '@/components/BoutonFavori'
 import { ChaineEnchainement } from '@/components/ChaineEnchainement'
 import { chargerCatalogue } from '@/catalogue'
@@ -60,9 +59,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * que les comptes n'ont pas de nom d'affichage — montrer une adresse e-mail sur
  * une page publique se paierait en spam.
  *
- * Le FAVORI (Story 5.1) n'est proposé que s'il peut aboutir : partagé, et pas
- * le sien. Un visiteur anonyme voit à la place une invitation à se connecter,
- * qui le ramène ici (porte d'accès, Story 3.5).
+ * Le FAVORI (Story 5.1) n'est proposé que s'il peut aboutir : connecté,
+ * partagé, et pas le sien.
+ *
+ * RIEN N'EST PROPOSÉ À UN VISITEUR ANONYME — décision d'Alain, 2026-08-31.
+ * L'AC de la Story 5.1 prévoyait de l'inviter à se connecter puis de le
+ * ramener ici ; le bouton encombrait la fiche pour un geste que personne ne
+ * vient chercher en lecture. La porte n'est pas perdue pour autant : la barre
+ * de navigation propose « Se connecter » sur toutes les pages, et le favori
+ * apparaît dès qu'on l'est.
  */
 export default async function FicheEnchainement({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -75,7 +80,6 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
   // On ne charge les favoris que si le bouton peut apparaitre : inutile de
   // poser une requete pour un visiteur anonyme ou sur son propre enchainement.
   const dejaFavori = favorisable ? (await idsFavoris(payload, user)).has(enchainement.id) : false
-  const partageEtAnonyme = !user && enchainement.visibilite === 'partage'
 
   const catalogue = await chargerCatalogue(payload)
   const maillons = construireChaine(
@@ -118,12 +122,6 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
             chemin={chemin}
             action={basculerFavori}
           />
-        ) : null}
-
-        {partageEtAnonyme ? (
-          <Bouton href={`/connexion?suite=${encodeURIComponent(chemin)}`} variante="fantome">
-            Se connecter pour mettre en favori
-          </Bouton>
         ) : null}
       </header>
 
