@@ -8,11 +8,12 @@ import {
   positionCourante,
   type ResultatEnregistrement,
   type SaisieEnchainement,
+  type SaisieMetadonnees,
   type VuePasse,
   type VuePosition,
 } from '@/composition'
-import { lienEcoutable } from '@/musique'
 import { correspondAuNom } from '@/recherche'
+import { ChampsEnchainement, lienMusiqueInvalide } from './ChampsEnchainement'
 import { Bouton } from './Bouton'
 import { ImagePosition } from './ImagePosition'
 import './compositeur.css'
@@ -85,27 +86,26 @@ export function Compositeur({
   const [chaine, setChaine] = useState<VuePasse[]>([])
   const [filtre, setFiltre] = useState('')
 
-  const [titre, setTitre] = useState('')
-  const [date, setDate] = useState(dateParDefaut)
-  const [description, setDescription] = useState('')
-  const [musiqueTitre, setMusiqueTitre] = useState('')
-  const [musiqueLien, setMusiqueLien] = useState('')
-  const [notes, setNotes] = useState('')
-  const [visibilite, setVisibilite] = useState(visibilites[0]?.value ?? 'prive')
+  // Les informations tiennent en UN objet plutot qu'en six etats : c'est la
+  // forme que `ChampsEnchainement` attend, et celle que l'enregistrement
+  // envoie. Un seul endroit ou ajouter un champ, le jour ou il y en aura un de
+  // plus.
+  const [informations, setInformations] = useState<SaisieMetadonnees>({
+    titre: '',
+    date: dateParDefaut,
+    description: '',
+    musique: { titre: '', lien: '' },
+    notes: '',
+    // Prive en premier dans la liste, donc par defaut : on ne partage jamais
+    // par accident (FR-17, AD-6).
+    visibilite: visibilites[0]?.value ?? 'prive',
+  })
 
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
 
   const idDepart = useId()
   const idFiltre = useId()
-  const idTitre = useId()
-  const idDate = useId()
-  const idDescription = useId()
-  const idMusiqueTitre = useId()
-  const idMusiqueLien = useId()
-  const idMusiqueErreur = useId()
-  const idNotes = useId()
-  const idVisibilite = useId()
 
   const parId = useMemo(
     () => new Map(positions.map((position) => [position.id, position])),
@@ -126,7 +126,7 @@ export function Compositeur({
   // Signale le lien inutilisable DES LA SAISIE plutot qu'au retour du serveur :
   // l'action revalide de son cote (c'est elle qui decide), mais decouvrir la
   // faute apres avoir compose vingt passes serait une punition.
-  const lienInvalide = musiqueLien.trim() !== '' && lienEcoutable(musiqueLien) === null
+  const lienInvalide = lienMusiqueInvalide(informations)
 
   const ajouter = (passe: VuePasse) => {
     setChaine((precedente) => [...precedente, passe])
@@ -146,12 +146,8 @@ export function Compositeur({
 
     try {
       const resultat = await enregistrer({
-        titre: titre.trim(),
-        date,
-        description,
-        musique: { titre: musiqueTitre, lien: musiqueLien },
-        notes,
-        visibilite,
+        ...informations,
+        titre: informations.titre.trim(),
         passes: chaine.map((passe) => passe.id),
       })
 
@@ -339,129 +335,13 @@ export function Compositeur({
       <section className="compo-bloc">
         <h2 className="compo-bloc__titre">4. Enregistrer</h2>
 
-        <div className="compo-champs">
-          <div className="compo-champ compo-champ--large">
-            <label className="compo-label label-caps" htmlFor={idTitre}>
-              Titre
-            </label>
-            <input
-              id={idTitre}
-              type="text"
-              className="compo-saisie"
-              required
-              placeholder="Cours du mardi, passes en main droite…"
-              value={titre}
-              onChange={(evenement) => setTitre(evenement.target.value)}
-            />
-          </div>
-
-          <div className="compo-champ">
-            <label className="compo-label label-caps" htmlFor={idDate}>
-              Date
-            </label>
-            {/* Aujourd'hui par defaut, modifiable : on note souvent le cours le
-                lendemain, et un enchainement ancien se saisit a sa date. */}
-            <input
-              id={idDate}
-              type="date"
-              className="compo-saisie"
-              value={date}
-              onChange={(evenement) => setDate(evenement.target.value)}
-            />
-          </div>
-
-          <div className="compo-champ">
-            <label className="compo-label label-caps" htmlFor={idVisibilite}>
-              Visibilité
-            </label>
-            {/* Prive en premier, donc par defaut : on ne partage jamais par
-                accident (FR-17, AD-6). */}
-            <select
-              id={idVisibilite}
-              className="compo-saisie"
-              value={visibilite}
-              onChange={(evenement) => setVisibilite(evenement.target.value)}
-            >
-              {visibilites.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="compo-champ compo-champ--large">
-            <label className="compo-label label-caps" htmlFor={idDescription}>
-              Description
-            </label>
-            <textarea
-              id={idDescription}
-              className="compo-saisie compo-saisie--zone"
-              rows={3}
-              placeholder="Ce qu'il faut retenir de l'enchaînement."
-              value={description}
-              onChange={(evenement) => setDescription(evenement.target.value)}
-            />
-          </div>
-
-          {/* La musique appartient a l'enchainement : on danse une choregraphie
-              SUR un morceau. Deux champs et non un, parce que le TITRE survit au
-              lien mort — quatre des cinq musiques de l'historique pointaient
-              vers des fichiers de l'ancien site, disparus avec lui. */}
-          <div className="compo-champ">
-            <label className="compo-label label-caps" htmlFor={idMusiqueTitre}>
-              Musique
-            </label>
-            <input
-              id={idMusiqueTitre}
-              type="text"
-              className="compo-saisie"
-              placeholder="Gene Vincent — Be-Bop-A-Lula"
-              value={musiqueTitre}
-              onChange={(evenement) => setMusiqueTitre(evenement.target.value)}
-            />
-            <p className="compo-indice texte-attenue">
-              Laisse vide et colle un lien : le titre est récupéré tout seul, quand le fournisseur
-              le publie.
-            </p>
-          </div>
-
-          <div className="compo-champ">
-            <label className="compo-label label-caps" htmlFor={idMusiqueLien}>
-              Lien de la musique
-            </label>
-            <input
-              id={idMusiqueLien}
-              type="url"
-              inputMode="url"
-              className="compo-saisie"
-              placeholder="https://open.spotify.com/…"
-              value={musiqueLien}
-              onChange={(evenement) => setMusiqueLien(evenement.target.value)}
-              aria-invalid={lienInvalide || undefined}
-              aria-describedby={lienInvalide ? idMusiqueErreur : undefined}
-            />
-            {lienInvalide ? (
-              <p id={idMusiqueErreur} className="compo-erreur-champ" role="alert">
-                Il faut une adresse web (http:// ou https://).
-              </p>
-            ) : null}
-          </div>
-
-          <div className="compo-champ compo-champ--large">
-            <label className="compo-label label-caps" htmlFor={idNotes}>
-              Notes
-            </label>
-            <textarea
-              id={idNotes}
-              className="compo-saisie compo-saisie--zone"
-              rows={3}
-              placeholder="Points de vigilance, variantes…"
-              value={notes}
-              onChange={(evenement) => setNotes(evenement.target.value)}
-            />
-          </div>
-        </div>
+        <ChampsEnchainement
+          valeurs={informations}
+          surChangement={(partiel) =>
+            setInformations((precedentes) => ({ ...precedentes, ...partiel }))
+          }
+          visibilites={visibilites}
+        />
 
         {erreur ? (
           <p className="compo-erreur" role="alert">

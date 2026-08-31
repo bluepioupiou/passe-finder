@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { chaineDe, construireChaine, extremites, formaterDate, typologie } from '@/enchainements'
-import type { Pass, Position } from '@/payload-types'
+import {
+  chaineDe,
+  construireChaine,
+  extremites,
+  formaterDate,
+  peutModifier,
+  typologie,
+} from '@/enchainements'
+import type { Pass, Position, User } from '@/payload-types'
 
 /**
  * Lecture d'un enchainement (Story 4.4).
@@ -153,5 +160,35 @@ describe('typologie', () => {
     for (const index of [0, 1, 5, 42]) {
       expect(typologie(index, 1, false)).toEqual({ entree: 'haut', sortie: 'bas' })
     }
+  })
+})
+
+describe('peutModifier', () => {
+  const auteur = { id: 7 } as User
+  const autre = { id: 9 } as User
+  const administrateur = { id: 3, admin: true } as User
+
+  it('accepte l auteur', () => {
+    expect(peutModifier({ auteur: auteur.id }, auteur)).toBe(true)
+  })
+
+  it('refuse quelqu un d autre, et un visiteur anonyme', () => {
+    // Le lien « Modifier » ne doit pas apparaitre sur l enchaînement d un
+    // autre : il menerait a une porte fermee. La collection refuse de son cote,
+    // et c est teste en integration — ici on evite seulement la promesse non
+    // tenue.
+    expect(peutModifier({ auteur: auteur.id }, autre)).toBe(false)
+    expect(peutModifier({ auteur: auteur.id }, null)).toBe(false)
+  })
+
+  it('accepte un administrateur, comme la collection', () => {
+    expect(peutModifier({ auteur: auteur.id }, administrateur)).toBe(true)
+  })
+
+  it('reconnaît l auteur que la relation soit résolue ou non', () => {
+    // Selon la profondeur de lecture, `auteur` est un identifiant ou l objet
+    // complet : la reponse ne doit pas dependre d un detail de requete.
+    expect(peutModifier({ auteur }, auteur)).toBe(true)
+    expect(peutModifier({ auteur }, autre)).toBe(false)
   })
 })

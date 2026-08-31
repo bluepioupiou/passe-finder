@@ -75,3 +75,19 @@
   margin-left: var(--space-2);
   font-size: var(--label-caps-size);
 }
+
+/* Le titre, et le geste de l'auteur en haut a droite.
+   `align-items: flex-start` : sur telephone le titre passe sur deux ou trois
+   lignes, et le bouton doit rester en HAUT a droite, pas centre sur la hauteur
+   du titre. `flex-shrink` a zero pour qu'il ne s'ecrase pas — un bouton
+   comprime devient une cible tactile ratee (UX-DR17). */
+.fiche-enchainement-ligne-titre {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.fiche-enchainement-ligne-titre .bouton {
+  flex-shrink: 0;
+}

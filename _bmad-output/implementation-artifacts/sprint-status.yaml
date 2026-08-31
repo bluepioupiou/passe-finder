@@ -1021,8 +1021,15 @@ development_status:
   4-4-vue-lecture-partage-par-url-controles-de-partage: in-progress
   # dernier AC livre en avance : blocage de suppression d'une passe utilisee
   # par un enchainement (FR-8 / ADD-8). Edition et suppression restent a faire.
-  # le volet « seul l auteur modifie/supprime » est LIVRE (prerequis de 3-1) ;
-  # restent les ecrans d edition et de suppression
+  # le volet « seul l auteur modifie/supprime » est LIVRE (prerequis de 3-1).
+  # ECRAN D EDITION livre le 2026-08-31 : /enchainements/<id>/modifier, lien
+  # « Modifier » en haut a droite de la fiche, visible du seul auteur (ou d un
+  # admin). Il reprend les INFORMATIONS (titre, date, description, notes,
+  # musique, visibilite) ; la CHAINE de passes n y est pas modifiable — c est
+  # un autre geste, qui demandera de rouvrir le compositeur sur un existant.
+  # Champs partages avec le compositeur (`ChampsEnchainement`) pour qu un champ
+  # ajoute d un cote ne manque pas de l autre. Restent : l edition de la chaine
+  # et la SUPPRESSION.
   4-5-editer-supprimer-ses-propres-enchainements: in-progress
   4-6-lier-une-video-youtube-a-un-enchainement: backlog
   epic-4-retrospective: optional
