@@ -4,9 +4,13 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { basculerFavori } from '@/app/(frontend)/favoris/actions'
+import { Bouton } from '@/components/Bouton'
+import { BoutonFavori } from '@/components/BoutonFavori'
 import { ChaineEnchainement } from '@/components/ChaineEnchainement'
 import { chargerCatalogue } from '@/catalogue'
 import { chaineDe, construireChaine, formaterDate } from '@/enchainements'
+import { idsFavoris, peutEtreMisEnFavori } from '@/favoris'
 import config from '@/payload.config'
 import './fiche-enchainement.css'
 
@@ -35,7 +39,7 @@ async function lireEnchainement(id: string) {
     })
     .catch(() => null)
 
-  return { payload, enchainement }
+  return { payload, enchainement, user }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -52,16 +56,26 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * ouvrir le lien reçu et réviser, sans compte (FR-18, FR-19).
  *
  * Ce qui attend d'autres stories : les contrôles d'auteur (basculer la
- * visibilité, éditer, supprimer) et le bouton Favori demandent les comptes
- * (Epic 3) ; l'auteur n'est pas affiché tant que les comptes n'ont pas de nom
- * d'affichage — montrer une adresse e-mail sur une page publique se paierait
- * en spam.
+ * visibilité, éditer, supprimer, Story 4.5). L'auteur n'est pas affiché tant
+ * que les comptes n'ont pas de nom d'affichage — montrer une adresse e-mail sur
+ * une page publique se paierait en spam.
+ *
+ * Le FAVORI (Story 5.1) n'est proposé que s'il peut aboutir : partagé, et pas
+ * le sien. Un visiteur anonyme voit à la place une invitation à se connecter,
+ * qui le ramène ici (porte d'accès, Story 3.5).
  */
 export default async function FicheEnchainement({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { payload, enchainement } = await lireEnchainement(id)
+  const { payload, enchainement, user } = await lireEnchainement(id)
 
   if (!enchainement) notFound()
+
+  const chemin = `/enchainements/${enchainement.id}`
+  const favorisable = peutEtreMisEnFavori(enchainement, user)
+  // On ne charge les favoris que si le bouton peut apparaitre : inutile de
+  // poser une requete pour un visiteur anonyme ou sur son propre enchainement.
+  const dejaFavori = favorisable ? (await idsFavoris(payload, user)).has(enchainement.id) : false
+  const partageEtAnonyme = !user && enchainement.visibilite === 'partage'
 
   const catalogue = await chargerCatalogue(payload)
   const maillons = construireChaine(
@@ -95,6 +109,21 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
 
         {enchainement.description ? (
           <p className="fiche-texte fiche-enchainement-description">{enchainement.description}</p>
+        ) : null}
+
+        {favorisable ? (
+          <BoutonFavori
+            idEnchainement={enchainement.id}
+            favoriInitial={dejaFavori}
+            chemin={chemin}
+            action={basculerFavori}
+          />
+        ) : null}
+
+        {partageEtAnonyme ? (
+          <Bouton href={`/connexion?suite=${encodeURIComponent(chemin)}`} variante="fantome">
+            Se connecter pour mettre en favori
+          </Bouton>
         ) : null}
       </header>
 

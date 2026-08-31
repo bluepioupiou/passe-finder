@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 
 import { IconeCompte } from './Icones'
@@ -27,9 +28,10 @@ type Proprietes = {
  * Un menu qui reste ouvert par-dessus la page oblige a revenir cliquer la
  * bascule pour s'en debarrasser.
  *
- * « Mes enchaînements » et « Mes favoris » sont annonces comme A VENIR plutot
- * que poses en liens morts : leurs destinations arrivent a l'Epic 5, et un lien
- * qui mene a une page vide se lit comme un defaut.
+ * « Mes favoris » mene desormais a une vraie page (Story 5.1). « Mes
+ * enchaînements » reste annonce comme A VENIR plutot que pose en lien mort :
+ * sa destination arrive a la Story 5.2, et un lien qui mene a une page vide se
+ * lit comme un defaut.
  */
 export function MenuCompte({ email, seDeconnecter }: Proprietes) {
   const [ouvert, setOuvert] = useState(false)
@@ -71,9 +73,16 @@ export function MenuCompte({ email, seDeconnecter }: Proprietes) {
         <div className="menu-compte__panneau" role="menu">
           <p className="menu-compte__identite texte-attenue">{email}</p>
 
-          <p className="menu-compte__avenir texte-attenue">
-            Mes enchaînements et mes favoris : bientôt.
-          </p>
+          <Link
+            className="menu-compte__item"
+            role="menuitem"
+            href="/favoris"
+            onClick={() => setOuvert(false)}
+          >
+            Mes favoris
+          </Link>
+
+          <p className="menu-compte__avenir texte-attenue">Mes enchaînements : bientôt.</p>
 
           {/* Un FORMULAIRE, pas un lien : la deconnexion change l'etat du
               serveur, elle ne doit pas partir sur une simple visite d'URL

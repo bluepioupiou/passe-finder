@@ -115,3 +115,30 @@ export function IconeCompte(proprietes: ProprietesIcone) {
     </Svg>
   )
 }
+
+/**
+ * Etoile : le favori (Story 5.1).
+ *
+ * `rempli` change le FOND, pas le trait : l'etoile garde exactement la meme
+ * silhouette qu'elle soit posee ou non, donc la bascule ne fait pas sauter la
+ * mise en page et se lit d'un coup d'oeil.
+ */
+export function IconeEtoile({ rempli = false, ...proprietes }: ProprietesIcone & { rempli?: boolean }) {
+  return (
+    <svg
+      className={proprietes.className}
+      width={proprietes.taille ?? 20}
+      height={proprietes.taille ?? 20}
+      viewBox="0 0 24 24"
+      fill={rempli ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8-4.2-4.1 5.9-.9z" />
+    </svg>
+  )
+}

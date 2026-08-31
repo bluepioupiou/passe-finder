@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-31 (gel temporaire de la creation d un enchainement)
+# last_updated: 2026-08-31 (story 5-1 : favoris)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -514,6 +514,60 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# STORY 5-1 : FAVORIS (2026-08-31)
+# ---------------------------------------------------------------------------
+# Demande d Alain : mettre en favori depuis la fiche, retrouver ses favoris
+# depuis le menu utilisateur, et filtrer la liste des enchainements sur ses
+# favoris. Les deux premiers sont la story 5-1 et une moitie de 5-2 ; le
+# troisieme est une extension de la grille de 5-4.
+#
+# LA CONTRAINTE ADD-9 EST TENUE TELLE QUELLE : on ne met en favori QUE le
+# partage d autrui. Consequence a connaitre avant de tester a l ecran — ALAIN
+# NE VERRA LE BOUTON NULLE PART sur les 120 enchainements migres, puisqu il en
+# est l auteur. C est le comportement voulu (le sien se retrouve dans « mes
+# enchainements », story 5-2), mais il faut un second compte ordinaire pour
+# voir la fonction vivre. Si la regle doit sauter, c est une ligne dans
+# `peutEtreMisEnFavori` ET une dans le hook de la collection — mais cela
+# reviendrait a rouvrir AD-7.
+#
+# UN LIEN, JAMAIS UNE COPIE : si l auteur corrige son enchainement, le favori
+# suit. La page /favoris relit d ailleurs les enchainements a travers leurs
+# `access` plutot que par la relation en profondeur — un enchainement repasse
+# en prive depuis la mise en favori disparait donc de la liste, au lieu d y
+# rester en fantome.
+#
+# OU VIT LA REGLE. La collection `Favori` decide (prive refuse, le sien refuse,
+# unicite du couple, proprietaire pris dans la SESSION et non dans la saisie).
+# Le predicat pur `peutEtreMisEnFavori` ne fait qu'eviter de proposer un bouton
+# qui serait refuse : doublon DELIBERE et assume, teste des deux cotes.
+# L unicite passe par un hook faute d index composite dans Payload ; a l echelle
+# d une classe de danse, la course entre deux clics est theorique et son pire
+# effet serait un doublon sans consequence.
+#
+# BOUTON OPTIMISTE : l etoile bascule avant la reponse du serveur, et revient
+# en arriere en affichant la raison si l action echoue. Mettre en signet est un
+# geste anodin et repete ; une attente a chaque clic le rendrait penible.
+# PIEGE QUE CELA A CREE, et qui a mordu : le premier jet des tests e2e etait
+# rouge une fois sur quatre, parce qu il naviguait des le changement de libelle,
+# donc parfois AVANT que l ecriture ait atterri. Corrige en attendant que le
+# bouton soit reactive (il est desactive pendant la transition). A garder en
+# tete pour toute future bascule optimiste.
+#
+# EXTRAIT EN PASSANT : `CarteEnchainement`. Deux pages la rendent desormais
+# (la liste et les favoris) ; recopiee, elle aurait derive, et la grille aurait
+# perdu le rythme commun qui la rend balayable.
+#
+# LE FILTRE « MES FAVORIS » n apparait que pour un compte connecte AYANT au
+# moins un favori : une case qui ne peut rien donner est pire que pas de case.
+#
+# NON FAIT : la liste « mes enchainements » du profil (5-2), qui reste annoncee
+# comme a venir dans le menu. La page /favoris en est la premiere moitie.
+#
+# 42 unitaires (5 ajoutes), 29 integration (7 ajoutes), 31 e2e (6 ajoutes),
+# migration 20260831_165326_favoris, build de prod OK.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # CONVENTION DE STATUT — QUAND UNE STORY PASSE `done` (decision Alain, 2026-08-30)
 # ---------------------------------------------------------------------------
 # Constat : 22 stories sont en `review` et AUCUNE en `done`. Ce n'est pas un
@@ -892,8 +946,12 @@ development_status:
 
   # --- Epic 5: Découverte, favoris & profil ---
   epic-5: in-progress
-  5-1-mettre-en-favori-un-enchainement-partage-d-autrui: backlog
-  5-2-profil-a-deux-listes-mes-enchainements-mes-favoris: backlog
+  # collection Favori (ADD-9 tenue), bouton sur la fiche, page /favoris,
+  # filtre « mes favoris » dans la liste
+  5-1-mettre-en-favori-un-enchainement-partage-d-autrui: review
+  # la liste « mes favoris » est livree (/favoris) ; « mes enchainements » reste
+  # a faire, et le menu de compte l annonce comme a venir
+  5-2-profil-a-deux-listes-mes-enchainements-mes-favoris: in-progress
   5-3-accueil-fil-des-nouveautes: backlog
   # recherche par nom, filtre difficulte, etat sans resultat. Pas d'onglets :
   # le choix Positions/Passes vit dans la barre de navigation, a un seul endroit.

@@ -55,3 +55,30 @@
     flex: 0 0 200px;
   }
 }
+
+/*
+ * Case « Mes favoris » (Story 5.1). Elle se pose sur la meme ligne que la
+ * recherche et la difficulte, mais ne s'etire pas : c'est un interrupteur, pas
+ * un champ de saisie.
+ */
+.filtres__champ--case {
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  /* Aligne la case sur les champs voisins, qui portent une etiquette au-dessus. */
+  align-self: flex-end;
+  min-height: 44px;
+}
+
+.filtres__case {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.filtres__label-case {
+  font-weight: 600;
+  cursor: pointer;
+}

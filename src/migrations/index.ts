@@ -5,6 +5,7 @@ import * as migration_20260826_104503_position_legacy_id from './20260826_104503
 import * as migration_20260827_200955_passe from './20260827_200955_passe';
 import * as migration_20260830_072052_enchainement from './20260830_072052_enchainement';
 import * as migration_20260830_202812_drapeau_admin from './20260830_202812_drapeau_admin';
+import * as migration_20260831_165326_favoris from './20260831_165326_favoris';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20260830_202812_drapeau_admin.up,
     down: migration_20260830_202812_drapeau_admin.down,
-    name: '20260830_202812_drapeau_admin'
+    name: '20260830_202812_drapeau_admin',
+  },
+  {
+    up: migration_20260831_165326_favoris.up,
+    down: migration_20260831_165326_favoris.down,
+    name: '20260831_165326_favoris'
   },
 ];

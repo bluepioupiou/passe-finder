@@ -73,6 +73,7 @@ export interface Config {
     positions: Position;
     passes: Pass;
     enchainements: Enchainement;
+    favoris: Favoris;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     positions: PositionsSelect<false> | PositionsSelect<true>;
     passes: PassesSelect<false> | PassesSelect<true>;
     enchainements: EnchainementsSelect<false> | EnchainementsSelect<true>;
+    favoris: FavorisSelect<false> | FavorisSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -303,6 +305,20 @@ export interface Enchainement {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "favoris".
+ */
+export interface Favoris {
+  id: number;
+  /**
+   * Rempli automatiquement depuis la session.
+   */
+  utilisateur: number | User;
+  enchainement: number | Enchainement;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -348,6 +364,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'enchainements';
         value: number | Enchainement;
+      } | null)
+    | ({
+        relationTo: 'favoris';
+        value: number | Favoris;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -492,6 +512,16 @@ export interface EnchainementsSelect<T extends boolean = true> {
   legacyId?: T;
   legacyMarqueurs?: T;
   legacyMeta?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "favoris_select".
+ */
+export interface FavorisSelect<T extends boolean = true> {
+  utilisateur?: T;
+  enchainement?: T;
   updatedAt?: T;
   createdAt?: T;
 }
