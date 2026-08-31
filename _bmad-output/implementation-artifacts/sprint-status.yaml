@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-31 (story 3-5 : porte d acces aux actions reservees)
+# last_updated: 2026-08-31 (gel temporaire de la creation d un enchainement)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -468,6 +468,49 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 #
 # L EPIC 3 EST DESORMAIS COMPLETE SAUF 3-3, qui attend la decision SES /
 # Resend — la seule story du projet a dependre d un envoi d email.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# GEL TEMPORAIRE DE LA CREATION D UN ENCHAINEMENT (2026-08-31)
+# ---------------------------------------------------------------------------
+# Demande d Alain : « tant que je n ai pas resolu certaines choses, seul
+# l admin a le droit de voir le bouton + ».
+#
+# CE N EST PAS UN CHANGEMENT DE PRODUIT, C EST UN GEL. Composer est le geste
+# central du produit et n a pas vocation a rester reserve a l admin. Le motif
+# est le modele de visibilite, encore ouvert (action item
+# `identifiant-opaque-et-visibilites`) : laisser les eleves composer avant de
+# savoir ce que « partage » voudra dire leur ferait produire des enchainements
+# dont la portee changerait sous leurs pieds.
+#
+# CACHER LE BOUTON N AURAIT PAS SUFFI. La demande portait sur le « + », mais
+# l affichage ne ferme ni /enchainements/nouveau ni l API : un compte ordinaire
+# connaissant l URL aurait continue de composer et d enregistrer. Le gel est
+# donc pose aux TROIS niveaux, derriere un seul predicat :
+#   - `peutCreerEnchainement` (src/collections/acces.ts) — le seul endroit a
+#     changer pour rouvrir : remplacer le corps par `Boolean(req.user)` ;
+#   - la collection Enchainement (`create`), qui protege reellement ;
+#   - la page du compositeur, qui renvoie vers la liste ;
+#   - la barre, ou le « + » disparait.
+# Le predicat porte un nom a lui plutot que d etre `adminSeul` recopie : le jour
+# de la reouverture, on ne veut pas avoir a deviner lesquels des `estAdmin` du
+# projet parlaient de creation.
+#
+# TRACES A SUPPRIMER A LA REOUVERTURE (elles decrivent un etat provisoire, pas
+# une regle du produit) :
+#   - tests/int/proprietaire.int.spec.ts, « refuse la creation ... (gel
+#     temporaire) » ;
+#   - tests/e2e/compte.e2e.spec.ts, « un compte ordinaire ne voit pas le + » ;
+#   - le drapeau `admin: true` du compte de tests/e2e/compositeur.e2e.spec.ts,
+#     et celui de l administrateur seme dans compte.e2e.spec.ts ;
+#   - dans compte.e2e.spec.ts, la porte d acces se reconnecte en administrateur
+#     faute de quoi elle ne pourrait pas montrer que la destination demandee est
+#     bien rejouee. A remettre sur le compte ordinaire.
+#
+# EFFET SUR 4-3 : la story reste `review`, son code est intact. Seul le droit
+# d appeler la creation est restreint, et de facon reversible.
+#
+# 37 unitaires, 22 integration (1 ajoute), 25 e2e, build de prod OK.
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------

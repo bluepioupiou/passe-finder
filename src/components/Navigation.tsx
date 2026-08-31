@@ -2,6 +2,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { seDeconnecter } from '@/app/(frontend)/compte/actions'
+import { estAdmin } from '@/collections/acces'
 import { sessionCourante } from '@/porte'
 import { IconeLoupe } from './Icones'
 import { Logo } from './Logo'
@@ -64,7 +65,11 @@ export async function Navigation() {
               groupe est pousse a droite d'un bloc, sans que la disparition du
               « + » pour un anonyme ne deplace la loupe. */}
           <div className="nav__outils">
-            {user ? <MenuCreation /> : null}
+            {/* GEL TEMPORAIRE (2026-08-31) : le « + » n'apparait que pour un
+                administrateur, le temps de trancher le modele de visibilite.
+                Ce n'est qu'un confort d'affichage — la page et la collection
+                refusent de leur cote. Voir `peutCreerEnchainement`. */}
+            {estAdmin(user) ? <MenuCreation /> : null}
 
             <form className="nav__recherche" action="/recherche" role="search">
               <label className="nav__recherche-label" htmlFor="recherche-globale">

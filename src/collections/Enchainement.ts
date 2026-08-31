@@ -1,6 +1,6 @@
 import type { CollectionConfig, Where } from 'payload'
 
-import { auteurOuAdmin, estAdmin } from './acces'
+import { auteurOuAdmin, estAdmin, peutCreerEnchainement } from './acces'
 
 /** Visibilité d'un enchaînement (FR-17, AD-6). */
 export const VISIBILITES = [
@@ -61,9 +61,12 @@ export const Enchainement: CollectionConfig = {
       }
       return { visibilite: { equals: 'partage' } }
     },
-    // Tout compte connecté crée SON enchaînement : c'est le geste central du
-    // produit, il n'est pas réservé à l'admin (contrairement au catalogue).
-    create: ({ req }) => Boolean(req.user),
+    // GEL TEMPORAIRE (2026-08-31) : la création est refermée aux seuls
+    // administrateurs, le temps de trancher le modèle de visibilité. Le geste
+    // central du produit n'est pas censé être réservé à l'admin — voir
+    // `peutCreerEnchainement`, qui porte la raison et la ligne à changer pour
+    // rouvrir.
+    create: peutCreerEnchainement,
     // Seul l'auteur modifie et supprime (FR-18 / ADD-5). Prérequis de la
     // Story 3.1 : sans cette règle, l'ouverture de l'inscription laisserait le
     // premier inscrit réécrire le travail des autres élèves.

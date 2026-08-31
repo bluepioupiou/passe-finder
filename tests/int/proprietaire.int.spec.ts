@@ -214,6 +214,28 @@ describe('Propriété', () => {
     expect(relu.email).toBe('test-proprio-auteur@example.test')
   })
 
+  it('refuse la création d un enchaînement à un compte ordinaire (gel temporaire)', async () => {
+    // GEL TEMPORAIRE (2026-08-31) : creation reservee aux administrateurs, le
+    // temps de trancher le modele de visibilite. CE TEST EST A SUPPRIMER le jour
+    // ou elle est rouverte — il decrit un etat voulu mais provisoire.
+    //
+    // Il est ici plutot que dans l'interface parce que c'est la collection qui
+    // protege : cacher le « + » de la barre ne ferme ni la page ni l API.
+    await expect(
+      payload.create({
+        collection: 'enchainements',
+        data: {
+          titre: 'Refusé',
+          auteur: autre.id,
+          visibilite: 'prive',
+          passes: [{ passe: idPasse }],
+        },
+        overrideAccess: false,
+        user: autre,
+      }),
+    ).rejects.toThrow()
+  })
+
   it("laisse un visiteur anonyme créer un compte (inscription publique)", async () => {
     const cree = await payload.create({
       collection: 'users',
