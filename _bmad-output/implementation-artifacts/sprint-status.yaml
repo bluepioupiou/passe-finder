@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-30 (story 3-4 : role admin & gouvernance du catalogue)
+# last_updated: 2026-08-31 (separation des tests unitaires / integration)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-24
-last_updated: 2026-08-30
+last_updated: 2026-08-31
 project: passe-finder
 project_key: NOKEY
 tracking_system: file-system
@@ -434,7 +434,7 @@ action_items:
   # Releve par Alain le 2026-08-30, en lancant les tests pendant que le serveur
   # de dev tournait.
   - id: tests-separer-back-et-front
-    status: in-progress
+    status: done
     titre: "Separer les tests back et front pour les piloter independamment"
     concerne: [outillage]
     constat: >
@@ -463,10 +463,45 @@ action_items:
         du pipeline. A doser en consequence.
     taille_estimee: "petite a moyenne — configuration vitest, pas de code applicatif"
     avancement: >
-      2026-08-30 : le volet E2E est traite (un seul worker Playwright, comptes
-      de test distincts par fichier). Il reste le volet VITEST, qui est le
-      constat d'origine : separer les tests purs des tests qui prennent la base."
-
+      2026-08-30 : volet E2E traite (un seul worker Playwright, comptes de test
+      distincts par fichier).
+    resolution: >
+      2026-08-31. LA CAUSE N ETAIT PAS CELLE QU ON CROYAIT. Le constat initial
+      accusait le serveur de dev tournant en meme temps ; en realite la CI
+      echouait AUSSI, systematiquement (3 sur 3), et le serveur de dev n y est
+      pour rien. Reproduit en local sur une base vierge, sans serveur : vitest
+      execute les fichiers dans des PROCESSUS PARALLELES, chaque fichier qui
+      appelle getPayload pousse le schema dans le meme fichier SQLite, et deux
+      poussees concurrentes se verrouillent (SQLITE_BUSY sur une requete
+      d introspection de sqlite_master). DEUX fichiers suffisaient : le defaut
+      preexistait a la story 3-4, dont le troisieme fichier de test l a
+      simplement rendu systematique au lieu d intermittent.
+      Second defaut, distinct et bien reel : vitest.setup.ts charge le .env du
+      projet, donc les tests ecrivaient DANS LA BASE DE DEVELOPPEMENT. D ou la
+      collision avec npm run dev, et des fixtures melangees aux vraies donnees
+      (3 positions de test retrouvees dans le catalogue, supprimees).
+      CORRECTIF : deux commandes et deux configurations.
+        - `npm run test:unit` : 37 tests purs, tests/unit/, parallelisme complet,
+          moins d une seconde, utilisable en --watch pendant qu on code ;
+        - `npm run test:int` : 12 tests, tests/int/, `fileParallelism: false` et
+          base dediee `.tmp/test.db` supprimee avant chaque run (globalSetup).
+      La serialisation est le correctif du bug ; la base dediee sort les vraies
+      donnees du chemin et supprime la cascade de fixtures oubliees.
+      CI reordonnee : tsc -> lint -> test:unit -> test:int, le plus rapide
+      echoue en premier.
+      DEBAT TRANCHE : Alain proposait de remplacer les tests de base par des
+      tests entierement a doublures a l etape qualite. Ecarte, et la nuance
+      compte : les trois defauts reels attrapes par ce projet (visibilite privee
+      par defaut, blocage de suppression, regles d acces admin) sont des defauts
+      de CABLAGE, qu une doublure de Payload ne peut pas voir. Hors des
+      fonctions pures — deja testees purement, et qui sont 37 des 49 tests — la
+      logique de ce projet n existe presque pas en dehors du framework. C etait
+      l ISOLATION qu il fallait, comme le disait le constat d origine.
+    reste_a_faire: >
+      Les tests e2e ecrivent toujours dans la base de developpement, et c est
+      VOULU : ils exercent la vraie application, qui a besoin du catalogue migre.
+      Chaque fichier e2e nettoie derriere lui (titres horodates, comptes
+      dedies). A surveiller si un scenario futur oublie son menage.
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
   epic-1: in-progress

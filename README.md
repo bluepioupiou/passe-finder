@@ -33,7 +33,10 @@ Puis ouvrir :
 | `npm run build` | build de production |
 | `npm start` | démarre le build de production |
 | `npm run generate:types` | régénère les types après un changement de collection |
-| `npm run test:int` | tests d'intégration (Vitest) |
+| `npm run test:unit` | tests unitaires — fonctions pures, aucune base, < 1 s |
+| `npm run test:int` | tests d'intégration — vrai Payload, base dédiée `.tmp/test.db` |
+| `npm run test:e2e` | tests de bout en bout (Playwright) |
+| `npm test` | les trois, dans cet ordre |
 
 ## Docker (image de production)
 

@@ -45,11 +45,24 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Tests d'intégration
-        run: npm run test:int
+      # Les unitaires en premier : ils ne touchent a rien, durent quelques
+      # secondes, et couvrent les trois quarts des cas. Echouer ici coute
+      # beaucoup moins cher qu'echouer apres l'integration.
+      - name: Tests unitaires
+        run: npm run test:unit
         env:
           # Valeur factice : src/env.ts exige PAYLOAD_SECRET au chargement.
           # Ce n'est PAS un secret de production.
+          PAYLOAD_SECRET: ci-unit-secret
+
+      # Les tests d'integration parlent au vrai Payload et poussent le schema
+      # dans une base dediee (.tmp/test.db), en SERIE : deux fichiers poussant
+      # le schema en parallele dans le meme fichier SQLite se verrouillaient
+      # mutuellement, ce qui rendait ce job rouge de facon systematique.
+      # Voir l'en-tete de vitest.int.config.mts.
+      - name: Tests d'intégration
+        run: npm run test:int
+        env:
           PAYLOAD_SECRET: ci-integration-secret
 
   # ---------------------------------------------------------------------------
