@@ -45,6 +45,7 @@ next-env.d.ts
 
 # tests
 /coverage
+/.tmp/
 /test-results/
 /playwright-report/
 /blob-report/

@@ -147,7 +147,10 @@ Pour démarrer : `cp .env.example .env` puis renseigner les valeurs.
 | `npm run build` | fabrique la version optimisée pour la production |
 | `npm start` | démarre la version de production (après `build`) |
 | `npm run generate:types` | régénère `payload-types.ts` après avoir modifié une collection |
-| `npm run test:int` | lance les tests d'intégration (Vitest) |
+| `npm run test:unit` | tests unitaires : fonctions pures, aucune base, moins d'une seconde |
+| `npm run test:int` | tests d'intégration : vrai Payload sur une base dédiée (`.tmp/test.db`) |
+| `npm run test:e2e` | tests de bout en bout dans un navigateur (Playwright) |
+| `npm test` | les trois, dans cet ordre (le plus rapide échoue en premier) |
 
 ---
 

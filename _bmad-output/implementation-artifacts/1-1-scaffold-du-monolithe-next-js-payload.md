@@ -180,6 +180,8 @@ Scaffold monolithe Next.js + Payload opérationnel, démarrant en local, base SQ
 - `.env.example` (PAYLOAD_SECRET, DATABASE_URI). `.env` local créé pour la vérif (gitignoré, non commité).
 - `Dockerfile` (défaut template, base `node:24-alpine` — finalisation Story 1.2).
 - `playwright.config.ts`, `vitest.config.mts`, `vitest.setup.ts`, `test.env`.
+  (`vitest.config.mts` a ete scinde le 2026-08-31 en `vitest.unit.config.mts` et
+  `vitest.int.config.mts` — voir la note « separation des tests » du suivi.)
 
 **Nouveaux fichiers (`src/`) :**
 - `src/payload.config.ts` — adaptateur SQLite, `i18n` FR, collection `Users` seule, seul scribe.
