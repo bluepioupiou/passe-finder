@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { getPayload } from 'payload'
 
 import config from '../../src/payload.config.js'
+import { cleanupTestUser, seedTestUser, type Identifiants } from '../helpers/seedUser'
 
 /**
  * Parcours de compte (Stories 3.1 / 3.2) : s'inscrire, etre reconnu par la
@@ -22,10 +23,19 @@ const compte = {
   motDePasse: 'motdepasse-de-test',
 }
 
+/** Compte administrateur, necessaire tant que la creation est gelee. */
+const administrateur: Identifiants = {
+  email: 'compte-admin@passe-finder.test',
+  password: 'test-compte-admin',
+  admin: true,
+}
+
 test.describe('Compte', () => {
   let page: Page
 
   test.beforeAll(async ({ browser }) => {
+    await seedTestUser(administrateur)
+
     const contexte = await browser.newContext()
     page = await contexte.newPage()
   })
@@ -36,6 +46,7 @@ test.describe('Compte', () => {
       collection: 'users',
       where: { email: { equals: compte.email } },
     })
+    await cleanupTestUser(administrateur)
   })
 
   test('un visiteur anonyme se voit proposer la connexion', async () => {
@@ -57,8 +68,6 @@ test.describe('Compte', () => {
     await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Se connecter' })).toHaveCount(0)
 
-    // Et le « + » des creations apparait, puisqu'il est reserve aux connectes.
-    await expect(page.getByRole('button', { name: 'Créer' })).toBeVisible()
   })
 
   test('le menu de compte nomme la session et permet de se déconnecter', async () => {
@@ -109,6 +118,12 @@ test.describe('Compte', () => {
   test("la porte emmène un anonyme vers la connexion, puis le ramène", async () => {
     // Story 3.5 : le contrat complet, sur une route protegee. On repart d un
     // contexte neuf pour etre reellement anonyme.
+    //
+    // On se reconnecte en ADMINISTRATEUR et non avec le compte ordinaire du
+    // fichier, a cause du gel temporaire de la creation (2026-08-31) : un
+    // compte ordinaire serait renvoye vers la liste et on ne verrait pas que la
+    // porte a bien rejoue la destination demandee. A remettre sur le compte
+    // ordinaire le jour ou la creation est rouverte.
     const contexte = await page.context().browser()!.newContext()
     const visiteur = await contexte.newPage()
 
@@ -118,24 +133,28 @@ test.describe('Compte', () => {
     // La page dit POURQUOI elle demande un compte, sinon elle se lit comme un refus.
     await expect(visiteur.getByText('Cette page demande un compte.')).toBeVisible()
 
-    await visiteur.fill('#email', compte.email)
-    await visiteur.fill('#motDePasse', compte.motDePasse)
+    await visiteur.fill('#email', administrateur.email)
+    await visiteur.fill('#motDePasse', administrateur.password)
     await visiteur.getByRole('button', { name: 'Se connecter' }).click()
 
     // Ramene a ce qu il voulait faire, et le compositeur est bien la.
     await expect(visiteur).toHaveURL(/\/enchainements\/nouveau$/)
-    await expect(visiteur.getByLabel("D'où part l'enchaînement ?")).toBeVisible()
+    await expect(visiteur.getByLabel("D\'où part l\'enchaînement ?")).toBeVisible()
 
     await contexte.close()
   })
 
-  test("un compte déjà connecté n'est pas renvoyé vers la connexion", async () => {
+  test("un compte ordinaire ne voit pas le « + » et ne peut pas composer", async () => {
+    // GEL TEMPORAIRE (2026-08-31) : la creation est reservee aux administrateurs.
+    // CE TEST EST A SUPPRIMER le jour ou elle est rouverte — il decrit un etat
+    // voulu mais provisoire, pas une regle du produit.
+    await page.goto('/enchainements')
+    await expect(page.getByRole('button', { name: 'Créer' })).toHaveCount(0)
+
+    // Et la porte ne tient pas qu a l affichage : connaitre l URL ne suffit pas.
     await page.goto('/enchainements/nouveau')
-
-    await expect(page).toHaveURL(/\/enchainements\/nouveau$/)
-    await expect(page.getByLabel("D'où part l'enchaînement ?")).toBeVisible()
+    await expect(page).toHaveURL(/\/enchainements$/)
   })
-
   test("le back-office refuse un compte ordinaire", async () => {
     // Decision du 2026-08-31 : /admin est reserve aux administrateurs. Un eleve
     // connecte ne doit pas y entrer, meme en connaissant l'URL.

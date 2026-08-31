@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
@@ -7,6 +8,7 @@ import { chargerCatalogue, vuesDuCatalogue } from '@/catalogue'
 import { VISIBILITES } from '@/collections/Enchainement'
 import { dateDuJour } from '@/composition'
 import config from '@/payload.config'
+import { estAdmin } from '@/collections/acces'
 import { exigerSession } from '@/porte'
 import { enregistrerEnchainement } from './actions'
 import './nouvel-enchainement.css'
@@ -30,7 +32,13 @@ export const metadata = {
  * decident en dernier ressort (ADD-5). Les trois verifient, independamment.
  */
 export default async function NouvelEnchainement() {
-  await exigerSession('/enchainements/nouveau')
+  const utilisateur = await exigerSession('/enchainements/nouveau')
+
+  // GEL TEMPORAIRE (2026-08-31) : creation reservee aux administrateurs. On
+  // renvoie vers la liste plutot que de montrer un compositeur qui refuserait
+  // d'enregistrer — une porte fermee qu'on laisse pousser est pire que pas de
+  // porte du tout. Voir `peutCreerEnchainement` pour rouvrir.
+  if (!estAdmin(utilisateur)) redirect('/enchainements')
 
   const payload = await getPayload({ config: await config })
   // Le catalogue entier tient en memoire (30 positions, ~110 passes) et se lit
