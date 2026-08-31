@@ -1,11 +1,11 @@
 'use server'
 
-import { headers as getHeaders } from 'next/headers.js'
 import { getPayload } from 'payload'
 
 import { jourVersISO, type ResultatEnregistrement, type SaisieEnchainement } from '@/composition'
 import { VISIBILITES } from '@/collections/Enchainement'
 import config from '@/payload.config'
+import { sessionCourante } from '@/porte'
 
 /**
  * Enregistre un enchainement compose (Story 4.3, FR-14).
@@ -37,7 +37,9 @@ export async function enregistrerEnchainement(
 
   try {
     const payload = await getPayload({ config: await config })
-    const { user } = await payload.auth({ headers: await getHeaders() })
+    // Forme « action » de la porte (Story 3.5) : elle RENVOIE la session au lieu
+    // de rediriger. Rediriger ici jetterait la chaine deja composee a l ecran.
+    const user = await sessionCourante()
 
     if (!user) {
       return {

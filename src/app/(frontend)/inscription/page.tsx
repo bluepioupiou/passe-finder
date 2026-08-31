@@ -40,6 +40,9 @@ export default async function Inscription({
           Il faut un compte pour composer un enchaînement : c&apos;est lui qui en devient
           l&apos;auteur, et qui décide ensuite de le garder privé ou de le partager.
         </p>
+        {suite ? (
+          <p className="texte-attenue">Une fois le compte créé, tu reprendras où tu allais.</p>
+        ) : null}
       </header>
 
       <FormulaireCompte
