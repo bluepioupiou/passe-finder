@@ -1,21 +1,25 @@
 import { test, expect, Page } from '@playwright/test'
-import { login } from '../helpers/login'
+import { loginBackOffice } from '../helpers/login'
 import { seedTestUser, cleanupTestUser, testUser } from '../helpers/seedUser'
+
+// Le back-office est reserve aux administrateurs (Story 3.4) : ce scenario doit
+// donc semer un compte qui porte le drapeau, sinon la porte se referme sur lui.
+const administrateur = { ...testUser, admin: true }
 
 test.describe('Admin Panel', () => {
   let page: Page
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    await seedTestUser()
+    await seedTestUser(administrateur)
 
     const context = await browser.newContext()
     page = await context.newPage()
 
-    await login({ page, user: testUser })
+    await loginBackOffice({ page, user: administrateur })
   })
 
   test.afterAll(async () => {
-    await cleanupTestUser()
+    await cleanupTestUser(administrateur)
   })
 
   test('can navigate to dashboard', async () => {

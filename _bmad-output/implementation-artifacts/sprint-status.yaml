@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-31 (separation des tests unitaires / integration)
+# last_updated: 2026-08-31 (stories 3-1 et 3-2 : inscription et connexion)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -365,6 +365,65 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# STORIES 3-1 / 3-2 : INSCRIPTION, CONNEXION, ETAT CONNECTE (2026-08-31)
+# ---------------------------------------------------------------------------
+# Tranche demandee par Alain apres 3-4 : « un eleve cree son compte, se
+# connecte, se deconnecte, et la nav le reflete ». Livre avec son PREREQUIS.
+#
+# LE PREREQUIS, qui etait le vrai danger. Avant d ouvrir l inscription, les
+# droits par defaut de Payload — « tout compte connecte peut tout » — devaient
+# tomber. Ils etaient sans consequence tant que personne ne pouvait se
+# connecter ; le jour de l inscription publique, ils auraient laisse le premier
+# inscrit :
+#   - reecrire et supprimer les enchainements des autres eleves ;
+#   - LIRE LES ENCHAINEMENTS PRIVES de tout le monde (`read` renvoyait `true`
+#     des qu une session existait — defaut trouve en posant la regle) ;
+#   - lire et modifier les autres COMPTES, donc la liste des emails de la
+#     classe et le mot de passe d autrui.
+# Poses : `auteurOuAdmin` sur Enchainement (update/delete), lecture = partages
+# de tous PLUS les siens quelle que soit leur visibilite, et `soiMemeOuAdmin`
+# sur users (read/update/delete). Tous renvoient une CONTRAINTE DE REQUETE et
+# non un booleen : la regle porte sur la selection des documents, donc elle
+# vaut aussi pour les operations par lot et pour REST/GraphQL.
+#
+# LIVRE :
+#   - /inscription et /connexion (E8), un seul composant de formulaire pour les
+#     deux ecrans ; erreurs en francais, message IDENTIQUE pour « compte
+#     inconnu » et « mot de passe faux » (ne pas dire quelles adresses ont un
+#     compte ici) ;
+#   - session posee par action serveur ; un compte neuf est connecte dans la
+#     foulee (FR-26) ;
+#   - `?suite=` : on revient a ce qu on voulait faire. N accepte qu un chemin
+#     INTERNE — sans ce filtre, la page de connexion devenait un tremplin vers
+#     un site tiers, signe de notre domaine ;
+#   - barre de navigation : menu de compte (email, creer, deconnexion) pour un
+#     connecte, « Se connecter » pour un anonyme. Ferme le placeholder laisse
+#     ouvert depuis la Story 1.6 ;
+#   - le compositeur ne renvoie plus vers /admin mais vers /connexion (+ le lien
+#     d inscription), en emportant `suite`.
+#
+# /ADMIN RESERVE AUX ADMINISTRATEURS (decision Alain, 2026-08-31).
+# `access.admin` sur users. Possible SEULEMENT maintenant : jusqu a 3-2, /admin
+# etait l unique porte de connexion du site. Consequence sur les tests : le
+# helper e2e se connectait par /admin/login pour TOUS les scenarios ; il est
+# scinde en `login` (page publique, comptes ordinaires) et `loginBackOffice`
+# (administrateurs), et le scenario d administration seme un compte admin.
+#
+# NON FAIT : 3-3 (mot de passe oublie) attend un expediteur d email, seule
+# story de l Epic 3 a en avoir besoin. 3-5 (porte d acces reutilisable) reste
+# entiere ; `?suite=` en est une anticipation partielle, cote formulaire
+# seulement — la REDIRECTION automatique d un anonyme vers la connexion n est
+# pas posee, chaque page refuse encore a sa maniere.
+#
+# A INSTRUIRE, releve en testant : la page d accueil affiche « Bienvenue,
+# <email> » (heritage du scaffold). Maintenant que de vrais comptes existent,
+# publier l email en h1 n a plus de sens. A reprendre avec 5-3 (accueil, E1),
+# qui doit de toute facon remplacer cette page.
+#
+# 37 unitaires, 21 integration (9 ajoutes), 23 e2e (6 ajoutes), build de prod OK.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # CONVENTION DE STATUT — QUAND UNE STORY PASSE `done` (decision Alain, 2026-08-30)
 # ---------------------------------------------------------------------------
 # Constat : 22 stories sont en `review` et AUCUNE en `done`. Ce n'est pas un
@@ -530,8 +589,10 @@ development_status:
 
   # --- Epic 3: Comptes & accès ---
   epic-3: in-progress
-  3-1-inscription-creer-un-compte: backlog
-  3-2-connexion-deconnexion-etat-connecte-dans-la-nav: backlog
+  # /inscription, compte ordinaire, session ouverte dans la foulee
+  3-1-inscription-creer-un-compte: review
+  # /connexion, menu de compte dans la barre, /admin reserve aux admins
+  3-2-connexion-deconnexion-etat-connecte-dans-la-nav: review
   3-3-recuperation-d-acces-mot-de-passe-oublie: backlog
   # drapeau `admin` sur users (acces de CHAMP : aucune auto-promotion), ecriture
   # du catalogue + Media reservee, amorcage par `npm run promouvoir:admin`
@@ -555,8 +616,8 @@ development_status:
   4-4-vue-lecture-partage-par-url-controles-de-partage: in-progress
   # dernier AC livre en avance : blocage de suppression d'une passe utilisee
   # par un enchainement (FR-8 / ADD-8). Edition et suppression restent a faire.
-  # ATTENTION : le volet « seul l auteur modifie/supprime » est un PREREQUIS de
-  # 3-1, pas un confort. Cf. le danger releve dans la note 3-4 ci-dessus
+  # le volet « seul l auteur modifie/supprime » est LIVRE (prerequis de 3-1) ;
+  # restent les ecrans d edition et de suppression
   4-5-editer-supprimer-ses-propres-enchainements: in-progress
   4-6-lier-une-video-youtube-a-un-enchainement: backlog
   epic-4-retrospective: optional

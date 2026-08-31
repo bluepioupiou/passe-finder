@@ -1,0 +1,103 @@
+/*
+ * Menu de compte de la barre de navigation (Story 3.2).
+ * Meme vocabulaire que le menu « + » : cible de 44px, rond, accent au survol.
+ * Les deux se cotoient a droite de la barre et doivent peser pareil.
+ */
+
+.menu-compte {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.menu-compte__bascule {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Cible tactile confortable (UX-DR17). */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-full);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.menu-compte__bascule:hover,
+.menu-compte__bascule[aria-expanded='true'] {
+  background: var(--accent-soft);
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.menu-compte__panneau {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: 20;
+  min-width: 240px;
+  padding: var(--space-1);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * L'email en tete du panneau : sur un telephone partage, savoir QUI est
+ * connecte avant de composer evite de deposer son travail sous le compte de
+ * quelqu'un d'autre. Il peut etre long : on le coupe plutot que d'elargir le
+ * panneau.
+ */
+.menu-compte__identite {
+  margin: 0;
+  padding: var(--space-3);
+  font-size: var(--data-size);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line);
+}
+
+.menu-compte__item {
+  display: block;
+  width: 100%;
+  padding: var(--space-3);
+  color: var(--ink);
+  text-align: left;
+  text-decoration: none;
+  border-radius: var(--rounded-sm);
+  font-weight: 600;
+}
+
+.menu-compte__item:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+/* Le bouton de deconnexion doit se lire comme les liens qui l'entourent. */
+.menu-compte__item--action {
+  font: inherit;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.menu-compte__avenir {
+  margin: 0;
+  padding: var(--space-3);
+  font-size: var(--data-size);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+@media (min-width: 768px) {
+  .menu-compte__panneau {
+    left: auto;
+    right: 0;
+  }
+}

@@ -1,4 +1,6 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Where } from 'payload'
+
+import { auteurOuAdmin, estAdmin } from './acces'
 
 /** Visibilité d'un enchaînement (FR-17, AD-6). */
 export const VISIBILITES = [
@@ -44,19 +46,29 @@ export const Enchainement: CollectionConfig = {
     // partagés. La règle est une contrainte de requête, pas un filtre d'UI :
     // elle s'applique aussi à l'API et à la recherche (AD-3).
     read: ({ req }) => {
-      if (req.user) return true // TODO (Story 4.4) : limiter aux siens + partagés d'autrui.
+      if (estAdmin(req.user)) return true
+      // Un compte connecté voit les partagés de tous, PLUS les siens quelle
+      // que soit leur visibilité. Sans la seconde branche, un auteur perdrait
+      // de vue ses propres brouillons privés ; sans la première, il ne verrait
+      // plus rien des autres.
+      if (req.user) {
+        // Annotation explicite : sans elle, TypeScript deduit de ce `or` une
+        // union de formes distinctes plutot que le type `Where` de Payload.
+        const siensOuPartages: Where = {
+          or: [{ visibilite: { equals: 'partage' } }, { auteur: { equals: req.user.id } }],
+        }
+        return siensOuPartages
+      }
       return { visibilite: { equals: 'partage' } }
     },
     // Tout compte connecté crée SON enchaînement : c'est le geste central du
     // produit, il n'est pas réservé à l'admin (contrairement au catalogue).
     create: ({ req }) => Boolean(req.user),
-    // TODO (Story 4.5) : restreindre à l'auteur. AUJOURD'HUI TOUT COMPTE
-    // CONNECTÉ PEUT MODIFIER L'ENCHAÎNEMENT D'UN AUTRE. Inoffensif tant que
-    // personne ne peut se connecter hors /admin, mais cette règle DOIT être
-    // posée avant la Story 3.1 (inscription publique), sinon le premier
-    // inscrit peut réécrire le travail des autres élèves.
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    // Seul l'auteur modifie et supprime (FR-18 / ADD-5). Prérequis de la
+    // Story 3.1 : sans cette règle, l'ouverture de l'inscription laisserait le
+    // premier inscrit réécrire le travail des autres élèves.
+    update: auteurOuAdmin,
+    delete: auteurOuAdmin,
   },
   fields: [
     {

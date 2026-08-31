@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { champAdminSeul } from './acces'
+import { champAdminSeul, estAdmin, soiMemeOuAdmin } from './acces'
 
 /**
  * Users — collection d'authentification de Payload (AD-9).
@@ -21,6 +21,24 @@ export const Users: CollectionConfig = {
     defaultColumns: ['email', 'admin', 'updatedAt'],
   },
   auth: true,
+  access: {
+    // INSCRIPTION PUBLIQUE (Story 3.1) : c'est la seule ecriture ouverte a un
+    // visiteur anonyme de tout le projet. Elle ne donne aucun pouvoir : le
+    // champ `admin` reste hors de portee (acces de champ, plus bas), et un
+    // compte neuf a exactement les droits de tout autre compte connecte.
+    create: () => true,
+    // CHACUN SON COMPTE. Les droits par defaut de Payload laissent tout compte
+    // connecte lire et modifier TOUS les autres : la liste des emails de la
+    // classe d'un cote, le changement de mot de passe d'autrui de l'autre.
+    read: soiMemeOuAdmin,
+    update: soiMemeOuAdmin,
+    delete: soiMemeOuAdmin,
+    // ACCES AU BACK-OFFICE, reserve aux administrateurs (decision d'Alain,
+    // 2026-08-31). Possible seulement maintenant : jusqu a la Story 3.2,
+    // /admin etait l'unique porte de connexion du site, la fermer aurait prive
+    // les eleves de tout moyen de se connecter. Ils ont desormais /connexion.
+    admin: ({ req }) => estAdmin(req.user),
+  },
   fields: [
     // L'email et le mot de passe sont ajoutes par `auth: true`.
     {

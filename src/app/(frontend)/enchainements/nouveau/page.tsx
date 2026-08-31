@@ -26,9 +26,9 @@ export const metadata = {
  * qui connait l'URL tombe donc sur l'invitation a se connecter, et l'action
  * d'enregistrement refuse de son cote (les deux verifient, independamment).
  *
- * Le lien de connexion pointe vers `/admin` : la v1 n'a pas encore d'ecran de
- * connexion public (Epic 3, Story 3.2). C'est provisoire et assume plutot que
- * de poser un faux formulaire qui ne saurait rien faire.
+ * Le lien de connexion renvoie vers /connexion en emportant `suite` : apres
+ * s'etre connecte, on revient ICI plutot que sur l'accueil, et on reprend ce
+ * qu'on etait venu faire.
  */
 export default async function NouvelEnchainement() {
   const payload = await getPayload({ config: await config })
@@ -50,7 +50,10 @@ export default async function NouvelEnchainement() {
         </header>
 
         <div className="nouveau-actions">
-          <Bouton href="/admin">Se connecter</Bouton>
+          <Bouton href="/connexion?suite=%2Fenchainements%2Fnouveau">Se connecter</Bouton>
+          <Bouton href="/inscription?suite=%2Fenchainements%2Fnouveau" variante="fantome">
+            Créer un compte
+          </Bouton>
           <Bouton href="/enchainements" variante="fantome">
             Voir les enchaînements partagés
           </Bouton>
