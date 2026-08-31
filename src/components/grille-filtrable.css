@@ -71,11 +71,58 @@
   min-height: 44px;
 }
 
+/*
+ * Case dessinee par NOUS (`appearance: none`), et pas la case native.
+ *
+ * POURQUOI. Laissee au navigateur, la case decochee est peinte par le systeme
+ * selon le theme de la machine : en sombre, Chrome la remplit d’un gris
+ * fonce qui, sur notre fond presque noir, se lit comme un bloc plein — donc
+ * comme une case DEJA COCHEE. `accent-color` n’y change rien : il ne
+ * s’applique qu’a l’etat coche.
+ *
+ * En la dessinant, l’etat se lit de la meme facon dans les deux themes :
+ * decochee = contour vide sur la surface, cochee = accent plein avec sa coche.
+ */
 .filtres__case {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
   width: 18px;
   height: 18px;
-  accent-color: var(--accent);
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-sm);
   cursor: pointer;
+  position: relative;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.filtres__case:hover {
+  border-color: var(--accent);
+}
+
+.filtres__case:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* La coche : deux traits d’un carre, pivotes. Aucune image a charger. */
+.filtres__case:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid var(--on-accent);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.filtres__case:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .filtres__label-case {
