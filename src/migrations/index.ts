@@ -9,6 +9,7 @@ import * as migration_20260831_165326_favoris from './20260831_165326_favoris';
 import * as migration_20260831_195957_musique_enchainement from './20260831_195957_musique_enchainement';
 import * as migration_20260901_042354_titre_normalise from './20260901_042354_titre_normalise';
 import * as migration_20260901_075115_transition from './20260901_075115_transition';
+import * as migration_20260901_155620_pseudo from './20260901_155620_pseudo';
 
 export const migrations = [
   {
@@ -64,6 +65,11 @@ export const migrations = [
   {
     up: migration_20260901_075115_transition.up,
     down: migration_20260901_075115_transition.down,
-    name: '20260901_075115_transition'
+    name: '20260901_075115_transition',
+  },
+  {
+    up: migration_20260901_155620_pseudo.up,
+    down: migration_20260901_155620_pseudo.down,
+    name: '20260901_155620_pseudo'
   },
 ];
