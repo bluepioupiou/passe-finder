@@ -58,6 +58,39 @@ export async function chargerCatalogue(payload: Payload): Promise<Catalogue> {
 }
 
 /**
+ * Les positions d'où part au moins une transition (Story 4.7).
+ *
+ * Sert le marqueur des cartes du catalogue : « d'ici, on peut changer de prise
+ * sans danser ». UNE SEULE REQUÊTE pour toute la grille, au lieu d'une par
+ * carte — il y a une trentaine de positions et une vingtaine de transitions,
+ * mais la forme compte plus que la taille : c'est celle qui ne dégénère pas si
+ * le catalogue grossit.
+ *
+ * Le SENS SORTANT et pas les deux : sur une carte, ce qu'un danseur veut savoir
+ * c'est ce qu'il peut faire une fois arrivé là. « On peut arriver ici sans
+ * passe » est une information de fiche, pas de vignette.
+ *
+ * Vit ici plutôt que dans `positions.ts`, qui part dans le navigateur avec
+ * `ImagePosition` et doit rester libre de toute dépendance à Payload.
+ */
+export async function positionsQuiChangentDePrise(payload: Payload): Promise<Set<number>> {
+  const { docs } = await payload.find({
+    collection: 'transitions',
+    limit: 500,
+    depth: 0,
+    // On ne lit que l'extrémité qui nous intéresse : le reste ne sert à rien ici.
+    select: { positionDebut: true },
+  })
+
+  return new Set(
+    docs.flatMap((transition) => {
+      const debut = identifiant(transition.positionDebut)
+      return debut === null ? [] : [debut]
+    }),
+  )
+}
+
+/**
  * Projection du catalogue pour le compositeur (Story 4.2).
  *
  * Ne traverse le reseau que ce que le compositeur affiche : nom, difficulte

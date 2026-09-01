@@ -3,7 +3,9 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import { GrilleFiltrable } from '@/components/GrilleFiltrable'
+import { IconeTransition } from '@/components/Icones'
 import { ImagePosition } from '@/components/ImagePosition'
+import { positionsQuiChangentDePrise } from '@/catalogue'
 import config from '@/payload.config'
 import './positions.css'
 
@@ -38,12 +40,15 @@ export default async function PositionsPage({
 
   const payload = await getPayload({ config: await config })
 
-  const { docs: positions, totalDocs } = await payload.find({
-    collection: 'positions',
-    limit: 200,
-    depth: 1,
-    sort: 'nom',
-  })
+  const [{ docs: positions, totalDocs }, changentDePrise] = await Promise.all([
+    payload.find({
+      collection: 'positions',
+      limit: 200,
+      depth: 1,
+      sort: 'nom',
+    }),
+    positionsQuiChangentDePrise(payload),
+  ])
 
   // Les cartes sont rendues ici (cote serveur) ; la grille cliente ne fait que
   // choisir lesquelles afficher.
@@ -57,7 +62,23 @@ export default async function PositionsPage({
       // a 3 lignes pour que les cartes gardent une hauteur comparable ; elle
       // reste entiere sur la fiche.
       <Link className="position-carte" href={`/positions/${position.id}`}>
-        <h2 className="position-nom">{position.nom}</h2>
+        <h2 className="position-nom">
+          {position.nom}
+          {/* JUSTE L'ICONE, collee au nom : dans une grille, ce qu'on veut
+              savoir c'est « d'ici, on peut changer de prise sans danser ».
+              Le detail (vers quoi, comment) se lit sur la fiche. Meme parti que
+              les marqueurs musique et video des cartes Enchainement.
+              L'intitule reste, invisible, pour les lecteurs d'ecran : ici
+              l'icone EST l'information (UX-DR17). */}
+          {changentDePrise.has(position.id) ? (
+            <span className="position-transition">
+              <IconeTransition taille={15} />
+              <span className="position-transition__intitule">
+                Changement de prise possible depuis cette position
+              </span>
+            </span>
+          ) : null}
+        </h2>
         <ImagePosition position={position} className="position-image" />
         {position.description ? (
           <p className="position-description texte-attenue texte-coupe">{position.description}</p>
