@@ -93,3 +93,9 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* L'auteur, sur sa propre ligne sous la ligne meta. Discret : dans une grille,
+   on cherche un titre avant de regarder qui l'a ecrit. */
+.enchainement-auteur {
+  font-size: var(--label-caps-size);
+}

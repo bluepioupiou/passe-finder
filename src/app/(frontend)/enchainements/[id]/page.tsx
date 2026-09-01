@@ -9,6 +9,7 @@ import { Bouton } from '@/components/Bouton'
 import { BoutonFavori } from '@/components/BoutonFavori'
 import { ChaineEnchainement } from '@/components/ChaineEnchainement'
 import { IconeNote, IconeVideo } from '@/components/Icones'
+import { nomAuteur, nomsDesAuteurs } from '@/auteurs'
 import { chargerCatalogue } from '@/catalogue'
 import { chaineDe, construireChaine, formaterDate, peutModifier } from '@/enchainements'
 import { idsFavoris, peutEtreMisEnFavori } from '@/favoris'
@@ -94,6 +95,7 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
     chaineDe(enchainement.passes, catalogue.passes, catalogue.positions),
   )
 
+  const auteur = nomAuteur(enchainement, await nomsDesAuteurs(payload, [enchainement]))
   const date = formaterDate(enchainement.date)
   const musique = presenterMusique(enchainement.musique)
   const video = presenterVideo(enchainement.urlVideo)
@@ -133,6 +135,10 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
             <span className="fiche-enchainement-badge label-caps">Privé</span>
           ) : null}
         </p>
+
+        {/* Sous la ligne date / nombre de passes, comme sur la carte : la meme
+            information au meme endroit d'un ecran a l'autre. */}
+        {auteur ? <p className="fiche-enchainement-auteur texte-attenue">par {auteur}</p> : null}
 
         {enchainement.description ? (
           <p className="fiche-texte fiche-enchainement-description">{enchainement.description}</p>
