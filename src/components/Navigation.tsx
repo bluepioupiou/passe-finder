@@ -97,7 +97,11 @@ export async function Navigation() {
 
           <div className="nav__actions">
             {user ? (
-              <MenuCompte email={user.email} seDeconnecter={seDeconnecter} />
+              <MenuCompte
+                email={user.email}
+                admin={estAdmin(user)}
+                seDeconnecter={seDeconnecter}
+              />
             ) : (
               <Link className="nav__lien nav__connexion" href="/connexion">
                 Se connecter
