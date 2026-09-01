@@ -3,6 +3,7 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import { CarteEnchainement } from '@/components/CarteEnchainement'
+import { nomAuteur, nomsDesAuteurs } from '@/auteurs'
 import { chargerCatalogue } from '@/catalogue'
 import config from '@/payload.config'
 import { exigerSession } from '@/porte'
@@ -76,6 +77,8 @@ export default async function MesFavoris() {
     .map((id) => parId.get(id))
     .filter((enchainement): enchainement is Enchainement => enchainement !== undefined)
 
+  const auteurs = await nomsDesAuteurs(payload, ordonnes)
+
   return (
     <div className="contenu-page">
       <header className="enchainements-entete">
@@ -97,7 +100,11 @@ export default async function MesFavoris() {
         <ul className="enchainements-grille">
           {ordonnes.map((enchainement) => (
             <li key={enchainement.id}>
-              <CarteEnchainement enchainement={enchainement} catalogue={catalogue} />
+              <CarteEnchainement
+                enchainement={enchainement}
+                catalogue={catalogue}
+                auteur={nomAuteur(enchainement, auteurs)}
+              />
             </li>
           ))}
         </ul>

@@ -142,7 +142,18 @@ test.describe('Modification', () => {
     await expect(enregistrer).toBeDisabled()
   })
 
-  test('la carte signale la musique et la vidéo', async () => {
+  test('l’auteur est affiché, sans jamais publier l’adresse', async () => {
+    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+
+    await page.goto(`/enchainements/${idEnchainement}`)
+
+    // La partie AVANT l'arobase, et elle seule : publier l'adresse entiere sur
+    // une page ouverte se paierait en spam (UX-DR10).
+    await expect(page.locator('.fiche-enchainement-auteur')).toHaveText('par modification-auteur')
+    await expect(page.locator('body')).not.toContainText(auteur.email)
+  })
+
+  test('la carte signale la musique, la vidéo et l’auteur', async () => {
     test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
 
     // Dans la grille, on veut savoir « celui-ci en a » sans ouvrir la fiche.
@@ -153,6 +164,7 @@ test.describe('Modification', () => {
     await expect(carte.locator('.enchainement-media')).toHaveCount(2)
     await expect(carte).toContainText('Avec musique')
     await expect(carte).toContainText('Avec vidéo')
+    await expect(carte.locator('.enchainement-auteur')).toHaveText('par modification-auteur')
   })
 
   test('un autre compte ne voit pas le lien, et l’adresse répond 404', async ({ browser }) => {

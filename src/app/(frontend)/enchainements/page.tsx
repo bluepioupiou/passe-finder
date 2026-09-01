@@ -5,6 +5,7 @@ import React from 'react'
 
 import { CarteEnchainement } from '@/components/CarteEnchainement'
 import { GrilleFiltrable } from '@/components/GrilleFiltrable'
+import { nomAuteur, nomsDesAuteurs } from '@/auteurs'
 import { chargerCatalogue } from '@/catalogue'
 import { idsFavoris } from '@/favoris'
 import config from '@/payload.config'
@@ -59,11 +60,21 @@ export default async function EnchainementsPage({
   // besoin par carte pour le filtre « mes favoris ».
   const favoris = await idsFavoris(payload, user)
 
+  // Une seule requete pour tous les auteurs de la page, quel que soit le nombre
+  // de cartes.
+  const auteurs = await nomsDesAuteurs(payload, enchainements)
+
   const elements = enchainements.map((enchainement) => ({
     cle: enchainement.id,
     nom: enchainement.titre,
     favori: favoris.has(enchainement.id),
-    carte: <CarteEnchainement enchainement={enchainement} catalogue={catalogue} />,
+    carte: (
+      <CarteEnchainement
+        enchainement={enchainement}
+        catalogue={catalogue}
+        auteur={nomAuteur(enchainement, auteurs)}
+      />
+    ),
   }))
   return (
     <div className="contenu-page">

@@ -23,9 +23,16 @@ import { IconeNote, IconeVideo } from './Icones'
 export function CarteEnchainement({
   enchainement,
   catalogue,
+  auteur,
 }: {
   enchainement: Enchainement
   catalogue: Catalogue
+  /**
+   * Nom d'affichage deja reduit (`nomsDesAuteurs`), jamais l'adresse ni l'objet
+   * `User` : ce qui n'arrive pas jusqu'ici ne peut pas fuir dans le HTML.
+   * `null` quand on ne sait pas — la ligne disparait alors.
+   */
+  auteur?: string | null
 }) {
   const passes = chaineDe(enchainement.passes, catalogue.passes, catalogue.positions)
   const { depart, arrivee } = extremites(passes)
@@ -66,6 +73,11 @@ export function CarteEnchainement({
           </span>
         ) : null}
       </p>
+
+      {/* L'auteur sur SA PROPRE LIGNE, sous la date et les marqueurs : dans une
+          grille, c'est une information de second rang — on cherche d'abord un
+          titre, on regarde ensuite qui l'a ecrit. */}
+      {auteur ? <p className="enchainement-auteur texte-attenue">par {auteur}</p> : null}
 
       {depart && arrivee ? (
         <p className="enchainement-trajet texte-attenue">
