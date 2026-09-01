@@ -80,6 +80,11 @@ export type SaisieMetadonnees = {
    * evite de retaper le nom dans une appli de streaming.
    */
   musique: { titre: string; lien: string }
+  /**
+   * Lien vers la video de l'enchainement. UN SEUL champ, contrairement a la
+   * musique : un morceau se nomme, une video de cours se regarde (FR-37).
+   */
+  video: string
   notes: string
   visibilite: string
 }

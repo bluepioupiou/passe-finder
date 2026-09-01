@@ -68,24 +68,24 @@
   line-height: var(--body-line);
 }
 
-/* La note de la carte : « cet enchainement a une musique », lu d'un coup d'oeil
-   dans la grille.
+/* Les marqueurs de la carte — « cet enchainement a une musique », « il a une
+   video » — lus d'un coup d'oeil dans la grille.
    EN COULEUR pour ressortir de la ligne meta, qui est attenuee — mais avec
    l'accent DEJA porte par la fleche du trajet, pas une teinte de plus : la
    carte garde une seule couleur (DESIGN.md), et c'est elle qui signale « il y a
    quelque chose ici ». */
-.enchainement-musique {
+.enchainement-media {
   color: var(--accent);
 }
 
-.enchainement-musique svg {
+.enchainement-media svg {
   vertical-align: -0.15em;
 }
 
 /* L'icone EST l'information ici : son intitule doit exister pour les lecteurs
    d'ecran, sans occuper de place a l'ecran (meme technique que le label du
    champ de recherche). */
-.enchainement-musique__intitule {
+.enchainement-media__intitule {
   position: absolute;
   width: 1px;
   height: 1px;

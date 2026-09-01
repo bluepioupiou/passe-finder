@@ -1,4 +1,5 @@
-import { fournisseurDe, lienEcoutable } from './musique'
+import { lienSur } from './liens'
+import { fournisseurDe } from './musique'
 
 /**
  * Le TITRE du morceau, demande au fournisseur a l'enregistrement (demande
@@ -53,7 +54,7 @@ const DELAI_MS = 3_000
 
 /** L'adresse a interroger pour ce lien, ou `null` si personne ne repond ici. */
 export function pointOEmbed(lien: string | null | undefined): string | null {
-  const url = lienEcoutable(lien)
+  const url = lienSur(lien)
   if (url === null) return null
 
   const fournisseur = fournisseurDe(url)

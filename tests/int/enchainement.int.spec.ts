@@ -170,6 +170,18 @@ describe('Enchainement', () => {
     expect(relu.musique?.lien).toBe('https://www.deezer.com/track/4200101')
   })
 
+  it('refuse un lien de vidéo qui n est pas une adresse web', async () => {
+    // Meme garde que le lien de la musique, meme raison : la fiche en fait un
+    // `<a href>` que d'autres cliquent.
+    await expect(
+      payload.update({
+        collection: 'enchainements',
+        id: idEnchainement,
+        data: { urlVideo: 'javascript:alert(1)' },
+      }),
+    ).rejects.toThrow()
+  })
+
   it('empeche de supprimer une passe utilisee', async () => {
     await expect(payload.delete({ collection: 'passes', id: idPasse })).rejects.toThrow(
       /Suppression impossible/,

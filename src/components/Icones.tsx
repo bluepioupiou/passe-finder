@@ -162,3 +162,19 @@ export function IconeNote(proprietes: ProprietesIcone) {
     </Svg>
   )
 }
+
+/**
+ * Camera : la video de l'enchainement.
+ *
+ * Meme parti que la note de musique — une icone au trait, aucune marque : le
+ * fournisseur est nomme en toutes lettres a cote (« Voir sur YouTube »), ce qui
+ * marche aussi pour ceux qu'on ne connait pas.
+ */
+export function IconeVideo(proprietes: ProprietesIcone) {
+  return (
+    <Svg {...proprietes}>
+      <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
+      <path d="M15.5 10.5l5-3v9l-5-3z" />
+    </Svg>
+  )
+}

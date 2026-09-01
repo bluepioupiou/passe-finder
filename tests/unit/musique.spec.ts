@@ -1,47 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import { fournisseurDe, lienEcoutable, presenterMusique } from '@/musique'
+import { fournisseurDe, presenterMusique } from '@/musique'
 
 /**
  * La musique d'un enchainement (demande d'Alain, 2026-08-31).
  *
- * Deux choses se testent ici, et une seule est cosmetique :
- *  - `lienEcoutable` est une GARDE. Ce champ est rempli par les eleves et rendu
- *    en `<a href>` sur une fiche que d'autres ouvrent : ce qui n'est pas
- *    http(s) ne doit jamais devenir cliquable. La collection et l'action
- *    serveur s'appuient toutes deux dessus ;
- *  - `presenterMusique` decide ce qu'on LIT. Le titre plutot que l'URL, parce
- *    qu'un titre survit au lien mort — quatre des cinq musiques de l'historique
- *    pointent vers des fichiers disparus avec l'ancien site.
+ * `presenterMusique` decide ce qu'on LIT : le titre plutot que l'URL, parce
+ * qu'un titre survit au lien mort — quatre des cinq musiques de l'historique
+ * pointent vers des fichiers disparus avec l'ancien site.
+ *
+ * La GARDE sur le lien lui-meme (« ce qui n'est pas http(s) ne devient jamais
+ * cliquable ») est partagee avec la video : elle se teste dans `liens.spec.ts`.
  */
-
-describe('lienEcoutable', () => {
-  it('accepte http et https', () => {
-    expect(lienEcoutable('https://open.spotify.com/track/abc')).toBe(
-      'https://open.spotify.com/track/abc',
-    )
-    expect(lienEcoutable('http://www.deezer.com/track/1')).toBe('http://www.deezer.com/track/1')
-  })
-
-  it('complete un lien recopie sans son protocole', () => {
-    // Ce qu'on obtient en recopiant une barre d'adresse plutot qu'en utilisant
-    // « Partager ». Refuser cette forme ferait passer une saisie juste pour une
-    // faute.
-    expect(lienEcoutable('open.spotify.com/track/abc')).toBe('https://open.spotify.com/track/abc')
-  })
-
-  it('refuse tout ce qui n est pas une adresse web', () => {
-    // Le cas qui compte vraiment : une saisie utilisateur rendue en lien.
-    expect(lienEcoutable('javascript:alert(1)')).toBeNull()
-    expect(lienEcoutable('data:text/html,<script>')).toBeNull()
-    // Chemin relatif de l'ancien site : rien a ouvrir depuis le nouveau.
-    expect(lienEcoutable('musiques/choregraphie-2012-V8.mp3')).toBeNull()
-    // Un titre saisi dans la mauvaise case ne doit pas devenir un lien.
-    expect(lienEcoutable('Gene Vincent — Be-Bop-A-Lula')).toBeNull()
-    expect(lienEcoutable('   ')).toBeNull()
-    expect(lienEcoutable(null)).toBeNull()
-  })
-})
 
 describe('fournisseurDe', () => {
   it('reconnaît les hébergeurs, sous-domaine compris', () => {

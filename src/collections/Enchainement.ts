@@ -1,6 +1,6 @@
 import type { CollectionBeforeChangeHook, CollectionConfig, Where } from 'payload'
 
-import { lienEcoutable } from '../musique'
+import { lienSur } from '../liens'
 import { titreDuMorceau } from '../musique-oembed'
 import { auteurOuAdmin, estAdmin, peutCreerEnchainement } from './acces'
 
@@ -162,7 +162,7 @@ export const Enchainement: CollectionConfig = {
             if (!valeur || valeur.trim() === '') return true
 
             return (
-              lienEcoutable(valeur) !== null ||
+              lienSur(valeur) !== null ||
               'Le lien doit être une adresse web (commençant par http:// ou https://).'
             )
           },
@@ -228,11 +228,26 @@ export const Enchainement: CollectionConfig = {
       ],
     },
     {
+      // Le NOM du champ reste `urlVideo` : le renommer imposerait une migration
+      // de colonne pour un gain nul — c'est le LIBELLÉ qui parlait de YouTube,
+      // et rien n'oblige à passer par lui.
       name: 'urlVideo',
       type: 'text',
-      label: 'Vidéo YouTube',
+      label: 'Vidéo',
       admin: {
-        description: "Facultative. Lien vers la vidéo de l'enchaînement (FR-37).",
+        description:
+          "Facultatif. Lien vers la vidéo de l'enchaînement — YouTube, Vimeo, " +
+          'Dailymotion… (FR-37).',
+      },
+      // Meme garde que le lien de la musique, et pour la meme raison : la fiche
+      // en fait un `<a href>` que d'autres cliquent.
+      validate: (valeur: string | null | undefined) => {
+        if (!valeur || valeur.trim() === '') return true
+
+        return (
+          lienSur(valeur) !== null ||
+          'Le lien doit être une adresse web (commençant par http:// ou https://).'
+        )
       },
     },
 
