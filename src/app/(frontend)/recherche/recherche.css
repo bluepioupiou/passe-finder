@@ -54,8 +54,8 @@
 }
 
 .resultat__image {
+  --image-position-taille: 48px;
   flex-shrink: 0;
-  width: 48px;
 }
 
 .resultat__nom {

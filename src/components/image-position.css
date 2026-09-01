@@ -5,10 +5,26 @@
 
 .image-position {
   display: block;
-  width: 100%;
+  /*
+   * UNE SEULE DECLARATION `width` DANS TOUT LE PRODUIT, et les appelants la
+   * parametrent au lieu de la contredire.
+   *
+   * POURQUOI. Une page qui ecrivait `.mon-image { width: 40px }` posait une
+   * seconde regle de MEME priorite que le `width: 100%` d'ici : entre deux
+   * declarations a egalite, c'est l'ORDRE DE CHARGEMENT DES FICHIERS qui
+   * tranche — un ordre que personne ne controle, qui depend du graphe des
+   * imports, et qui peut donc changer en ajoutant un import ailleurs. Le
+   * compositeur en a fait les frais : ses vignettes de 40px ont pris toute la
+   * largeur du jour au lendemain, sans qu'une ligne de son CSS ait bouge.
+   * La fiche position portait deja une note sur ce piege, contournee au cas
+   * par cas avec `max-width` ; ici il disparait.
+   *
+   * Une variable n'entre en conflit avec rien : l'appelant la POSE, cette
+   * regle la LIT. `100%` reste le defaut — l'image remplit son conteneur.
+   */
+  width: var(--image-position-taille, 100%);
   /* Garde-fou : meme sans contrainte de la page appelante, l'image ne peut pas
-     s'etendre au-dela d'une taille raisonnable ni deborder de son conteneur.
-     Les pages affinent la valeur avec `max-width`. */
+     s'etendre au-dela d'une taille raisonnable ni deborder de son conteneur. */
   max-width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
