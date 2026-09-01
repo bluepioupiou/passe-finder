@@ -206,8 +206,14 @@ async function main() {
     }
 
     // Fidelite au legacy (decision Alain, 2026-08-30) : ce qui etait prive le
-    // reste, le reste arrive en partage. Un enchainement non publie est traite
+    // reste, le reste arrive en PUBLIC. Un enchainement non publie est traite
     // comme prive : il n'etait deja plus visible.
+    //
+    // « public » et non « non repertorie » (modele elargi du 2026-09-01) :
+    // l'ancienne appli listait ces enchainements pour tout le monde, c'est donc
+    // « public » qui reproduit ce qu'ils etaient. Le non-repertorie est un choix
+    // que personne n'a jamais fait dans le legacy — l'inventer ici retirerait
+    // 90 enchainements de la liste sans que personne ne l'ait demande.
     const prive = legacy.private === '1' || legacy.published === '0'
     if (prive) prives++
     if (marqueurs.length) avecMarqueurs++
@@ -222,7 +228,7 @@ async function main() {
         // `dateEvent` = date du cours ; a defaut, la date de creation.
         ...(date ? { date } : {}),
         auteur: auteur.id,
-        visibilite: prive ? 'prive' : 'partage',
+        visibilite: prive ? 'prive' : 'public',
         passes: maillonsPasses.map((m) => ({ passe: passeParLegacyId.get(Number(m.passe_id))! })),
         legacyId,
         ...(marqueurs.length

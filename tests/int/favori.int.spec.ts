@@ -23,6 +23,11 @@ describe('Favori', () => {
   let idPartage: number
   let idPartageBis: number
   let idPrive: number
+  // LE LIEN, et non le numero : c'est la seule adresse que la collection
+  // accepte desormais pour poser un favori (`retrouverParLeLien`).
+  let lienPartage: string
+  let lienPartageBis: string
+  let lienPrive: string
 
   beforeAll(async () => {
     payload = await getPayload({ config: await config })
@@ -61,11 +66,12 @@ describe('Favori', () => {
       data: {
         titre: 'Favori — partagé',
         auteur: auteur.id,
-        visibilite: 'partage',
+        visibilite: 'public',
         passes: [{ passe: idPasse }],
       },
     })
     idPartage = partage.id as number
+    lienPartage = partage.idPublic as string
 
     // Un second partage, pour les tests qui ont besoin d un enchainement
     // encore libre de tout favori (l unicite interdit de reutiliser le premier).
@@ -74,11 +80,12 @@ describe('Favori', () => {
       data: {
         titre: 'Favori — partagé (bis)',
         auteur: auteur.id,
-        visibilite: 'partage',
+        visibilite: 'public',
         passes: [{ passe: idPasse }],
       },
     })
     idPartageBis = partageBis.id as number
+    lienPartageBis = partageBis.idPublic as string
 
     const prive = await payload.create({
       collection: 'enchainements',
@@ -90,6 +97,7 @@ describe('Favori', () => {
       },
     })
     idPrive = prive.id as number
+    lienPrive = prive.idPublic as string
   })
 
   afterAll(async () => {
@@ -110,7 +118,7 @@ describe('Favori', () => {
   it("met en favori un enchaînement partagé d'autrui", async () => {
     const favori = await payload.create({
       collection: 'favoris',
-      data: { utilisateur: eleve.id, enchainement: idPartage },
+      data: { utilisateur: eleve.id, idPublic: lienPartage },
       overrideAccess: false,
       user: eleve,
     })
@@ -123,7 +131,7 @@ describe('Favori', () => {
     await expect(
       payload.create({
         collection: 'favoris',
-        data: { utilisateur: eleve.id, enchainement: idPartage },
+        data: { utilisateur: eleve.id, idPublic: lienPartage },
         overrideAccess: false,
         user: eleve,
       }),
@@ -142,7 +150,7 @@ describe('Favori', () => {
     await expect(
       payload.create({
         collection: 'favoris',
-        data: { utilisateur: eleve.id, enchainement: idPrive },
+        data: { utilisateur: eleve.id, idPublic: lienPrive },
         overrideAccess: false,
         user: eleve,
       }),
@@ -153,7 +161,7 @@ describe('Favori', () => {
     await expect(
       payload.create({
         collection: 'favoris',
-        data: { utilisateur: auteur.id, enchainement: idPartage },
+        data: { utilisateur: auteur.id, idPublic: lienPartage },
         overrideAccess: false,
         user: auteur,
       }),
@@ -164,7 +172,7 @@ describe('Favori', () => {
     // Sinon on deposerait un favori dans la liste de quelqu'un d'autre.
     const favori = await payload.create({
       collection: 'favoris',
-      data: { utilisateur: auteur.id, enchainement: idPartageBis },
+      data: { utilisateur: auteur.id, idPublic: lienPartageBis },
       overrideAccess: true,
       user: eleve,
       // `overrideAccess: true` court-circuite les droits mais PAS les hooks :

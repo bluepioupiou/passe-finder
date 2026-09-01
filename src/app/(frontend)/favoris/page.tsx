@@ -7,7 +7,7 @@ import { nomAuteur, nomsDesAuteurs } from '@/auteurs'
 import { chargerCatalogue } from '@/catalogue'
 import config from '@/payload.config'
 import { exigerSession } from '@/porte'
-import type { Enchainement } from '@/payload-types'
+import { lireParIdentifiantsPublics } from '@/lecture-enchainement'
 import '../enchainements/enchainements.css'
 
 export const dynamic = 'force-dynamic'
@@ -25,10 +25,17 @@ export const metadata = {
  *
  * LES FAVORIS SONT LUS EN PREMIER, puis les enchainements correspondants. On
  * pourrait charger la relation en profondeur 1 et s'epargner une requete, mais
- * les `access` de la collection Enchainement doivent s'appliquer : un
- * enchainement que son auteur a repasse en prive depuis la mise en favori ne
- * doit plus apparaitre ici. La seconde lecture est ce qui garantit cette
- * fraicheur.
+ * la visibilite doit etre relue : un enchainement que son auteur a repasse en
+ * prive depuis la mise en favori ne doit plus apparaitre ici. La seconde
+ * lecture est ce qui garantit cette fraicheur.
+ *
+ * ELLE PASSE PAR LE LIEN QUE LE FAVORI A GARDE, et non par les `access` de la
+ * collection. La raison tient au modele de visibilite : un NON REPERTORIE
+ * n'existe, pour `access.read`, que pour son auteur — c'est ce qui le tient
+ * hors des listes et de l'API. Un favori pose dessus disparaitrait donc en
+ * silence de cette page. Le favori conserve le lien recu, cette page le rejoue,
+ * et `peutLire` tranche a nouveau : ce qu'on rejoue est une adresse, pas un
+ * droit acquis (voir `src/visibilite.ts`).
  */
 export default async function MesFavoris() {
   const utilisateur = await exigerSession('/favoris')
@@ -45,37 +52,17 @@ export default async function MesFavoris() {
     user: utilisateur,
   })
 
-  const ids = favoris
-    .map((favori) =>
-      typeof favori.enchainement === 'object' && favori.enchainement !== null
-        ? favori.enchainement.id
-        : favori.enchainement,
-    )
-    .filter((id): id is number => typeof id === 'number')
+  // Les liens recus, du plus recemment mis de cote au plus ancien : c'est la
+  // chronologie de MA mise de cote qui fait sens ici, pas la date des
+  // enchainements. `lireParIdentifiantsPublics` conserve cet ordre.
+  const liens = favoris
+    .map((favori) => favori.idPublic)
+    .filter((lien): lien is string => typeof lien === 'string')
 
-  const [enchainements, catalogue] = await Promise.all([
-    ids.length === 0
-      ? Promise.resolve([] as Enchainement[])
-      : payload
-          .find({
-            collection: 'enchainements',
-            where: { id: { in: ids } },
-            limit: 500,
-            depth: 0,
-            overrideAccess: false,
-            user: utilisateur,
-          })
-          .then((resultat) => resultat.docs),
+  const [ordonnes, catalogue] = await Promise.all([
+    lireParIdentifiantsPublics(payload, liens, utilisateur),
     chargerCatalogue(payload),
   ])
-
-  // On conserve l'ORDRE DES FAVORIS (le plus recemment pose en premier), que la
-  // seconde requete ne connait pas : c'est la chronologie de MA mise de cote qui
-  // fait sens ici, pas la date des enchainements.
-  const parId = new Map(enchainements.map((enchainement) => [enchainement.id, enchainement]))
-  const ordonnes = ids
-    .map((id) => parId.get(id))
-    .filter((enchainement): enchainement is Enchainement => enchainement !== undefined)
 
   const auteurs = await nomsDesAuteurs(payload, ordonnes)
 

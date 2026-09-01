@@ -42,7 +42,9 @@ export function CarteEnchainement({
   const video = presenterVideo(enchainement.urlVideo)
 
   return (
-    <Link className="enchainement-carte" href={`/enchainements/${enchainement.id}`}>
+    // L'IDENTIFIANT PUBLIC, jamais le numero de ligne : c'est la seule adresse
+    // que le site sert (action item `identifiant-opaque-et-visibilites`).
+    <Link className="enchainement-carte" href={`/enchainements/${enchainement.idPublic}`}>
       <h2 className="enchainement-titre">{enchainement.titre}</h2>
 
       <p className="enchainement-meta texte-attenue">

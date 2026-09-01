@@ -5,16 +5,12 @@ import type {
   Where,
 } from 'payload'
 
+import { nouvelIdentifiantPublic } from '../identifiant-public'
 import { lienSur } from '../liens'
 import { normaliserTexte } from '../recherche'
 import { titreDuMorceau } from '../musique-oembed'
+import { VISIBILITES } from '../visibilite'
 import { auteurOuAdmin, estAdmin, peutCreerEnchainement } from './acces'
-
-/** Visibilité d'un enchaînement (FR-17, AD-6). */
-export const VISIBILITES = [
-  { label: 'Privé', value: 'prive' },
-  { label: 'Partagé', value: 'partage' },
-] as const
 
 /** Les deux moitiés du champ musique, telles qu'elles arrivent à l'écriture. */
 type SaisieMusique = { titre?: string | null; lien?: string | null }
@@ -71,6 +67,29 @@ const normaliserLeTitre: CollectionBeforeChangeHook = async ({ data, originalDoc
   if (typeof titre !== 'string') return data
 
   return { ...data, titreNormalise: normaliserTexte(titre) }
+}
+
+/**
+ * Donne son IDENTIFIANT PUBLIC à un enchaînement qui n'en a pas encore
+ * (action item `identifiant-opaque-et-visibilites`).
+ *
+ * SUR LA COLLECTION, donc pour toute écriture : /admin, l'API, le compositeur
+ * et les scripts de migration créent tous des enchaînements. Un identifiant
+ * posé dans une seule de ces portes laisserait les autres produire des
+ * documents inatteignables — ils n'auraient aucune URL.
+ *
+ * NE LE RÉÉCRIT JAMAIS. Un identifiant public est une adresse : la changer
+ * casserait tous les liens déjà envoyés, et c'est précisément le contraire de
+ * ce que cette colonne existe pour offrir. D'où la garde sur `originalDoc`.
+ */
+const donnerUnIdentifiantPublic: CollectionBeforeChangeHook = async ({ data, originalDoc }) => {
+  const existant = (originalDoc as { idPublic?: string | null } | undefined)?.idPublic
+  const propose = (data as { idPublic?: string | null }).idPublic
+
+  if (existant) return { ...data, idPublic: existant }
+  if (propose) return data
+
+  return { ...data, idPublic: nouvelIdentifiantPublic() }
 }
 
 /**
@@ -135,24 +154,32 @@ export const Enchainement: CollectionConfig = {
     defaultColumns: ['titre', 'date', 'visibilite', 'auteur'],
   },
   access: {
-    // FR-17 / AD-6 : un visiteur anonyme ne voit QUE les enchaînements
-    // partagés. La règle est une contrainte de requête, pas un filtre d'UI :
-    // elle s'applique aussi à l'API et à la recherche (AD-3).
+    // FR-17 / AD-6 : un visiteur anonyme ne voit QUE les enchaînements PUBLICS.
+    // La règle est une contrainte de requête, pas un filtre d'UI : elle
+    // s'applique aussi à l'API et à la recherche (AD-3).
+    //
+    // ELLE REFUSE LE NON-RÉPERTORIÉ COMME ELLE REFUSE LE PRIVÉ, et c'est ce qui
+    // porte tout le modèle (voir `src/visibilite.ts`). Sans cela,
+    // `GET /api/enchainements` rendrait à n'importe quel visiteur la liste
+    // complète des non-répertoriés, et « non répertorié » ne voudrait plus rien
+    // dire. Conséquence à connaître : la fiche NE PEUT PAS lire par ici — elle
+    // passe par `lireParIdentifiantPublic`, où c'est la possession du lien qui
+    // autorise.
     read: ({ req }) => {
       if (estAdmin(req.user)) return true
-      // Un compte connecté voit les partagés de tous, PLUS les siens quelle
+      // Un compte connecté voit les publics de tous, PLUS les siens quelle
       // que soit leur visibilité. Sans la seconde branche, un auteur perdrait
       // de vue ses propres brouillons privés ; sans la première, il ne verrait
       // plus rien des autres.
       if (req.user) {
         // Annotation explicite : sans elle, TypeScript deduit de ce `or` une
         // union de formes distinctes plutot que le type `Where` de Payload.
-        const siensOuPartages: Where = {
-          or: [{ visibilite: { equals: 'partage' } }, { auteur: { equals: req.user.id } }],
+        const siensOuPublics: Where = {
+          or: [{ visibilite: { equals: 'public' } }, { auteur: { equals: req.user.id } }],
         }
-        return siensOuPartages
+        return siensOuPublics
       }
-      return { visibilite: { equals: 'partage' } }
+      return { visibilite: { equals: 'public' } }
     },
     // GEL TEMPORAIRE (2026-08-31) : la création est refermée aux seuls
     // administrateurs, le temps de trancher le modèle de visibilité. Le geste
@@ -167,7 +194,7 @@ export const Enchainement: CollectionConfig = {
     delete: auteurOuAdmin,
   },
   hooks: {
-    beforeChange: [completerTitreMusique, normaliserLeTitre],
+    beforeChange: [donnerUnIdentifiantPublic, completerTitreMusique, normaliserLeTitre],
     beforeDelete: [retirerLesFavoris],
   },
   fields: [
@@ -263,6 +290,28 @@ export const Enchainement: CollectionConfig = {
       defaultValue: 'prive',
       label: 'Visibilité',
       options: [...VISIBILITES],
+      admin: {
+        description:
+          'Privé : toi seul. Non répertorié : visible par qui a le lien, absent des listes et ' +
+          'de la recherche. Public : listé et cherchable.',
+      },
+    },
+    {
+      // L'IDENTIFIANT QUI VIT DANS L'URL — voir `src/identifiant-public.ts`.
+      // Posé par le hook `donnerUnIdentifiantPublic`, jamais saisi, jamais
+      // réécrit : c'est une adresse, et une adresse qui change casse les liens
+      // déjà envoyés.
+      //
+      // PAS `hidden: true` : un champ `hidden` n'est pas queryable dans Payload,
+      // et celui-ci n'existe QUE pour être interrogé (c'est par lui que la fiche
+      // retrouve l'enchaînement). Masqué de /admin seulement, où il inviterait à
+      // le corriger à la main.
+      name: 'idPublic',
+      type: 'text',
+      unique: true,
+      index: true,
+      label: 'Identifiant public',
+      admin: { hidden: true, readOnly: true },
     },
     {
       name: 'passes',

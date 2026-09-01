@@ -41,7 +41,9 @@ const LIEN_VIDEO = 'https://www.youtube.com/watch?v=modification'
 
 test.describe('Modification', () => {
   let page: Page
-  let idEnchainement: number | null = null
+  // LE LIEN, et non le numero : c'est la seule adresse que le site sert
+  // desormais (action item `identifiant-opaque-et-visibilites`).
+  let lien: string | null = null
 
   test.beforeAll(async ({ browser }) => {
     await seedTestUser(auteur)
@@ -76,11 +78,11 @@ test.describe('Modification', () => {
           // PARTAGE a dessein : l'autre compte doit pouvoir le LIRE sans
           // pouvoir le modifier. Sur un enchainement prive, le 404 ne dirait
           // rien de la Story 4.5 — il viendrait de la lecture.
-          visibilite: 'partage',
+          visibilite: 'public',
           passes: [{ passe: prolongeable.id }],
         },
       })
-      idEnchainement = cree.id
+      lien = cree.idPublic ?? null
     }
 
     const contexte = await browser.newContext()
@@ -99,12 +101,12 @@ test.describe('Modification', () => {
   })
 
   test('l’auteur modifie les informations depuis sa fiche', async () => {
-    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+    test.skip(lien === null, 'Aucune passe sur cette cible.')
 
-    await page.goto(`/enchainements/${idEnchainement}`)
+    await page.goto(`/enchainements/${lien}`)
 
     await page.getByRole('link', { name: 'Modifier' }).click()
-    await expect(page).toHaveURL(new RegExp(`/enchainements/${idEnchainement}/modifier$`))
+    await expect(page).toHaveURL(new RegExp(`/enchainements/${lien}/modifier$`))
 
     // Le formulaire s'ouvre SUR LES VALEURS EXISTANTES : sans cela, enregistrer
     // pour corriger un titre effacerait tout le reste.
@@ -118,7 +120,7 @@ test.describe('Modification', () => {
     await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
 
     // On revient sur la fiche : la confirmation, c'est de voir le changement.
-    await expect(page).toHaveURL(new RegExp(`/enchainements/${idEnchainement}$`))
+    await expect(page).toHaveURL(new RegExp(`/enchainements/${lien}$`))
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(TITRE_MODIFIE)
     await expect(page.getByRole('link', { name: 'Un morceau' })).toHaveAttribute(
       'href',
@@ -133,9 +135,9 @@ test.describe('Modification', () => {
   })
 
   test('l’auteur reprend la chaîne là où elle en est, et la prolonge', async () => {
-    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+    test.skip(lien === null, 'Aucune passe sur cette cible.')
 
-    await page.goto(`/enchainements/${idEnchainement}/modifier`)
+    await page.goto(`/enchainements/${lien}/modifier`)
 
     // LA CHAINE EST DEJA LA : c'est tout l'objet de la reprise. Un compositeur
     // qui s'ouvrirait vide effacerait l'enchainement a l'enregistrement.
@@ -155,19 +157,19 @@ test.describe('Modification', () => {
 
     await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
 
-    await expect(page).toHaveURL(new RegExp(`/enchainements/${idEnchainement}$`))
+    await expect(page).toHaveURL(new RegExp(`/enchainements/${lien}$`))
     // La fiche compte les passes : c'est la preuve que la chaine a bien ete
     // REECRITE en base, et pas seulement affichee autrement.
     await expect(page.getByText('2 passes')).toBeVisible()
   })
 
   test('une chaîne vidée ne peut pas être enregistrée', async () => {
-    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+    test.skip(lien === null, 'Aucune passe sur cette cible.')
 
     // Le garde-fou qui compte : sans lui, retirer toutes les passes puis
     // enregistrer laisserait un enchainement sans chaine — ni lisible, ni
     // reparable depuis la fiche.
-    await page.goto(`/enchainements/${idEnchainement}/modifier`)
+    await page.goto(`/enchainements/${lien}/modifier`)
 
     const enregistrer = page.getByRole('button', { name: 'Enregistrer les modifications' })
     await expect(enregistrer).toBeEnabled()
@@ -181,16 +183,16 @@ test.describe('Modification', () => {
     await expect(page.getByText('Ajoute au moins une passe pour pouvoir enregistrer.')).toBeVisible()
 
     // On repart sans enregistrer : la chaine en base n'a pas bouge.
-    await page.goto(`/enchainements/${idEnchainement}`)
+    await page.goto(`/enchainements/${lien}`)
     await expect(page.getByText('2 passes')).toBeVisible()
   })
 
   test('un lien invalide, musique ou vidéo, bloque l’enregistrement', async () => {
-    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+    test.skip(lien === null, 'Aucune passe sur cette cible.')
 
     const enregistrer = page.getByRole('button', { name: 'Enregistrer les modifications' })
 
-    await page.goto(`/enchainements/${idEnchainement}/modifier`)
+    await page.goto(`/enchainements/${lien}/modifier`)
     await page.getByLabel('Lien de la musique').fill('pas une adresse')
     await expect(enregistrer).toBeDisabled()
 
@@ -203,9 +205,9 @@ test.describe('Modification', () => {
   })
 
   test('l’auteur est affiché, sans jamais publier l’adresse', async () => {
-    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+    test.skip(lien === null, 'Aucune passe sur cette cible.')
 
-    await page.goto(`/enchainements/${idEnchainement}`)
+    await page.goto(`/enchainements/${lien}`)
 
     // La partie AVANT l'arobase, et elle seule : publier l'adresse entiere sur
     // une page ouverte se paierait en spam (UX-DR10).
@@ -214,7 +216,7 @@ test.describe('Modification', () => {
   })
 
   test('la carte signale la musique, la vidéo et l’auteur', async () => {
-    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+    test.skip(lien === null, 'Aucune passe sur cette cible.')
 
     // Dans la grille, on veut savoir « celui-ci en a » sans ouvrir la fiche.
     await page.goto('/enchainements')
@@ -240,35 +242,35 @@ test.describe('Modification', () => {
   })
 
   test('un autre compte ne voit pas le lien, et l’adresse répond 404', async ({ browser }) => {
-    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+    test.skip(lien === null, 'Aucune passe sur cette cible.')
 
     const contexte = await browser.newContext()
     const pageAutre = await contexte.newPage()
     await login({ page: pageAutre, user: autre })
 
     // Il LIT l'enchainement (il est partage) mais ne peut pas le modifier.
-    await pageAutre.goto(`/enchainements/${idEnchainement}`)
+    await pageAutre.goto(`/enchainements/${lien}`)
     await expect(pageAutre.getByRole('heading', { level: 1 })).toBeVisible()
     await expect(pageAutre.getByRole('link', { name: 'Modifier' })).toHaveCount(0)
 
-    const reponse = await pageAutre.goto(`/enchainements/${idEnchainement}/modifier`)
+    const reponse = await pageAutre.goto(`/enchainements/${lien}/modifier`)
     expect(reponse?.status()).toBe(404)
 
     await contexte.close()
   })
 
   test('un visiteur anonyme est emmené vers la connexion', async ({ browser }) => {
-    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+    test.skip(lien === null, 'Aucune passe sur cette cible.')
 
     const contexte = await browser.newContext()
     const anonyme = await contexte.newPage()
 
-    await anonyme.goto(`/enchainements/${idEnchainement}/modifier`)
+    await anonyme.goto(`/enchainements/${lien}/modifier`)
 
     // La porte emporte le chemin d'origine, pour y revenir apres connexion
     // (Story 3.5).
     await expect(anonyme).toHaveURL(/\/connexion\?suite=/)
-    await expect(anonyme).toHaveURL(new RegExp(encodeURIComponent(`/${idEnchainement}/modifier`)))
+    await expect(anonyme).toHaveURL(new RegExp(encodeURIComponent(`/${lien}/modifier`)))
 
     await contexte.close()
   })
@@ -276,9 +278,9 @@ test.describe('Modification', () => {
   // EN DERNIER, forcement : ce test detruit l'enchainement sur lequel tous les
   // autres travaillent.
   test('l’auteur supprime son enchaînement, en deux temps', async () => {
-    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+    test.skip(lien === null, 'Aucune passe sur cette cible.')
 
-    await page.goto(`/enchainements/${idEnchainement}/modifier`)
+    await page.goto(`/enchainements/${lien}/modifier`)
 
     const demander = page.getByRole('button', { name: "Supprimer l'enchaînement" })
     await demander.click()
@@ -300,9 +302,9 @@ test.describe('Modification', () => {
     await expect(page).toHaveURL(/\/enchainements$/)
 
     // Et elle n'existe vraiment plus, y compris en tapant l'adresse.
-    const reponse = await page.goto(`/enchainements/${idEnchainement}`)
+    const reponse = await page.goto(`/enchainements/${lien}`)
     expect(reponse?.status()).toBe(404)
 
-    idEnchainement = null
+    lien = null
   })
 })

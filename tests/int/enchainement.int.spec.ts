@@ -111,7 +111,7 @@ describe('Enchainement', () => {
     await payload.update({
       collection: 'enchainements',
       id: idEnchainement,
-      data: { visibilite: 'partage' },
+      data: { visibilite: 'public' },
     })
 
     const partage = await payload.find({

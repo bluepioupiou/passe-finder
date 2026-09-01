@@ -23,7 +23,8 @@
     "migrate:transitions": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/migrate-transitions.ts",
     "migrate:all": "npm run migrate:positions && npm run migrate:passes && npm run migrate:transitions && npm run migrate:enchainements",
     "rapport:transitions": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/rapport-transitions.ts",
-    "promouvoir:admin": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/promouvoir-admin.ts"
+    "promouvoir:admin": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/promouvoir-admin.ts",
+    "reprendre:visibilites": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/reprendre-visibilites.ts"
   },
   "dependencies": {
     "@payloadcms/db-sqlite": "3.88.0",

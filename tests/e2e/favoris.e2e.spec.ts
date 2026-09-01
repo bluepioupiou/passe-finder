@@ -18,24 +18,30 @@ const eleve: Identifiants = {
   password: 'test-favoris',
 }
 
-/** Un enchainement partage de la cible, ou `null` si le catalogue est vide. */
-async function unEnchainementPartage(request: APIRequestContext): Promise<number | null> {
-  // Requete ANONYME : elle ne peut donc ramener que du partage (FR-17).
+/**
+ * Le LIEN d'un enchainement public de la cible, ou `null` si le catalogue est
+ * vide.
+ *
+ * Requete ANONYME, donc elle ne peut ramener que du PUBLIC (FR-17) : ni prive,
+ * ni non repertorie. C'est aussi, au passage, la preuve que l'API ne liste pas
+ * ces deux-la.
+ */
+async function unEnchainementPartage(request: APIRequestContext): Promise<string | null> {
   const reponse = await request.get('/api/enchainements?limit=1&depth=0')
   if (!reponse.ok()) return null
 
   const { docs } = await reponse.json()
-  return docs?.[0]?.id ?? null
+  return docs?.[0]?.idPublic ?? null
 }
 
 test.describe('Favoris', () => {
   let page: Page
-  let idEnchainement: number | null = null
+  let lien: string | null = null
 
   test.beforeAll(async ({ browser, request }) => {
     await seedTestUser(eleve)
 
-    idEnchainement = await unEnchainementPartage(request)
+    lien = await unEnchainementPartage(request)
 
     const contexte = await browser.newContext()
     page = await contexte.newPage()
@@ -61,9 +67,9 @@ test.describe('Favoris', () => {
   })
 
   test('la fiche propose la mise en favori, et la bascule', async () => {
-    test.skip(idEnchainement === null, 'Aucun enchaînement partagé sur cette cible.')
+    test.skip(lien === null, 'Aucun enchaînement partagé sur cette cible.')
 
-    await page.goto(`/enchainements/${idEnchainement}`)
+    await page.goto(`/enchainements/${lien}`)
 
     const bouton = page.getByRole('button', { name: 'Mettre en favori' })
     await expect(bouton).toBeVisible()
@@ -83,7 +89,7 @@ test.describe('Favoris', () => {
   })
 
   test("l'état survit au rechargement (il est en base, pas dans la page)", async () => {
-    test.skip(idEnchainement === null, 'Aucun enchaînement partagé sur cette cible.')
+    test.skip(lien === null, 'Aucun enchaînement partagé sur cette cible.')
 
     await page.reload()
 
@@ -91,7 +97,7 @@ test.describe('Favoris', () => {
   })
 
   test('le menu de compte mène à mes favoris, qui contient l’enchaînement', async () => {
-    test.skip(idEnchainement === null, 'Aucun enchaînement partagé sur cette cible.')
+    test.skip(lien === null, 'Aucun enchaînement partagé sur cette cible.')
 
     await page.getByRole('button', { name: 'Mon compte' }).click()
     await page.getByRole('menuitem', { name: 'Mes favoris' }).click()
@@ -101,7 +107,7 @@ test.describe('Favoris', () => {
   })
 
   test('la liste des enchaînements se filtre sur mes favoris', async () => {
-    test.skip(idEnchainement === null, 'Aucun enchaînement partagé sur cette cible.')
+    test.skip(lien === null, 'Aucun enchaînement partagé sur cette cible.')
 
     await page.goto('/enchainements')
     // ATTENDRE QUE LA PAGE SOIT VIVANTE AVANT DE TAPER. La recherche est un
@@ -121,9 +127,9 @@ test.describe('Favoris', () => {
   })
 
   test('le favori se retire, et la liste redevient vide', async () => {
-    test.skip(idEnchainement === null, 'Aucun enchaînement partagé sur cette cible.')
+    test.skip(lien === null, 'Aucun enchaînement partagé sur cette cible.')
 
-    await page.goto(`/enchainements/${idEnchainement}`)
+    await page.goto(`/enchainements/${lien}`)
     await page.getByRole('button', { name: 'En favori' }).click()
     const retire = page.getByRole('button', { name: 'Mettre en favori' })
     await expect(retire).toBeVisible()
@@ -140,7 +146,7 @@ test.describe('Favoris', () => {
   })
 
   test('un visiteur anonyme ne voit aucun contrôle de favori', async () => {
-    test.skip(idEnchainement === null, 'Aucun enchaînement partagé sur cette cible.')
+    test.skip(lien === null, 'Aucun enchaînement partagé sur cette cible.')
 
     // Decision d'Alain (2026-08-31) : la fiche ne propose RIEN a un anonyme, pas
     // meme une invitation a se connecter — elle encombrait la lecture. La porte
@@ -149,7 +155,7 @@ test.describe('Favoris', () => {
     const contexte = await page.context().browser()!.newContext()
     const visiteur = await contexte.newPage()
 
-    await visiteur.goto(`/enchainements/${idEnchainement}`)
+    await visiteur.goto(`/enchainements/${lien}`)
 
     await expect(visiteur.getByRole('button', { name: 'Mettre en favori' })).toHaveCount(0)
     await expect(visiteur.getByRole('link', { name: /favori/i })).toHaveCount(0)

@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-01 (story 4-5 : editer la chaine et supprimer)
+# last_updated: 2026-09-01 (identifiant opaque et trois visibilites)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -894,7 +894,7 @@ action_items:
   # l identifiant public, et le modele de visibilite. Ils se tiennent, mais ils
   # ne coutent pas du tout la meme chose.
   - id: identifiant-opaque-et-visibilites
-    status: open
+    status: done
     titre: "Identifiant opaque et modele de visibilite elargi"
     concerne:
       - 4-4-vue-lecture-partage-par-url-controles-de-partage
@@ -972,6 +972,43 @@ action_items:
       Identifiant opaque + lien de partage : moyenne (un champ, une migration,
       le routage, la reprise de 120 fiches) — et c est la partie faisable.
       Ecole/cours : epic a instruire, HORS V1, reporte sciemment (2026-08-31).
+    livre: >
+      LIVRE le 2026-09-01. Les trois cas a portee du modele actuel sont en
+      place ; « ecole / cours » reste hors v1, comme prevu, et l enum lui laisse
+      sa place (une valeur de plus, pas un modele different).
+
+      LE MODELE, en une phrase : DEUX AXES, portes a deux endroits differents,
+      et c est ce qu il faut avoir en tete avant d y toucher.
+        - « apparait-il dans les listes » vit dans `access.read` de la
+          collection, qui refuse le non-repertorie comme le prive. C est ce qui
+          protege la liste, la recherche ET `GET /api/enchainements` — aucune
+          surface n a a se souvenir d exclure quoi que ce soit ;
+        - « qui a le droit de lire » vit dans `peutLire` (src/visibilite.ts) et
+          n est consulte que par les chemins qui presentent l IDENTIFIANT
+          PUBLIC : la fiche, et « mes favoris ». L URL est la cle.
+      Le doublon est delibere et ASYMETRIQUE : `access.read` est plus strict.
+      Un oubli du cote de `peutLire` ne peut jamais elargir ce que les listes
+      montrent — au pire une fiche legitime repond 404.
+
+      TROIS DECISIONS PRISES AVEC ALAIN LE 2026-09-01, sur les nuances notees
+      plus haut :
+        - `partage` est RENOMME `public`, migration des 108 lignes comprise. Le
+          mot disait deux choses a la fois ; avec un troisieme cas il fallait
+          choisir. Les valeurs sont `prive` / `nonRepertorie` / `public`.
+        - LES ANCIENNES URL NUMERIQUES NE REPONDENT PLUS (404). Une redirection
+          aurait sauve les vieux liens mais laisse retrouver n importe quel non
+          repertorie par denombrement — c est-a-dire vide la fonction de son
+          sens.
+        - UN NON REPERTORIE PEUT SE METTRE EN FAVORI. Ce qu on recoit, on peut
+          le ranger. Consequence non evidente : un favori ne se pose plus que
+          sur presentation du LIEN (`Favori.idPublic`, la relation devient
+          derivee). Sans ce verrou, n importe quel compte connecte enumererait
+          les numeros 1, 2, 3… pour se constituer un favori sur chaque non
+          repertorie — et « mes favoris » les lui afficherait tous.
+
+      DEVELOPPEMENT : une base de dev ne joue pas les migrations (mode push).
+      `npm run reprendre:visibilites` fait la reprise des donnees ; le script
+      est idempotent et peut disparaitre une fois la transition passee.
 
   # Demande d Alain le 2026-08-31 au soir, notee pour le lendemain. TROIS
   # sujets qui se tiennent (ils portent tous sur la LISTE des enchainements)

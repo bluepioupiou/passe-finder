@@ -5,11 +5,11 @@ import React from 'react'
 
 import { Compositeur } from '@/components/Compositeur'
 import { chargerCatalogue, vuesDuCatalogue } from '@/catalogue'
-import { VISIBILITES } from '@/collections/Enchainement'
 import { dateDuJour } from '@/composition'
 import config from '@/payload.config'
 import { estAdmin } from '@/collections/acces'
 import { exigerSession } from '@/porte'
+import { VISIBILITES } from '@/visibilite'
 import { enregistrerEnchainement } from './actions'
 import './nouvel-enchainement.css'
 

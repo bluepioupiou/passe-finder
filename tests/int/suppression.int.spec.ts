@@ -30,20 +30,26 @@ describe('Suppression d un enchaînement', () => {
 
   const enchainementsCrees: number[] = []
 
-  /** Un enchainement partage tout neuf, dont le test dispose comme il veut. */
-  async function enchainement(titre: string): Promise<number> {
+  /**
+   * Un enchainement public tout neuf, dont le test dispose comme il veut.
+   *
+   * Rend le NUMERO et le LIEN : les suppressions se font par numero (API
+   * locale), les favoris se posent par lien — c'est la seule adresse que la
+   * collection `Favori` accepte.
+   */
+  async function enchainement(titre: string): Promise<{ id: number; lien: string }> {
     const cree = await payload.create({
       collection: 'enchainements',
       data: {
         titre,
         auteur: auteur.id,
-        visibilite: 'partage',
+        visibilite: 'public',
         passes: [{ passe: idPasse }],
       },
     })
 
     enchainementsCrees.push(cree.id)
-    return cree.id
+    return { id: cree.id, lien: cree.idPublic as string }
   }
 
   beforeAll(async () => {
@@ -91,7 +97,7 @@ describe('Suppression d un enchaînement', () => {
   })
 
   it('laisse son auteur supprimer le sien', async () => {
-    const id = await enchainement('Suppression — le mien')
+    const { id } = await enchainement('Suppression — le mien')
 
     await payload.delete({ collection: 'enchainements', id, overrideAccess: false, user: auteur })
 
@@ -103,7 +109,7 @@ describe('Suppression d un enchaînement', () => {
   })
 
   it('refuse a quelqu un d autre de supprimer', async () => {
-    const id = await enchainement('Suppression — pas le tien')
+    const { id } = await enchainement('Suppression — pas le tien')
 
     await expect(
       payload.delete({ collection: 'enchainements', id, overrideAccess: false, user: eleve }),
@@ -115,11 +121,11 @@ describe('Suppression d un enchaînement', () => {
   })
 
   it('emporte les favoris posés dessus par d autres', async () => {
-    const id = await enchainement('Suppression — mis en favori')
+    const { id, lien } = await enchainement('Suppression — mis en favori')
 
     await payload.create({
       collection: 'favoris',
-      data: { utilisateur: eleve.id, enchainement: id },
+      data: { utilisateur: eleve.id, idPublic: lien },
       overrideAccess: false,
       user: eleve,
     })
@@ -137,7 +143,7 @@ describe('Suppression d un enchaînement', () => {
   })
 
   it('ne touche pas au catalogue qu il utilisait', async () => {
-    const id = await enchainement('Suppression — sans dégât')
+    const { id } = await enchainement('Suppression — sans dégât')
 
     await payload.delete({ collection: 'enchainements', id, overrideAccess: false, user: auteur })
 

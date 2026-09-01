@@ -4,9 +4,39 @@ import { getPayload } from 'payload'
 
 import { jourVersISO, type ResultatEnregistrement, type SaisieEnchainement } from '@/composition'
 import { lienSur } from '@/liens'
-import { VISIBILITES } from '@/collections/Enchainement'
 import config from '@/payload.config'
 import { sessionCourante } from '@/porte'
+import type { User } from '@/payload-types'
+import { estIdentifiantPublic } from '@/identifiant-public'
+import { visibiliteSure } from '@/visibilite'
+
+/**
+ * Le NUMERO de ligne derriere un identifiant public, pour qui a le droit
+ * d'ECRIRE dessus — ou `null`.
+ *
+ * PASSE PAR LES `access` (`overrideAccess: false`) ET C'EST VOULU, contrairement
+ * a la lecture de la fiche : modifier n'est pas lire. Un non-repertorie recu par
+ * lien se lit, il ne s'edite pas — et `access.read` ne le rend qu'a son auteur,
+ * ce qui suffit ici. Rien a recopier : la regle reste celle de la collection.
+ */
+async function ligneModifiable(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  idPublic: string,
+  user: User,
+): Promise<number | null> {
+  if (!estIdentifiantPublic(idPublic)) return null
+
+  const { docs } = await payload.find({
+    collection: 'enchainements',
+    where: { idPublic: { equals: idPublic } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: false,
+    user,
+  })
+
+  return docs[0]?.id ?? null
+}
 
 /**
  * Met a jour un enchainement — informations ET chaine (Story 4.5, FR-18).
@@ -36,7 +66,7 @@ import { sessionCourante } from '@/porte'
  * compositeur, qui garde la chaine et la saisie a l'ecran (NFR-4, UX-DR16).
  */
 export async function modifierEnchainement(
-  id: number,
+  idPublic: string,
   saisie: SaisieEnchainement,
 ): Promise<ResultatEnregistrement> {
   const titre = saisie.titre.trim()
@@ -63,9 +93,7 @@ export async function modifierEnchainement(
     }
   }
 
-  const visibilite = VISIBILITES.some((option) => option.value === saisie.visibilite)
-    ? (saisie.visibilite as (typeof VISIBILITES)[number]['value'])
-    : 'prive'
+  const visibilite = visibiliteSure(saisie.visibilite)
 
   try {
     const payload = await getPayload({ config: await config })
@@ -76,6 +104,11 @@ export async function modifierEnchainement(
         ok: false,
         message: 'Session expirée : reconnecte-toi, puis relance l’enregistrement.',
       }
+    }
+
+    const id = await ligneModifiable(payload, idPublic, user)
+    if (id === null) {
+      return { ok: false, message: "Cet enchaînement n'existe plus, ou il n'est pas le tien." }
     }
 
     await payload.update({
@@ -101,7 +134,7 @@ export async function modifierEnchainement(
       },
     })
 
-    return { ok: true, id }
+    return { ok: true, idPublic }
   } catch (erreur) {
     const message = erreur instanceof Error ? erreur.message : ''
     return {
@@ -132,13 +165,18 @@ export type ResultatSuppression = { ok: true } | { ok: false; message: string }
  * hook de la collection : /admin et l'API suppriment aussi, et une regle
  * ecrite dans une seule des trois portes n'en est pas une (ADD-5).
  */
-export async function supprimerEnchainement(id: number): Promise<ResultatSuppression> {
+export async function supprimerEnchainement(idPublic: string): Promise<ResultatSuppression> {
   try {
     const payload = await getPayload({ config: await config })
     const user = await sessionCourante()
 
     if (!user) {
       return { ok: false, message: 'Session expirée : reconnecte-toi, puis réessaie.' }
+    }
+
+    const id = await ligneModifiable(payload, idPublic, user)
+    if (id === null) {
+      return { ok: false, message: "Cet enchaînement n'existe plus, ou il n'est pas le tien." }
     }
 
     await payload.delete({ collection: 'enchainements', id, overrideAccess: false, user })

@@ -6,11 +6,12 @@ import React from 'react'
 import { Compositeur } from '@/components/Compositeur'
 import { SuppressionEnchainement } from '@/components/SuppressionEnchainement'
 import { chargerCatalogue, vuesDuCatalogue } from '@/catalogue'
-import { VISIBILITES } from '@/collections/Enchainement'
 import { dateDuJour, isoVersJour, reprendreChaine, type VuePasse } from '@/composition'
 import { identifiant, peutModifier } from '@/enchainements'
 import config from '@/payload.config'
 import { exigerSession } from '@/porte'
+import { estIdentifiantPublic } from '@/identifiant-public'
+import { VISIBILITES } from '@/visibilite'
 import { modifierEnchainement, supprimerEnchainement } from './actions'
 import '../fiche-enchainement.css'
 
@@ -54,28 +55,34 @@ export const metadata = {
 export default async function ModifierEnchainement({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ idPublic: string }>
 }) {
-  const { id } = await params
-  const chemin = `/enchainements/${id}/modifier`
+  const { idPublic } = await params
+  const chemin = `/enchainements/${idPublic}/modifier`
   const utilisateur = await exigerSession(chemin)
 
   const payload = await getPayload({ config: await config })
-  const enchainement = await payload
-    .findByID({
-      collection: 'enchainements',
-      id,
-      depth: 0,
-      disableErrors: true,
-      overrideAccess: false,
-      user: utilisateur,
-    })
-    .catch(() => null)
+
+  // PAR LES `access`, contrairement à la fiche : modifier n'est pas lire. Un
+  // non-répertorié reçu par lien se lit, il ne s'édite pas — et `access.read`
+  // ne le rend qu'à son auteur, ce qui suffit à fermer la porte ici.
+  const { docs } = estIdentifiantPublic(idPublic)
+    ? await payload.find({
+        collection: 'enchainements',
+        where: { idPublic: { equals: idPublic } },
+        limit: 1,
+        depth: 0,
+        overrideAccess: false,
+        user: utilisateur,
+      })
+    : { docs: [] }
+
+  const enchainement = docs[0]
 
   if (!enchainement) notFound()
   if (!peutModifier(enchainement, utilisateur)) notFound()
 
-  const fiche = `/enchainements/${enchainement.id}`
+  const fiche = `/enchainements/${enchainement.idPublic}`
 
   // Le catalogue entier tient en mémoire et se lit en trois requêtes ; le
   // compositeur n'en reçoit que la projection dont il a besoin.
@@ -120,7 +127,7 @@ export default async function ModifierEnchainement({
         // au compositeur un cas de plus à porter.
         dateParDefaut={dateDuJour()}
         visibilites={[...VISIBILITES]}
-        enregistrer={modifierEnchainement.bind(null, enchainement.id)}
+        enregistrer={modifierEnchainement.bind(null, idPublic)}
         initial={{
           depart,
           chaine,
@@ -141,7 +148,7 @@ export default async function ModifierEnchainement({
       />
 
       <SuppressionEnchainement
-        id={enchainement.id}
+        idPublic={idPublic}
         titre={enchainement.titre}
         supprimer={supprimerEnchainement}
       />

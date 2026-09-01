@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 
-import type { ResultatSuppression } from '@/app/(frontend)/enchainements/[id]/modifier/actions'
+import type { ResultatSuppression } from '@/app/(frontend)/enchainements/[idPublic]/modifier/actions'
 import { Bouton } from './Bouton'
 import './compositeur.css'
 
@@ -27,14 +27,15 @@ import './compositeur.css'
  * fois dans la vie d'un enchainement.
  */
 export function SuppressionEnchainement({
-  id,
+  idPublic,
   titre,
   supprimer,
 }: {
-  id: number
+  /** L'identifiant public : la seule adresse que connaissent les URL du site. */
+  idPublic: string
   /** Rappele dans la demande de confirmation : on supprime CELUI-CI, pas « un ». */
   titre: string
-  supprimer: (id: number) => Promise<ResultatSuppression>
+  supprimer: (idPublic: string) => Promise<ResultatSuppression>
 }) {
   const router = useRouter()
 
@@ -49,7 +50,7 @@ export function SuppressionEnchainement({
     setErreur(null)
 
     try {
-      const resultat = await supprimer(id)
+      const resultat = await supprimer(idPublic)
 
       if (resultat.ok) {
         // Vers la LISTE et non vers la fiche : celle qu'on vient de quitter
