@@ -3,7 +3,7 @@
 import { getPayload } from 'payload'
 
 import { jourVersISO, type ResultatEnregistrement, type SaisieEnchainement } from '@/composition'
-import { lienEcoutable } from '@/musique'
+import { lienSur } from '@/liens'
 import { VISIBILITES } from '@/collections/Enchainement'
 import config from '@/payload.config'
 import { sessionCourante } from '@/porte'
@@ -37,11 +37,20 @@ export async function enregistrerEnchainement(
   // La collection le refuse aussi de son cote — trois gardes, independantes.
   const musiqueTitre = saisie.musique.titre.trim()
   const musiqueLienSaisi = saisie.musique.lien.trim()
-  const musiqueLien = lienEcoutable(musiqueLienSaisi)
+  const musiqueLien = lienSur(musiqueLienSaisi)
   if (musiqueLienSaisi !== '' && musiqueLien === null) {
     return {
       ok: false,
       message: 'Le lien de la musique doit être une adresse web (http:// ou https://).',
+    }
+  }
+
+  const videoSaisie = saisie.video.trim()
+  const video = lienSur(videoSaisie)
+  if (videoSaisie !== '' && video === null) {
+    return {
+      ok: false,
+      message: 'Le lien de la vidéo doit être une adresse web (http:// ou https://).',
     }
   }
 
@@ -70,6 +79,9 @@ export async function enregistrerEnchainement(
         titre,
         description: saisie.description.trim() || undefined,
         musique: { titre: musiqueTitre || undefined, lien: musiqueLien ?? undefined },
+        // `urlVideo` en base, `video` a la saisie : le champ historique garde
+        // son nom, l'interface ne parle plus de YouTube.
+        urlVideo: video ?? undefined,
         notes: saisie.notes.trim() || undefined,
         date: jourVersISO(saisie.date),
         auteur: user.id,

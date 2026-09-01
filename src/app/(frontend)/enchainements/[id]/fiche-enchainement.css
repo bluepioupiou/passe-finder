@@ -53,25 +53,26 @@
   font-size: var(--body-size);
 }
 
-/* La musique, dans l'entete : icone + titre (cliquable ou non) + hebergeur.
+/* Les deux liens de l'entete — la musique et la video : icone + intitule
+   (cliquable ou non) + hebergeur.
    EN FLUX DE TEXTE, et surtout PAS en `flex` : un titre de morceau est long
    (« Gene Vincent — montage choregraphie 2011 (ENSAM) ») et, sur telephone, un
    conteneur flex renvoyait le texte entier a la ligne en laissant la note toute
    seule au-dessus. Ici l'icone se comporte comme un caractere : elle reste
    collee au debut de la phrase, qui se replie normalement. */
-.fiche-enchainement-musique {
+.fiche-enchainement-lien-media {
   font-size: var(--body-size);
   line-height: var(--body-line);
 }
 
-.fiche-enchainement-musique svg {
+.fiche-enchainement-lien-media svg {
   margin-right: var(--space-2);
   vertical-align: -0.2em;
 }
 
 /* L'hebergeur est une precision, pas l'information : il s'efface d'un cran
    derriere le nom du morceau. */
-.fiche-enchainement-musique .texte-attenue {
+.fiche-enchainement-lien-media .texte-attenue {
   margin-left: var(--space-2);
   font-size: var(--label-caps-size);
 }

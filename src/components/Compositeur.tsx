@@ -13,7 +13,7 @@ import {
   type VuePosition,
 } from '@/composition'
 import { correspondAuNom } from '@/recherche'
-import { ChampsEnchainement, lienMusiqueInvalide } from './ChampsEnchainement'
+import { ChampsEnchainement, auMoinsUnLienInvalide } from './ChampsEnchainement'
 import { Bouton } from './Bouton'
 import { ImagePosition } from './ImagePosition'
 import './compositeur.css'
@@ -95,6 +95,7 @@ export function Compositeur({
     date: dateParDefaut,
     description: '',
     musique: { titre: '', lien: '' },
+    video: '',
     notes: '',
     // Prive en premier dans la liste, donc par defaut : on ne partage jamais
     // par accident (FR-17, AD-6).
@@ -126,7 +127,7 @@ export function Compositeur({
   // Signale le lien inutilisable DES LA SAISIE plutot qu'au retour du serveur :
   // l'action revalide de son cote (c'est elle qui decide), mais decouvrir la
   // faute apres avoir compose vingt passes serait une punition.
-  const lienInvalide = lienMusiqueInvalide(informations)
+  const lienInvalide = auMoinsUnLienInvalide(informations)
 
   const ajouter = (passe: VuePasse) => {
     setChaine((precedente) => [...precedente, passe])

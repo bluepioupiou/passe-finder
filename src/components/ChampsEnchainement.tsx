@@ -3,7 +3,7 @@
 import React, { useId } from 'react'
 
 import type { SaisieMetadonnees } from '@/composition'
-import { lienEcoutable } from '@/musique'
+import { lienSur } from '@/liens'
 import './compositeur.css'
 
 /**
@@ -29,15 +29,30 @@ import './compositeur.css'
  * ferait diverger deux apparences qui doivent rester identiques.
  */
 
+/** Un lien saisi qui ne pourra pas etre ouvert. Vide = pas de faute. */
+function inutilisable(valeur: string): boolean {
+  return valeur.trim() !== '' && lienSur(valeur) === null
+}
+
+/** Quels liens sont inutilisables — pour les signaler champ par champ. */
+export function liensInvalides(valeurs: SaisieMetadonnees): {
+  musique: boolean
+  video: boolean
+} {
+  return { musique: inutilisable(valeurs.musique.lien), video: inutilisable(valeurs.video) }
+}
+
 /**
- * Le lien de la musique est-il inutilisable ?
+ * Y a-t-il au moins un lien inutilisable ?
  *
  * Exporte parce que le BOUTON d'enregistrement vit chez le parent : c'est lui
  * qui doit se desactiver. Ecrite ici, la question a une seule reponse pour les
  * deux ecrans.
  */
-export function lienMusiqueInvalide(valeurs: SaisieMetadonnees): boolean {
-  return valeurs.musique.lien.trim() !== '' && lienEcoutable(valeurs.musique.lien) === null
+export function auMoinsUnLienInvalide(valeurs: SaisieMetadonnees): boolean {
+  const invalides = liensInvalides(valeurs)
+
+  return invalides.musique || invalides.video
 }
 
 export function ChampsEnchainement({
@@ -61,9 +76,11 @@ export function ChampsEnchainement({
   const idMusiqueTitre = useId()
   const idMusiqueLien = useId()
   const idMusiqueErreur = useId()
+  const idVideo = useId()
+  const idVideoErreur = useId()
   const idNotes = useId()
 
-  const lienInvalide = lienMusiqueInvalide(valeurs)
+  const invalides = liensInvalides(valeurs)
 
   return (
     <div className="compo-champs">
@@ -169,11 +186,36 @@ export function ChampsEnchainement({
           onChange={(evenement) =>
             surChangement({ musique: { ...valeurs.musique, lien: evenement.target.value } })
           }
-          aria-invalid={lienInvalide || undefined}
-          aria-describedby={lienInvalide ? idMusiqueErreur : undefined}
+          aria-invalid={invalides.musique || undefined}
+          aria-describedby={invalides.musique ? idMusiqueErreur : undefined}
         />
-        {lienInvalide ? (
+        {invalides.musique ? (
           <p id={idMusiqueErreur} className="compo-erreur-champ" role="alert">
+            Il faut une adresse web (http:// ou https://).
+          </p>
+        ) : null}
+      </div>
+
+      {/* La VIDEO montre l'execution, la musique est ce sur quoi on danse :
+          deux champs, deux usages. Un seul champ ici, sans titre a saisir —
+          une video de cours ne se nomme pas, elle se regarde. */}
+      <div className="compo-champ compo-champ--large">
+        <label className="compo-label label-caps" htmlFor={idVideo}>
+          Lien de la vidéo
+        </label>
+        <input
+          id={idVideo}
+          type="url"
+          inputMode="url"
+          className="compo-saisie"
+          placeholder="https://www.youtube.com/watch?v=…"
+          value={valeurs.video}
+          onChange={(evenement) => surChangement({ video: evenement.target.value })}
+          aria-invalid={invalides.video || undefined}
+          aria-describedby={invalides.video ? idVideoErreur : undefined}
+        />
+        {invalides.video ? (
+          <p id={idVideoErreur} className="compo-erreur-champ" role="alert">
             Il faut une adresse web (http:// ou https://).
           </p>
         ) : null}

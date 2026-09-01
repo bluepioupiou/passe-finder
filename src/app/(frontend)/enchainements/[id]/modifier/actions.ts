@@ -3,7 +3,7 @@
 import { getPayload } from 'payload'
 
 import { jourVersISO, type ResultatEnregistrement, type SaisieMetadonnees } from '@/composition'
-import { lienEcoutable } from '@/musique'
+import { lienSur } from '@/liens'
 import { VISIBILITES } from '@/collections/Enchainement'
 import config from '@/payload.config'
 import { sessionCourante } from '@/porte'
@@ -39,11 +39,20 @@ export async function modifierEnchainement(
   if (titre === '') return { ok: false, message: 'Il manque un titre.' }
 
   const musiqueLienSaisi = saisie.musique.lien.trim()
-  const musiqueLien = lienEcoutable(musiqueLienSaisi)
+  const musiqueLien = lienSur(musiqueLienSaisi)
   if (musiqueLienSaisi !== '' && musiqueLien === null) {
     return {
       ok: false,
       message: 'Le lien de la musique doit être une adresse web (http:// ou https://).',
+    }
+  }
+
+  const videoSaisie = saisie.video.trim()
+  const video = lienSur(videoSaisie)
+  if (videoSaisie !== '' && video === null) {
+    return {
+      ok: false,
+      message: 'Le lien de la vidéo doit être une adresse web (http:// ou https://).',
     }
   }
 
@@ -75,6 +84,9 @@ export async function modifierEnchainement(
         description: saisie.description.trim() || null,
         notes: saisie.notes.trim() || null,
         musique: { titre: saisie.musique.titre.trim() || null, lien: musiqueLien },
+        // `urlVideo` en base, `video` a la saisie : le champ historique garde
+        // son nom, l'interface ne parle plus de YouTube.
+        urlVideo: video,
         date: jourVersISO(saisie.date) ?? null,
         visibilite,
       },

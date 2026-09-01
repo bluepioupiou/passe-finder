@@ -291,7 +291,7 @@ export interface Enchainement {
     id?: string | null;
   }[];
   /**
-   * Facultative. Lien vers la vidéo de l'enchaînement (FR-37).
+   * Facultatif. Lien vers la vidéo de l'enchaînement — YouTube, Vimeo, Dailymotion… (FR-37).
    */
   urlVideo?: string | null;
   legacyId?: number | null;

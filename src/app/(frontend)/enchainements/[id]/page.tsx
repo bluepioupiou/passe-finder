@@ -8,11 +8,12 @@ import { basculerFavori } from '@/app/(frontend)/favoris/actions'
 import { Bouton } from '@/components/Bouton'
 import { BoutonFavori } from '@/components/BoutonFavori'
 import { ChaineEnchainement } from '@/components/ChaineEnchainement'
-import { IconeNote } from '@/components/Icones'
+import { IconeNote, IconeVideo } from '@/components/Icones'
 import { chargerCatalogue } from '@/catalogue'
 import { chaineDe, construireChaine, formaterDate, peutModifier } from '@/enchainements'
 import { idsFavoris, peutEtreMisEnFavori } from '@/favoris'
 import { presenterMusique } from '@/musique'
+import { presenterVideo } from '@/video'
 import config from '@/payload.config'
 import './fiche-enchainement.css'
 
@@ -95,6 +96,7 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
 
   const date = formaterDate(enchainement.date)
   const musique = presenterMusique(enchainement.musique)
+  const video = presenterVideo(enchainement.urlVideo)
   const nombre = enchainement.passes.length
 
   return (
@@ -143,7 +145,7 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
             Comme la vidéo, c'est un simple lien (FR-39) : aucun lecteur
             intégré, donc aucun tiers chargé sur la page de révision. */}
         {musique ? (
-          <p className="fiche-enchainement-musique">
+          <p className="fiche-enchainement-lien-media">
             <IconeNote taille={18} />
             {musique.lien ? (
               <a href={musique.lien} target="_blank" rel="noopener noreferrer">
@@ -155,6 +157,24 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
             {musique.complement ? (
               <span className="texte-attenue">sur {musique.complement}</span>
             ) : null}
+          </p>
+        ) : null}
+
+        {/* La video se pose juste sous la musique, meme forme : ce sont les deux
+            liens de l'enchainement, et les separer en sections eloignees ferait
+            chercher l'un apres avoir trouve l'autre.
+            Comme la musique, un simple lien (FR-39) : aucun lecteur integre,
+            donc aucun tiers charge sur la page de revision. */}
+        {video ? (
+          <p className="fiche-enchainement-lien-media">
+            <IconeVideo taille={18} />
+            {video.lien ? (
+              <a href={video.lien} target="_blank" rel="noopener noreferrer">
+                {video.texte}
+              </a>
+            ) : (
+              <span>{video.texte}</span>
+            )}
           </p>
         ) : null}
 
@@ -177,19 +197,6 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
         <section className="fiche-section">
           <h2 className="fiche-section__titre">Notes</h2>
           <p className="fiche-texte">{enchainement.notes}</p>
-        </section>
-      ) : null}
-
-      {enchainement.urlVideo ? (
-        <section className="fiche-section">
-          <h2 className="fiche-section__titre">Vidéo</h2>
-          {/* En v1, la vidéo est un simple lien (FR-39) : pas de lecteur
-              intégré, donc pas de tiers chargé sur la page de révision. */}
-          <p>
-            <a href={enchainement.urlVideo} target="_blank" rel="noopener noreferrer">
-              Voir la vidéo
-            </a>
-          </p>
         </section>
       ) : null}
     </div>

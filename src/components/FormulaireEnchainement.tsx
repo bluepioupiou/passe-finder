@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 
 import type { ResultatEnregistrement, SaisieMetadonnees } from '@/composition'
 import { Bouton } from './Bouton'
-import { ChampsEnchainement, lienMusiqueInvalide } from './ChampsEnchainement'
+import { ChampsEnchainement, auMoinsUnLienInvalide } from './ChampsEnchainement'
 import './compositeur.css'
 
 /**
@@ -40,7 +40,7 @@ export function FormulaireEnchainement({
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
 
-  const lienInvalide = lienMusiqueInvalide(informations)
+  const lienInvalide = auMoinsUnLienInvalide(informations)
   const fiche = `/enchainements/${id}`
 
   const soumettre = async (evenement: React.FormEvent) => {

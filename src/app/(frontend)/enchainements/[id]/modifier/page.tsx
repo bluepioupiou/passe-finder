@@ -89,6 +89,7 @@ export default async function ModifierEnchainement({
             titre: enchainement.musique?.titre ?? '',
             lien: enchainement.musique?.lien ?? '',
           },
+          video: enchainement.urlVideo ?? '',
           notes: enchainement.notes ?? '',
           visibilite: enchainement.visibilite,
         }}

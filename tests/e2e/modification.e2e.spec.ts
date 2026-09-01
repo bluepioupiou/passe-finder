@@ -37,6 +37,7 @@ const autre: Identifiants = {
 const TITRE = `Test modification — ${Date.now()}`
 const TITRE_MODIFIE = `${TITRE} (corrigé)`
 const LIEN_MUSIQUE = 'https://open.spotify.com/track/modification'
+const LIEN_VIDEO = 'https://www.youtube.com/watch?v=modification'
 
 test.describe('Modification', () => {
   let page: Page
@@ -105,6 +106,7 @@ test.describe('Modification', () => {
     await page.getByLabel('Titre').fill(TITRE_MODIFIE)
     await page.getByLabel('Musique', { exact: true }).fill('Un morceau')
     await page.getByLabel('Lien de la musique').fill(LIEN_MUSIQUE)
+    await page.getByLabel('Lien de la vidéo').fill(LIEN_VIDEO)
 
     await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
 
@@ -115,15 +117,42 @@ test.describe('Modification', () => {
       'href',
       LIEN_MUSIQUE,
     )
+    // La video nomme son hebergeur : elle n'a pas de titre a porter, elle se
+    // regarde.
+    await expect(page.getByRole('link', { name: 'Voir sur YouTube' })).toHaveAttribute(
+      'href',
+      LIEN_VIDEO,
+    )
   })
 
-  test('un lien de musique invalide bloque l’enregistrement', async () => {
+  test('un lien invalide, musique ou vidéo, bloque l’enregistrement', async () => {
     test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+
+    const enregistrer = page.getByRole('button', { name: 'Enregistrer les modifications' })
 
     await page.goto(`/enchainements/${idEnchainement}/modifier`)
     await page.getByLabel('Lien de la musique').fill('pas une adresse')
+    await expect(enregistrer).toBeDisabled()
 
-    await expect(page.getByRole('button', { name: 'Enregistrer les modifications' })).toBeDisabled()
+    await page.getByLabel('Lien de la musique').fill(LIEN_MUSIQUE)
+    await expect(enregistrer).toBeEnabled()
+
+    // La video porte la meme garde : elle finit elle aussi en `<a href>`.
+    await page.getByLabel('Lien de la vidéo').fill('pas une adresse non plus')
+    await expect(enregistrer).toBeDisabled()
+  })
+
+  test('la carte signale la musique et la vidéo', async () => {
+    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+
+    // Dans la grille, on veut savoir « celui-ci en a » sans ouvrir la fiche.
+    await page.goto('/enchainements')
+    await page.getByLabel('Rechercher un enchaînement').fill(TITRE_MODIFIE)
+
+    const carte = page.locator('.enchainement-carte', { hasText: TITRE_MODIFIE })
+    await expect(carte.locator('.enchainement-media')).toHaveCount(2)
+    await expect(carte).toContainText('Avec musique')
+    await expect(carte).toContainText('Avec vidéo')
   })
 
   test('un autre compte ne voit pas le lien, et l’adresse répond 404', async ({ browser }) => {

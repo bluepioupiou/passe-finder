@@ -964,6 +964,118 @@ action_items:
       le routage, la reprise de 120 fiches) — et c est la partie faisable.
       Ecole/cours : epic a instruire, HORS V1, reporte sciemment (2026-08-31).
 
+  # Demande d Alain le 2026-08-31 au soir, notee pour le lendemain. TROIS
+  # sujets qui se tiennent (ils portent tous sur la LISTE des enchainements)
+  # mais qui se livrent separement.
+  - id: liste-enchainements-auteur-filtres-pagination
+    status: open
+    titre: "Auteur affiche, filtres musique/video/auteur, et pagination de la liste"
+    concerne:
+      - 5-4-catalogue-navigable-positions-passes
+      - 4-4-vue-lecture-partage-par-url-controles-de-partage
+      - 5-2-profil-a-deux-listes-mes-enchainements-mes-favoris
+    constat: >
+      L AUTEUR n est affiche nulle part, contrairement a UX-DR10. La raison
+      etait bonne au moment ou elle a ete posee : la collection users n a que
+      l email, et publier une adresse sur une page ouverte se paie en spam.
+      Alain tranche : afficher LA PARTIE AVANT L ARROBASE, par defaut.
+      La LISTE, elle, charge tous les enchainements d un coup. A 120 c est
+      tenable ; ca ne le restera pas quand les eleves creeront les leurs.
+    demande:
+      - "Afficher l auteur sur la FICHE et sur la CARTE, sur une ligne SOUS la
+         date, le nombre de passes et les icones musique/video."
+      - "Par defaut, l auteur affiche est la partie de l email avant le @."
+      - "Filtrer la liste des enchainements : ceux qui ont une MUSIQUE, ceux qui
+         ont une VIDEO, et par AUTEUR."
+      - "PAGINER la liste : ne pas telecharger 1000 elements dans une page."
+    nuances_a_instruire:
+      - >
+        LA PARTIE AVANT L ARROBASE RESTE UNE DONNEE PERSONNELLE. « begey.alain »
+        publie sur une page ouverte est moins expose que l adresse entiere, mais
+        il reste devinable : la plupart des comptes sont chez gmail, et un
+        prenom.nom se recompose en une ligne. C est acceptable comme DEFAUT
+        transitoire ; le vrai remede est le PSEUDO, note pour une autre branche
+        (voir `pseudo-et-page-auteur`). A retenir dans cet ordre : le defaut
+        existe pour que l auteur soit visible tout de suite, pas pour durer.
+        Prevoir aussi le cas d une adresse qui porte le nom complet
+        (prenom.nom@) — c est precisement le cas d Alain.
+      - >
+        LES FILTRES DOIVENT ETRE DES CONTRAINTES DE REQUETE, pas un tri en
+        memoire apres coup : filtrer cote client obligerait a charger toute la
+        liste, ce qui annulerait la pagination que la meme demande reclame. Les
+        deux sujets se tiennent, et l ordre compte — pagination d abord, ou au
+        moins pensee en meme temps.
+      - >
+        « A une musique » n est pas une seule question : le champ a deux
+        moities. Un enchainement avec un TITRE mais sans lien a-t-il « une
+        musique » ? A trancher : le plus utile est probablement oui — c est la
+        presence de l information qui compte, pas celle du lien.
+      - >
+        Le filtre par AUTEUR croise le modele de visibilite : la liste ne montre
+        que ce que le lecteur a le droit de voir (partages + les siens). Un
+        filtre « auteur = X » ne doit donc jamais reveler combien X en a ecrit
+        au total. Les `access` s en chargent deja, mais un compteur affiche a
+        cote du filtre, lui, fuirait.
+      - >
+        La pagination doit tenir dans l URL (?page=2) pour que la page reste
+        partageable et que le retour navigateur fonctionne. Attention au champ
+        de recherche deja present : filtre et pagination doivent se combiner
+        sans se reinitialiser l un l autre.
+    taille_estimee: >
+      Auteur affiche : petite. Filtres : moyenne (requetes + interface).
+      Pagination : moyenne, et c est elle qui structure les deux autres.
+
+  # Demande d Alain le 2026-08-31 au soir. EXPLICITEMENT notee POUR UNE AUTRE
+  # BRANCHE : ce n est pas la suite immediate.
+  - id: pseudo-et-page-auteur
+    status: open
+    titre: "Pseudo, page publique d un auteur, et suivi"
+    concerne:
+      - 5-2-profil-a-deux-listes-mes-enchainements-mes-favoris
+      - 5-3-accueil-fil-des-nouveautes
+    constat: >
+      Le nom d auteur affiche vient de l email faute de mieux (voir
+      `liste-enchainements-auteur-filtres-pagination`). Un pseudo choisi est le
+      vrai remede : il rend l affichage volontaire au lieu de subi.
+      Vient ensuite l idee d un lieu ou l on voit ce qu une personne a publie,
+      et de pouvoir la SUIVRE.
+    demande:
+      - "Permettre a un utilisateur de definir son PSEUDO — ce qui sera affiche
+         comme auteur."
+      - "Une PAGE par utilisateur : des informations sur les enchainements
+         PUBLICS qu il a crees."
+      - "Peut-etre pouvoir le SUIVRE, et voir sur la page d accueil les derniers
+         elements crees par les auteurs suivis."
+    nuances_a_instruire:
+      - >
+        Le pseudo est un champ PUBLIC sur un compte : il lui faut ses propres
+        acces (chacun modifie le sien), et une regle pour le vide — retomber sur
+        la partie avant l arobase, ou refuser d afficher ? Se decide avec le
+        defaut de l autre lot.
+      - >
+        Unicite : deux « alain » sur une page de liste ne se distinguent plus.
+        Imposer l unicite est simple tant qu on est dix, et penible ensuite.
+        A trancher avant d ouvrir l inscription en grand.
+      - >
+        LA PAGE D UN AUTEUR NE MONTRE QUE DU PUBLIC. Avec le modele actuel
+        (prive / partage), « public » veut dire partage. Si le modele de
+        visibilite s elargit (voir `identifiant-opaque-et-visibilites`), cette
+        page devra suivre — un enchainement « partage par lien » n a rien a
+        faire dans une liste publique.
+      - >
+        LE SUIVI EST UN NOUVEL OBJET (qui suit qui), donc une collection de plus,
+        avec ses acces, et un fil d accueil qui devient une requete sur les
+        auteurs suivis — a rapprocher de la Story 5-3, deja au backlog, qui
+        prevoit un fil des nouveautes. Ne pas construire deux fils.
+      - >
+        Suivre quelqu un le lui apprend-il ? Une liste d abonnes visible est une
+        fonction sociale, avec ce qu elle emporte (comparaison, pression). A
+        decider AVANT de coder, pas apres.
+    taille_estimee: >
+      Pseudo : petite (un champ, un acces, un formulaire). Page auteur :
+      moyenne. Suivi + fil : epic a instruire — collection, acces, requetes,
+      et des questions de produit qui ne sont pas techniques.
+
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
   epic-1: in-progress
@@ -1031,7 +1143,14 @@ development_status:
   # ajoute d un cote ne manque pas de l autre. Restent : l edition de la chaine
   # et la SUPPRESSION.
   4-5-editer-supprimer-ses-propres-enchainements: in-progress
-  4-6-lier-une-video-youtube-a-un-enchainement: backlog
+  # champ VIDEO livre le 2026-08-31 : renomme a l affichage (« Video » et non
+  # « Video YouTube » — le nom en base reste `urlVideo`, le renommer imposerait
+  # une migration pour rien), fournisseur reconnu par l hote (YouTube, Vimeo,
+  # Dailymotion, Instagram, TikTok, Google Drive, repli sur le nom d hote),
+  # icone camera sur la fiche et marqueur sur la carte, saisie dans le
+  # compositeur ET l ecran de modification, garde http(s) comme la musique.
+  # Reste : rien de prevu au-dela — pas de lecteur integre, c est voulu (FR-39).
+  4-6-lier-une-video-youtube-a-un-enchainement: review
   epic-4-retrospective: optional
 
   # --- Epic 5: Découverte, favoris & profil ---
