@@ -257,6 +257,30 @@ jobs:
           echo "-> Récupération de l'image..."
           sudo docker compose pull
 
+          # LITESTREAM EST ARRÊTÉ LE TEMPS DES MIGRATIONS, et ce n'est pas une
+          # précaution de confort (incident du 2026-09-01).
+          #
+          # Litestream v0.5 ÉCRIT dans la base (table `_litestream_seq`) : le
+          # laisser tourner pendant `payload migrate`, c'est DEUX écrivains sur
+          # le même fichier SQLite. Une migration un peu longue se fait alors
+          # couper au milieu — et une migration interrompue laisse un schéma à
+          # moitié appliqué que Payload n'a pas enregistré. Au redémarrage
+          # suivant elle repart de zéro, bute sur sa propre colonne, et
+          # `set -e` arrête le conteneur. La production ne redémarre plus.
+          #
+          # `depends_on` ne suffisait pas : au redéploiement, seul `app` est
+          # recréé (l'image a changé) et Litestream, lui, continue de tourner.
+          echo "-> Arrêt de la réplication le temps des migrations..."
+          sudo docker compose stop litestream
+
+          # Les migrations SEULES, dans un conteneur jetable : `--no-deps` pour
+          # ne réveiller personne, `--entrypoint` pour ne pas démarrer Next.js
+          # dans la foulée. Si elles échouent, `set -e` arrête le déploiement
+          # ICI — l'ancienne application tourne encore, et la réplication
+          # reprend au redémarrage de la pile.
+          echo "-> Application des migrations, base pour nous seuls..."
+          sudo docker compose run --rm --no-deps --entrypoint sh app -c 'npm run payload -- migrate'
+
           echo "-> Redémarrage des conteneurs..."
           sudo docker compose up -d --remove-orphans
 
