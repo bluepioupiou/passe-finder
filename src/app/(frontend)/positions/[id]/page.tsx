@@ -74,66 +74,107 @@ function ListePasses({
 }
 
 /**
- * Les changements de prise SANS PASSE lies a cette position (FR-45, Story 4.7).
+ * Une transition, lue DANS LE SENS DE LA DANSE (Story 4.7).
  *
- * Rendue seulement si la liste n'est pas vide, contrairement aux listes de
- * passes qui affichent toujours leur message. La difference n'est pas un
- * caprice : « aucune passe ne part d'ici » est une information rare et utile —
- * c'est un cul-de-sac du catalogue. « Aucune transition ne part d'ici » est le
- * cas ORDINAIRE (les changements de prise vivent presque tous dans le petit
- * groupe des prises de main) : l'ecrire sur les trois quarts des fiches
- * n'apprendrait rien et noierait celles qui en ont.
+ * La fleche pointe toujours vers la droite, et c'est ce qui permet de melanger
+ * les deux sens dans une seule liste : ce qui change de place, c'est le geste.
  *
- * Le geste n'est pas cliquable vers lui-meme — une transition n'a pas de fiche,
- * ce n'est pas un objet qu'on consulte — mais l'AUTRE POSITION l'est : c'est
- * elle qui prolonge l'exploration du graphe, comme les passes le font (FR-20).
+ *   sortante :  « Changement de prise » -> Espagnole
+ *   entrante :  Berceau gauche -> « Changement de prise »
+ *
+ * On lit donc toujours « d'ou l'on vient, ou l'on va », comme une chaine
+ * d'enchainement. La typographie porte le reste : le GESTE est en gras, la
+ * POSITION est un lien attenue — d'un coup d'oeil on voit de quel cote de la
+ * fleche on se trouve, sans avoir a lire.
+ *
+ * Le geste n'est pas cliquable : une transition n'a pas de fiche, ce n'est pas
+ * un objet qu'on consulte. La position, elle, l'est — c'est elle qui prolonge
+ * l'exploration du graphe, comme les passes le font (FR-20).
  */
-function ListeTransitions({
-  titre,
-  transitions,
+function LigneTransition({
+  transition,
   sens,
 }: {
-  titre: string
-  transitions: Transition[]
+  transition: Transition
   sens: 'sortante' | 'entrante'
 }) {
-  if (transitions.length === 0) return null
+  const autre = positionDe(sens === 'sortante' ? transition.positionFin : transition.positionDebut)
+
+  const geste = <span className="fiche-passe-nom">{nomDeTransition(transition.nom)}</span>
+  const position = autre ? (
+    <Link className="fiche-transition__cible" href={`/positions/${autre.id}`}>
+      {autre.nom}
+    </Link>
+  ) : null
+
+  return (
+    <li className="fiche-transition">
+      <p className="fiche-transition__ligne">
+        {sens === 'sortante' ? geste : position}
+        <span className="fiche-transition__fleche" aria-hidden="true">
+          &rarr;
+        </span>
+        {sens === 'sortante' ? position : geste}
+      </p>
+
+      {/* Le deroule du geste : c'est le contenu de cours, la vraie raison
+          d'etre de l'objet. Affiche en toutes lettres et pas derriere un
+          survol — sur une fiche on a la place, et c'est ce qu'on vient y
+          chercher. */}
+      {transition.description ? (
+        <p className="fiche-transition__deroule texte-attenue">{transition.description}</p>
+      ) : null}
+    </li>
+  )
+}
+
+/**
+ * Les changements de prise SANS PASSE lies a cette position (FR-45).
+ *
+ * UN SEUL GROUPE pour les deux sens, la ou les passes en font deux. Les passes
+ * sont le corps du catalogue : on les cherche separement selon qu'on veut
+ * partir d'ici ou savoir comment on y arrive. Les transitions sont rares — une
+ * ou deux par position — et les separer en deux sections a moitie vides
+ * decoupait pour rien. Rassemblees, elles se lisent d'un bloc, et la fleche
+ * suffit a dire le sens.
+ *
+ * Rendu seulement si le groupe n'est pas vide, contrairement aux listes de
+ * passes qui affichent toujours leur message. La difference n'est pas un
+ * caprice : « aucune passe ne part d'ici » est une information rare et utile —
+ * c'est un cul-de-sac du catalogue. « Aucune transition ici » est le cas
+ * ORDINAIRE (les changements de prise vivent presque tous dans le petit groupe
+ * des prises de main) : l'ecrire sur les trois quarts des fiches n'apprendrait
+ * rien et noierait celles qui en ont.
+ */
+function Transitions({ depuis, vers }: { depuis: Transition[]; vers: Transition[] }) {
+  const total = depuis.length + vers.length
+  if (total === 0) return null
 
   return (
     <section className="fiche-section">
       <h2 className="fiche-section__titre">
         <IconeTransition className="fiche-section__icone" taille={18} />
-        {titre} <span className="texte-attenue">({transitions.length})</span>
+        Transitions <span className="texte-attenue">({total})</span>
       </h2>
 
+      <p className="fiche-transition__intro texte-attenue">
+        Changer de prise sans danser de passe, donc sans prendre de temps sur la musique.
+      </p>
+
       <ul className="fiche-passes">
-        {transitions.map((transition) => {
-          const autre = positionDe(
-            sens === 'sortante' ? transition.positionFin : transition.positionDebut,
-          )
-
-          return (
-            <li key={transition.id} className="fiche-transition">
-              <p className="fiche-transition__ligne">
-                <span className="fiche-passe-nom">{nomDeTransition(transition.nom)}</span>
-                {autre ? (
-                  <Link className="fiche-transition__cible" href={`/positions/${autre.id}`}>
-                    {sens === 'sortante' ? '→ ' : '← '}
-                    {autre.nom}
-                  </Link>
-                ) : null}
-              </p>
-
-              {/* Le deroule du geste : c'est le contenu de cours, la vraie
-                  raison d'etre de l'objet. Affiche en toutes lettres et pas
-                  derriere un survol — sur une fiche on a la place, et c'est ce
-                  qu'on vient y chercher. */}
-              {transition.description ? (
-                <p className="fiche-transition__deroule texte-attenue">{transition.description}</p>
-              ) : null}
-            </li>
-          )
-        })}
+        {/* Ce qui PART d'ici en premier : c'est la reponse a « qu'est-ce que je
+            peux faire maintenant ? », la question qu'on se pose sur une fiche
+            de position. */}
+        {depuis.map((transition) => (
+          <LigneTransition
+            key={`depuis-${transition.id}`}
+            transition={transition}
+            sens="sortante"
+          />
+        ))}
+        {vers.map((transition) => (
+          <LigneTransition key={`vers-${transition.id}`} transition={transition} sens="entrante" />
+        ))}
       </ul>
     </section>
   )
@@ -157,8 +198,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * les changements de prise qui ne coûtent pas de temps musical. C'est ce qui
  * rend le catalogue navigable de proche en proche.
  *
- * Les listes de transitions ne s'affichent que si elles ont quelque chose à
- * dire ; celles de passes s'affichent toujours. Voir `ListeTransitions`.
+ * Le groupe des transitions ne s'affiche que s'il a quelque chose à dire ;
+ * les listes de passes s'affichent toujours. Voir `Transitions`.
  */
 export default async function FichePosition({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -227,15 +268,6 @@ export default async function FichePosition({ params }: { params: Promise<{ id: 
         sens="sortante"
       />
 
-      {/* Juste apres les passes sortantes, et pas en bas de page : c'est l'autre
-          reponse a la meme question — « qu'est-ce que je peux faire d'ici ? ».
-          Sur une position sans passe sortante, c'est meme la SEULE. */}
-      <ListeTransitions
-        titre="Changer de prise sans danser"
-        transitions={prisesDepuis.docs}
-        sens="sortante"
-      />
-
       <ListePasses
         titre="Passes qui arrivent ici"
         vide="Aucune passe n'arrive à cette position."
@@ -243,11 +275,11 @@ export default async function FichePosition({ params }: { params: Promise<{ id: 
         sens="entrante"
       />
 
-      <ListeTransitions
-        titre="On arrive ici en changeant de prise"
-        transitions={prisesVers.docs}
-        sens="entrante"
-      />
+      {/* Les transitions APRES les deux listes de passes : c'est l'exception du
+          graphe, pas son corps. La seule fiche ou elles passent devant est
+          celle d'un cul-de-sac — et la, la liste des passes sortantes est vide,
+          donc elles arrivent tout de suite sous les yeux. */}
+      <Transitions depuis={prisesDepuis.docs} vers={prisesVers.docs} />
     </div>
   )
 }

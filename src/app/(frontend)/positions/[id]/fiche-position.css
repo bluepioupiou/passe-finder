@@ -111,11 +111,23 @@
   vertical-align: -0.15em;
 }
 
+/* Une ligne sous le titre du groupe : « transitions » ne dit rien a un eleve
+   qui decouvre le site. La phrase le dit une fois, pour les deux sens.
+   PAS de `max-width` ici, contrairement aux textes de la fiche : la mesure de
+   confort protege un paragraphe, pas une phrase unique — a 68ch et dans cette
+   petite taille, celle-ci se cassait en deux lignes courtes sous le titre. La
+   largeur de la page suffit a la tenir. */
+.fiche-transition__intro {
+  margin-top: calc(var(--space-4) * -1 + var(--space-1));
+  margin-bottom: var(--space-4);
+  font-size: var(--label-caps-size);
+}
+
 /*
  * Une transition n'est PAS un lien vers elle-meme : elle n'a pas de fiche, ce
  * n'est pas un objet qu'on consulte. La carte n'est donc pas cliquable dans son
- * ensemble, contrairement a celle d'une passe — seule la position d'arrivee
- * l'est, et c'est elle qui prolonge l'exploration.
+ * ensemble, contrairement a celle d'une passe — seule l'autre position l'est,
+ * et c'est elle qui prolonge l'exploration.
  */
 .fiche-transition {
   padding: var(--space-3) var(--space-4);
@@ -131,6 +143,19 @@
   gap: var(--space-3);
 }
 
+/*
+ * LA FLECHE POINTE TOUJOURS A DROITE, dans les deux sens de lecture : c'est ce
+ * qui permet de melanger les deux dans une seule liste. Ce qui change de place,
+ * c'est le geste — a gauche quand il part d'ici, a droite quand il y mene.
+ * En accent, comme la fleche de trajet des cartes Enchainement : c'est la
+ * couleur du graphe dans tout le produit.
+ */
+.fiche-transition__fleche {
+  color: var(--accent);
+}
+
+/* La POSITION est attenuee, le GESTE est en gras (`fiche-passe-nom`) : la
+   typographie dit de quel cote de la fleche on se trouve, sans avoir a lire. */
 .fiche-transition__cible {
   font-size: var(--label-caps-size);
   color: var(--muted);
