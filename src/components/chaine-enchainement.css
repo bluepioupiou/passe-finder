@@ -25,10 +25,6 @@
   border-radius: var(--rounded-full);
 }
 
-.bulle__image {
-  width: 100%;
-}
-
 .bulle__lien:hover .bulle__image {
   border-color: var(--accent);
 }
@@ -98,10 +94,10 @@
 
 /* Celle qu'on écrase : effacée, mais toujours lisible. */
 .pile__dessous {
+  --image-position-taille: var(--bulle-taille);
   position: absolute;
   top: 0;
   left: 0;
-  width: var(--bulle-taille);
   opacity: 0.4;
 }
 

@@ -77,7 +77,7 @@
  * defiler.
  */
 .position-image {
-  width: min(100%, 132px);
+  --image-position-taille: min(100%, 132px);
   margin: 0 auto;
 }
 
