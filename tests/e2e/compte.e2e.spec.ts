@@ -210,6 +210,35 @@ test.describe('Compte', () => {
     await page.goto('/enchainements/nouveau')
     await expect(page).toHaveURL(/\/enchainements$/)
   })
+  test("le menu ne propose pas le back-office a un compte ordinaire", async () => {
+    // Demande d'Alain (2026-09-01). Le lien est un CONFORT reserve aux
+    // administrateurs ; le test suivant verifie que la porte, elle, est fermee
+    // meme en connaissant l'URL.
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Mon compte' }).click()
+
+    await expect(page.getByRole('menuitem', { name: 'Back-office' })).toHaveCount(0)
+  })
+
+  test('le menu mène un administrateur au back-office', async () => {
+    const contexte = await page.context().browser()!.newContext()
+    const patron = await contexte.newPage()
+
+    await patron.goto('/connexion')
+    await patron.fill('#email', administrateur.email)
+    await patron.fill('#motDePasse', administrateur.password)
+    await patron.getByRole('button', { name: 'Se connecter' }).click()
+
+    await patron.getByRole('button', { name: 'Mon compte' }).click()
+    await patron.getByRole('menuitem', { name: 'Back-office' }).click()
+
+    await expect(patron).toHaveURL(/\/admin$/)
+    // On y est vraiment : la barre laterale des collections de Payload.
+    await expect(patron.getByRole('link', { name: 'Enchaînements' }).first()).toBeVisible()
+
+    await contexte.close()
+  })
+
   test("le back-office refuse un compte ordinaire", async () => {
     // Decision du 2026-08-31 : /admin est reserve aux administrateurs. Un eleve
     // connecte ne doit pas y entrer, meme en connaissant l'URL.

@@ -9,6 +9,8 @@ import './menu-compte.css'
 type Proprietes = {
   /** Affiche de qui est la session. Sert de titre au panneau. */
   email: string
+  /** Le compte porte-t-il le drapeau admin ? Decide de l'entree vers /admin. */
+  admin?: boolean
   /** Action serveur : la deconnexion ferme la session cote serveur, pas ici. */
   seDeconnecter: () => Promise<void>
 }
@@ -36,8 +38,11 @@ type Proprietes = {
  * enchaînements » reste annonce comme A VENIR plutot que pose en lien mort :
  * sa destination arrive a la Story 5.2, et un lien qui mene a une page vide se
  * lit comme un defaut.
+ *
+ * « Back-office » n'apparait qu'aux administrateurs, en avant-dernier : c'est
+ * une porte de service, elle ne doit pas se lire avant les entrees ordinaires.
  */
-export function MenuCompte({ email, seDeconnecter }: Proprietes) {
+export function MenuCompte({ email, admin = false, seDeconnecter }: Proprietes) {
   const [ouvert, setOuvert] = useState(false)
   const racine = useRef<HTMLDivElement>(null)
 
@@ -96,6 +101,31 @@ export function MenuCompte({ email, seDeconnecter }: Proprietes) {
           </Link>
 
           <p className="menu-compte__avenir texte-attenue">Mes enchaînements : bientôt.</p>
+
+          {/* LE BACK-OFFICE, pour les administrateurs seulement (demande
+              d'Alain, 2026-09-01) : /admin leur etait accessible mais ne
+              s'atteignait qu'en tapant l'adresse a la main.
+
+              N'AFFICHER LE LIEN QU'AUX ADMINISTRATEURS N'EST QU'UN CONFORT :
+              c'est `access.admin` de la collection users qui ferme reellement
+              la porte (ADD-5), et un compte ordinaire qui connaitrait l'URL est
+              refuse de la meme facon qu'avant. Le cacher evite seulement de
+              proposer a un eleve une porte qui se refermera sur lui.
+
+              Un `Link` ordinaire suffit, malgre le changement d'univers :
+              /admin vit sous une AUTRE mise en page racine (celle de Payload,
+              qui pose son propre `html`), et Next bascule alors de lui-meme en
+              chargement de page complet plutot qu'en navigation cote client. */}
+          {admin ? (
+            <Link
+              className="menu-compte__item"
+              role="menuitem"
+              href="/admin"
+              onClick={() => setOuvert(false)}
+            >
+              Back-office
+            </Link>
+          ) : null}
 
           {/* Un FORMULAIRE, pas un lien : la deconnexion change l'etat du
               serveur, elle ne doit pas partir sur une simple visite d'URL
