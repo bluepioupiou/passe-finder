@@ -75,7 +75,7 @@ describe('Propriété', () => {
       data: {
         titre: 'Propriété — partagé',
         auteur: auteur.id,
-        visibilite: 'partage',
+        visibilite: 'public',
         passes: [{ passe: idPasse }],
       },
     })

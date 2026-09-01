@@ -76,7 +76,7 @@ function monter() {
   const appels: SaisieEnchainement[] = []
   const action = async (saisie: SaisieEnchainement): Promise<ResultatEnregistrement> => {
     appels.push(saisie)
-    return { ok: true, id: 1 }
+    return { ok: true, idPublic: 'AAAAAAAAAAAA' }
   }
 
   render(
@@ -87,7 +87,8 @@ function monter() {
       dateParDefaut="2026-09-01"
       visibilites={[
         { label: 'Privé', value: 'prive' },
-        { label: 'Partagé', value: 'partage' },
+        { label: 'Non répertorié', value: 'nonRepertorie' },
+        { label: 'Public', value: 'public' },
       ]}
       enregistrer={action}
     />,

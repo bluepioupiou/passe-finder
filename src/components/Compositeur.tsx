@@ -324,7 +324,7 @@ export function Compositeur({
         // On atterrit sur la fiche : la confirmation, c'est de voir son
         // enchainement. La chaine reste en etat jusqu'a la navigation, donc
         // rien n'est perdu si celle-ci echoue.
-        router.push(`/enchainements/${resultat.id}`)
+        router.push(`/enchainements/${resultat.idPublic}`)
         // `refresh` force la relecture cote serveur : en REPRISE, la fiche
         // pourrait sinon se rouvrir depuis le cache du routeur, telle qu'elle
         // etait AVANT la modification qu'on vient d'enregistrer.

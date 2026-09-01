@@ -23,17 +23,23 @@ function idDe(relation: number | { id: number } | null | undefined): number | nu
 /**
  * Peut-on mettre CET enchainement en favori (ADD-9) ?
  *
- * Trois conditions : etre connecte, que l'enchainement soit partage, et ne pas
- * en etre l'auteur. La derniere surprend au premier abord — elle dit qu'un
+ * Trois conditions : etre connecte, que l'enchainement ne soit pas prive, et ne
+ * pas en etre l'auteur. La derniere surprend au premier abord — elle dit qu'un
  * favori sert a retrouver le travail DES AUTRES ; le sien se retrouve dans
  * « mes enchainements » (Story 5.2).
+ *
+ * LE NON REPERTORIE EST ACCEPTE (decision d'Alain, 2026-09-01) : ce qu'on
+ * recoit, on peut le ranger. Ce predicat n'est appele que sur un enchainement
+ * qu'on a sous les yeux — donc dont on a le lien. C'est la collection `Favori`
+ * qui verifie reellement cette possession, en n'acceptant que l'identifiant
+ * public comme adresse.
  */
 export function peutEtreMisEnFavori(
   enchainement: Pick<Enchainement, 'visibilite' | 'auteur'>,
   utilisateur: User | null,
 ): boolean {
   if (!utilisateur) return false
-  if (enchainement.visibilite !== 'partage') return false
+  if (enchainement.visibilite === 'prive') return false
 
   return idDe(enchainement.auteur) !== utilisateur.id
 }

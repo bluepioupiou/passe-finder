@@ -191,7 +191,7 @@ export default async function RecherchePage({
                 <li key={enchainement.id}>
                   <Link
                     className="resultat resultat--passe"
-                    href={`/enchainements/${enchainement.id}`}
+                    href={`/enchainements/${enchainement.idPublic}`}
                   >
                     <span className="resultat__nom">{enchainement.titre}</span>
                     <span className="resultat__meta texte-attenue">

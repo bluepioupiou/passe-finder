@@ -317,7 +317,11 @@ export interface Enchainement {
    * Propriétaire de l'enchaînement.
    */
   auteur: number | User;
-  visibilite: 'prive' | 'partage';
+  /**
+   * Privé : toi seul. Non répertorié : visible par qui a le lien, absent des listes et de la recherche. Public : listé et cherchable.
+   */
+  visibilite: 'prive' | 'nonRepertorie' | 'public';
+  idPublic?: string | null;
   /**
    * L'ordre des lignes EST l'ordre de l'enchaînement.
    */
@@ -362,7 +366,11 @@ export interface Favoris {
    * Rempli automatiquement depuis la session.
    */
   utilisateur: number | User;
-  enchainement: number | Enchainement;
+  /**
+   * Déduit du lien reçu.
+   */
+  enchainement?: (number | null) | Enchainement;
+  idPublic?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -576,6 +584,7 @@ export interface EnchainementsSelect<T extends boolean = true> {
   date?: T;
   auteur?: T;
   visibilite?: T;
+  idPublic?: T;
   passes?:
     | T
     | {
@@ -597,6 +606,7 @@ export interface EnchainementsSelect<T extends boolean = true> {
 export interface FavorisSelect<T extends boolean = true> {
   utilisateur?: T;
   enchainement?: T;
+  idPublic?: T;
   updatedAt?: T;
   createdAt?: T;
 }

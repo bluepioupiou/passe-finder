@@ -10,6 +10,7 @@ import * as migration_20260831_195957_musique_enchainement from './20260831_1959
 import * as migration_20260901_042354_titre_normalise from './20260901_042354_titre_normalise';
 import * as migration_20260901_075115_transition from './20260901_075115_transition';
 import * as migration_20260901_155620_pseudo from './20260901_155620_pseudo';
+import * as migration_20260901_200844_identifiant_public_et_visibilites from './20260901_200844_identifiant_public_et_visibilites';
 
 export const migrations = [
   {
@@ -70,6 +71,11 @@ export const migrations = [
   {
     up: migration_20260901_155620_pseudo.up,
     down: migration_20260901_155620_pseudo.down,
-    name: '20260901_155620_pseudo'
+    name: '20260901_155620_pseudo',
+  },
+  {
+    up: migration_20260901_200844_identifiant_public_et_visibilites.up,
+    down: migration_20260901_200844_identifiant_public_et_visibilites.down,
+    name: '20260901_200844_identifiant_public_et_visibilites'
   },
 ];

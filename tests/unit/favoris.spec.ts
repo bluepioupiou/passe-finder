@@ -18,11 +18,11 @@ const autre = { id: 9 } as User
 
 describe('peutEtreMisEnFavori', () => {
   it('accepte un enchaînement partagé écrit par quelqu un d autre', () => {
-    expect(peutEtreMisEnFavori({ visibilite: 'partage', auteur: autre.id }, eleve)).toBe(true)
+    expect(peutEtreMisEnFavori({ visibilite: 'public', auteur: autre.id }, eleve)).toBe(true)
   })
 
   it('refuse à un visiteur anonyme', () => {
-    expect(peutEtreMisEnFavori({ visibilite: 'partage', auteur: autre.id }, null)).toBe(false)
+    expect(peutEtreMisEnFavori({ visibilite: 'public', auteur: autre.id }, null)).toBe(false)
   })
 
   it('refuse un enchaînement privé', () => {
@@ -32,14 +32,14 @@ describe('peutEtreMisEnFavori', () => {
   it('refuse son propre enchaînement', () => {
     // On ne met pas en signet ce qu'on a ecrit : « mes enchainements » le
     // montre deja, a part (Story 5.2).
-    expect(peutEtreMisEnFavori({ visibilite: 'partage', auteur: eleve.id }, eleve)).toBe(false)
+    expect(peutEtreMisEnFavori({ visibilite: 'public', auteur: eleve.id }, eleve)).toBe(false)
   })
 
   it("reconnaît l auteur que la relation soit résolue ou non", () => {
     // Selon la profondeur de lecture, `auteur` est un identifiant ou l'objet
     // complet. Les deux formes doivent donner la meme reponse, sans quoi la
     // regle dependrait d'un detail de requete.
-    expect(peutEtreMisEnFavori({ visibilite: 'partage', auteur: eleve }, eleve)).toBe(false)
-    expect(peutEtreMisEnFavori({ visibilite: 'partage', auteur: autre }, eleve)).toBe(true)
+    expect(peutEtreMisEnFavori({ visibilite: 'public', auteur: eleve }, eleve)).toBe(false)
+    expect(peutEtreMisEnFavori({ visibilite: 'public', auteur: autre }, eleve)).toBe(true)
   })
 })

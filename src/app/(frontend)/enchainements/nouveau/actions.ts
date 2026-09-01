@@ -4,9 +4,9 @@ import { getPayload } from 'payload'
 
 import { jourVersISO, type ResultatEnregistrement, type SaisieEnchainement } from '@/composition'
 import { lienSur } from '@/liens'
-import { VISIBILITES } from '@/collections/Enchainement'
 import config from '@/payload.config'
 import { sessionCourante } from '@/porte'
+import { visibiliteSure } from '@/visibilite'
 
 /**
  * Enregistre un enchainement compose (Story 4.3, FR-14).
@@ -54,9 +54,7 @@ export async function enregistrerEnchainement(
     }
   }
 
-  const visibilite = VISIBILITES.some((option) => option.value === saisie.visibilite)
-    ? (saisie.visibilite as (typeof VISIBILITES)[number]['value'])
-    : 'prive'
+  const visibilite = visibiliteSure(saisie.visibilite)
 
   try {
     const payload = await getPayload({ config: await config })
@@ -91,7 +89,9 @@ export async function enregistrerEnchainement(
       },
     })
 
-    return { ok: true, id: enchainement.id }
+    // L'identifiant public est pose par la collection : on le relit de la
+    // reponse plutot que de le supposer.
+    return { ok: true, idPublic: enchainement.idPublic ?? '' }
   } catch (erreur) {
     // Le message de Payload est deja redige pour un humain (validation,
     // relation introuvable) : le montrer vaut mieux qu'un « erreur serveur ».

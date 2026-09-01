@@ -4,6 +4,7 @@ import React, { useId } from 'react'
 
 import type { SaisieMetadonnees } from '@/composition'
 import { lienSur } from '@/liens'
+import { PROMESSES } from '@/visibilite'
 import './compositeur.css'
 
 /**
@@ -72,6 +73,7 @@ export function ChampsEnchainement({
   const idTitre = useId()
   const idDate = useId()
   const idVisibilite = useId()
+  const idVisibiliteAide = useId()
   const idDescription = useId()
   const idMusiqueTitre = useId()
   const idMusiqueLien = useId()
@@ -125,6 +127,7 @@ export function ChampsEnchainement({
           className="compo-saisie"
           value={valeurs.visibilite}
           onChange={(evenement) => surChangement({ visibilite: evenement.target.value })}
+          aria-describedby={idVisibiliteAide}
         >
           {visibilites.map((option) => (
             <option key={option.value} value={option.value}>
@@ -132,6 +135,14 @@ export function ChampsEnchainement({
             </option>
           ))}
         </select>
+        {/* CE QUE LE CHOIX PROMET, sous le menu et non dans une aide qu'il
+            faudrait aller chercher. « Non répertorié » ne se devine pas : entre
+            « privé » et « public », un troisième mot ne dit pas de lui-même
+            qu'il reste lisible par qui a le lien. La phrase suit la sélection,
+            donc elle décrit toujours ce qu'on vient de choisir. */}
+        <p id={idVisibiliteAide} className="compo-indice texte-attenue">
+          {PROMESSES[valeurs.visibilite as keyof typeof PROMESSES] ?? ''}
+        </p>
       </div>
 
       <div className="compo-champ compo-champ--large">

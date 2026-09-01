@@ -216,8 +216,14 @@ export type SaisieEnchainement = SaisieMetadonnees & {
  *
  * Un echec revient au compositeur au lieu de faire tomber la page : la chaine
  * composee reste a l'ecran et rien n'est perdu (NFR-4, UX-DR16).
+ *
+ * LE SUCCES REND L'IDENTIFIANT PUBLIC, jamais le numero de la ligne : c'est
+ * l'adresse ou le compositeur doit atterrir, et la seule que les URL du site
+ * connaissent (action item `identifiant-opaque-et-visibilites`).
  */
-export type ResultatEnregistrement = { ok: true; id: number } | { ok: false; message: string }
+export type ResultatEnregistrement =
+  | { ok: true; idPublic: string }
+  | { ok: false; message: string }
 
 /**
  * Le jour d'aujourd'hui a Paris, au format `AAAA-MM-JJ`.

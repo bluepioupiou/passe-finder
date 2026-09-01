@@ -21,7 +21,7 @@ import { sessionCourante } from '@/porte'
 export type ResultatFavori = { ok: true; favori: boolean } | { ok: false; message: string }
 
 export async function basculerFavori(
-  idEnchainement: number,
+  idPublic: string,
   cheminARafraichir: string,
 ): Promise<ResultatFavori> {
   const utilisateur = await sessionCourante()
@@ -36,10 +36,7 @@ export async function basculerFavori(
     const existants = await payload.find({
       collection: 'favoris',
       where: {
-        and: [
-          { utilisateur: { equals: utilisateur.id } },
-          { enchainement: { equals: idEnchainement } },
-        ],
+        and: [{ utilisateur: { equals: utilisateur.id } }, { idPublic: { equals: idPublic } }],
       },
       limit: 1,
       depth: 0,
@@ -62,9 +59,14 @@ export async function basculerFavori(
     // `overrideAccess: false` : ce sont les regles de la collection qui
     // refusent le prive, le sien, et le doublon (ADD-9). On ne les recopie pas
     // ici — leur message d'erreur est deja redige pour un humain.
+    //
+    // ON N'ENVOIE PAS LA RELATION mais le LIEN : c'est la collection qui
+    // retrouve l'enchainement (`retrouverParLeLien`), et n'accepter que cette
+    // adresse-la est ce qui empeche de se constituer un favori sur un
+    // non-repertorie qu'on n'aurait jamais recu.
     await payload.create({
       collection: 'favoris',
-      data: { utilisateur: utilisateur.id, enchainement: idEnchainement },
+      data: { utilisateur: utilisateur.id, idPublic },
       overrideAccess: false,
       user: utilisateur,
     })

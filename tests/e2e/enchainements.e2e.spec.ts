@@ -14,12 +14,12 @@ import { expect, test, type APIRequestContext } from '@playwright/test'
 /** Un enchainement visible d'un anonyme, ou `null` si la cible n'en a aucun. */
 async function premierEnchainement(
   request: APIRequestContext,
-): Promise<{ id: number; titre: string } | null> {
+): Promise<{ lien: string; titre: string } | null> {
   const reponse = await request.get('/api/enchainements?limit=1&depth=0&sort=-date')
   if (!reponse.ok()) return null
 
   const { docs } = await reponse.json()
-  return docs?.length ? { id: docs[0].id, titre: docs[0].titre } : null
+  return docs?.length ? { lien: docs[0].idPublic, titre: docs[0].titre } : null
 }
 
 test.describe('Enchaînements', () => {
@@ -69,7 +69,7 @@ test.describe('Enchaînements', () => {
     const enchainement = await premierEnchainement(request)
     test.skip(!enchainement, 'Aucun enchaînement partagé sur cette cible.')
 
-    await page.goto(`/enchainements/${enchainement!.id}`)
+    await page.goto(`/enchainements/${enchainement!.lien}`)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(enchainement!.titre)
 
     // FR-20 : chaque passe de la chaine mene a sa fiche.

@@ -15,40 +15,39 @@ import { chaineDe, construireChaine, formaterDate, peutModifier } from '@/enchai
 import { idsFavoris, peutEtreMisEnFavori } from '@/favoris'
 import { presenterMusique } from '@/musique'
 import { presenterVideo } from '@/video'
+import { lireParIdentifiantPublic } from '@/lecture-enchainement'
+import { libelleVisibilite } from '@/visibilite'
 import config from '@/payload.config'
 import './fiche-enchainement.css'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * Lit l'enchaînement en appliquant les `access` de la collection.
+ * Lit l'enchaînement désigné par le lien.
  *
- * `overrideAccess: false` fait tout le travail de FR-17 / AD-6 : un
- * enchaînement privé n'est simplement pas trouvé pour qui n'est pas son auteur,
- * exactement comme s'il n'existait pas. Rien n'est masqué côté interface, donc
- * rien ne fuit par l'API ni par les métadonnées de la page.
+ * LE LIEN EST LA CLÉ, et c'est LA page qui l'admet — la seule du projet (voir
+ * `src/visibilite.ts`). Les `access` de la collection refusent le
+ * non-répertorié comme le privé, ce qui le tient hors des listes ET hors de
+ * l'API ; ici, présenter l'identifiant public vaut autorisation, et `peutLire`
+ * tranche ensuite.
+ *
+ * Un ancien numéro (`/enchainements/12`) n'a pas la forme d'un identifiant
+ * public : il n'atteint jamais la base et répond 404, comme décidé le
+ * 2026-09-01. Le laisser vivre annulerait tout ce modèle — on retrouverait
+ * n'importe quel non-répertorié en comptant.
  */
-async function lireEnchainement(id: string) {
+async function lireEnchainement(idPublic: string) {
   const payload = await getPayload({ config: await config })
   const { user } = await payload.auth({ headers: await getHeaders() })
 
-  const enchainement = await payload
-    .findByID({
-      collection: 'enchainements',
-      id,
-      depth: 0,
-      disableErrors: true,
-      overrideAccess: false,
-      user,
-    })
-    .catch(() => null)
+  const enchainement = await lireParIdentifiantPublic(payload, idPublic, user)
 
   return { payload, enchainement, user }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const { enchainement } = await lireEnchainement(id)
+export async function generateMetadata({ params }: { params: Promise<{ idPublic: string }> }) {
+  const { idPublic } = await params
+  const { enchainement } = await lireEnchainement(idPublic)
 
   return {
     title: enchainement ? `${enchainement.titre} — Passe Finder` : 'Enchaînement introuvable',
@@ -65,8 +64,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * supprimer mettrait un geste irréversible à portée de pouce sur une page qu'on
  * relit en cours, parfois en dansant.
  *
- * Le FAVORI (Story 5.1) n'est proposé que s'il peut aboutir : connecté,
- * partagé, et pas le sien.
+ * Le FAVORI (Story 5.1) n'est proposé que s'il peut aboutir : connecté, pas
+ * privé, et pas le sien. Un non-répertorié s'y met désormais aussi — on est ici
+ * parce qu'on en a reçu le lien (décision d'Alain, 2026-09-01).
  *
  * RIEN N'EST PROPOSÉ À UN VISITEUR ANONYME — décision d'Alain, 2026-08-31.
  * L'AC de la Story 5.1 prévoyait de l'inviter à se connecter puis de le
@@ -75,13 +75,17 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * de navigation propose « Se connecter » sur toutes les pages, et le favori
  * apparaît dès qu'on l'est.
  */
-export default async function FicheEnchainement({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const { payload, enchainement, user } = await lireEnchainement(id)
+export default async function FicheEnchainement({
+  params,
+}: {
+  params: Promise<{ idPublic: string }>
+}) {
+  const { idPublic } = await params
+  const { payload, enchainement, user } = await lireEnchainement(idPublic)
 
   if (!enchainement) notFound()
 
-  const chemin = `/enchainements/${enchainement.id}`
+  const chemin = `/enchainements/${enchainement.idPublic}`
   const favorisable = peutEtreMisEnFavori(enchainement, user)
   // Proposer, pas autoriser : la page de modification revalide, l'action aussi,
   // et la collection tranche (ADD-5). Ici on evite seulement d'offrir un lien
@@ -135,11 +139,17 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
               liens eux-mêmes, plus bas), la ligne a donc la place, et l'auteur
               se lit d'un coup avec le reste de l'état civil de l'enchaînement. */}
           {auteur ? <span className="fiche-enchainement-auteur">par {auteur}</span> : null}
-          {/* Visible du seul auteur, puisque les autres ne reçoivent pas un
-              enchaînement privé : le badge lui rappelle que ce lien ne mène
-              nulle part pour ses élèves. */}
-          {enchainement.visibilite === 'prive' ? (
-            <span className="fiche-enchainement-badge label-caps">Privé</span>
+          {/* CE QUE CE LIEN VAUT POUR LES AUTRES, dit à celui qui le tient.
+              « Privé » ne s'affiche que pour son auteur (personne d'autre ne
+              reçoit un privé) et lui rappelle que le lien ne mène nulle part
+              pour ses élèves. « Non répertorié » s'affiche pour TOUT LE MONDE,
+              et c'est délibéré : le lecteur doit savoir qu'il tient une adresse
+              qu'on ne retrouvera pas dans la liste — s'il la perd, il la perd.
+              Le public ne porte pas de badge : c'est le cas ordinaire. */}
+          {enchainement.visibilite !== 'public' ? (
+            <span className="fiche-enchainement-badge label-caps">
+              {libelleVisibilite(enchainement.visibilite)}
+            </span>
           ) : null}
         </p>
 
@@ -189,7 +199,7 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
 
         {favorisable ? (
           <BoutonFavori
-            idEnchainement={enchainement.id}
+            idPublic={enchainement.idPublic ?? ''}
             favoriInitial={dejaFavori}
             chemin={chemin}
             action={basculerFavori}

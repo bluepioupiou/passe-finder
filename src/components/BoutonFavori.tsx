@@ -7,12 +7,17 @@ import { IconeEtoile } from './Icones'
 import './bouton-favori.css'
 
 type Proprietes = {
-  idEnchainement: number
+  /**
+   * L'IDENTIFIANT PUBLIC, et pas le numero de la ligne : c'est la seule adresse
+   * qu'accepte la collection `Favori`, parce que la connaitre prouve qu'on a
+   * bien recu le lien (cf. `retrouverParLeLien`).
+   */
+  idPublic: string
   /** Etat au chargement, lu en base par la page. */
   favoriInitial: boolean
   /** Chemin a rafraichir apres coup (la fiche, ou la liste). */
   chemin: string
-  action: (idEnchainement: number, chemin: string) => Promise<ResultatFavori>
+  action: (idPublic: string, chemin: string) => Promise<ResultatFavori>
 }
 
 /**
@@ -28,7 +33,7 @@ type Proprietes = {
  * l'inverse), donc deux clics rapides ne peuvent pas desynchroniser durablement
  * le bouton et la base.
  */
-export function BoutonFavori({ idEnchainement, favoriInitial, chemin, action }: Proprietes) {
+export function BoutonFavori({ idPublic, favoriInitial, chemin, action }: Proprietes) {
   const [favori, setFavori] = useState(favoriInitial)
   const [erreur, setErreur] = useState<string | null>(null)
   const [enCours, demarrer] = useTransition()
@@ -40,7 +45,7 @@ export function BoutonFavori({ idEnchainement, favoriInitial, chemin, action }: 
     setErreur(null)
 
     demarrer(async () => {
-      const resultat = await action(idEnchainement, chemin)
+      const resultat = await action(idPublic, chemin)
 
       if (!resultat.ok) {
         setFavori(avant)
