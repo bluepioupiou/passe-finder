@@ -104,6 +104,13 @@ test.describe('Favoris', () => {
     test.skip(idEnchainement === null, 'Aucun enchaînement partagé sur cette cible.')
 
     await page.goto('/enchainements')
+    // ATTENDRE QUE LA PAGE SOIT VIVANTE AVANT DE TAPER. La recherche est un
+    // composant client : tant qu'il n'est pas hydrate, une frappe programmee
+    // pose bien le texte dans le champ, mais React n'a pas encore branche son
+    // `onChange` — la pause de 300 ms ne demarre jamais, et l'URL ne bouge pas.
+    // Un humain ne le voit pas (sa frappe suivante repart), un test si : c'est
+    // exactement ce qui rendait cette suite rouge une fois sur trois.
+    await page.waitForLoadState('networkidle')
 
     const total = await page.locator('.enchainements-grille li').count()
     expect(total).toBeGreaterThan(1)

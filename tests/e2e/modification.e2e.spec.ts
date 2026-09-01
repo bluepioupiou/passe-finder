@@ -158,7 +158,19 @@ test.describe('Modification', () => {
 
     // Dans la grille, on veut savoir « celui-ci en a » sans ouvrir la fiche.
     await page.goto('/enchainements')
+    // ATTENDRE QUE LA PAGE SOIT VIVANTE AVANT DE TAPER. La recherche est un
+    // composant client : tant qu'il n'est pas hydrate, une frappe programmee
+    // pose bien le texte dans le champ, mais React n'a pas encore branche son
+    // `onChange` — la pause de 300 ms ne demarre jamais, et l'URL ne bouge pas.
+    // Un humain ne le voit pas (sa frappe suivante repart), un test si : c'est
+    // exactement ce qui rendait cette suite rouge une fois sur trois.
+    await page.waitForLoadState('networkidle')
     await page.getByLabel('Rechercher un enchaînement').fill(TITRE_MODIFIE)
+    // La frappe part dans l'URL apres une pause de 300 ms, et la page revient
+    // filtree : on attend cette navigation avant de lire la grille, sinon on
+    // lit celle d'avant. Delai large — en developpement, la route peut se
+    // compiler a la demande.
+    await expect(page).toHaveURL(/[?&]q=/, { timeout: 15_000 })
 
     const carte = page.locator('.enchainement-carte', { hasText: TITRE_MODIFIE })
     await expect(carte.locator('.enchainement-media')).toHaveCount(2)

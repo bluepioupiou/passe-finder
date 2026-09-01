@@ -128,6 +128,11 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
           <span>
             {nombre} passe{nombre > 1 ? 's' : ''}
           </span>
+          {/* Sur la MEME ligne que la date et le nombre de passes : la fiche ne
+              porte pas les marqueurs musique/vidéo de la carte (elle montre les
+              liens eux-mêmes, plus bas), la ligne a donc la place, et l'auteur
+              se lit d'un coup avec le reste de l'état civil de l'enchaînement. */}
+          {auteur ? <span className="fiche-enchainement-auteur">par {auteur}</span> : null}
           {/* Visible du seul auteur, puisque les autres ne reçoivent pas un
               enchaînement privé : le badge lui rappelle que ce lien ne mène
               nulle part pour ses élèves. */}
@@ -135,10 +140,6 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
             <span className="fiche-enchainement-badge label-caps">Privé</span>
           ) : null}
         </p>
-
-        {/* Sous la ligne date / nombre de passes, comme sur la carte : la meme
-            information au meme endroit d'un ecran a l'autre. */}
-        {auteur ? <p className="fiche-enchainement-auteur texte-attenue">par {auteur}</p> : null}
 
         {enchainement.description ? (
           <p className="fiche-texte fiche-enchainement-description">{enchainement.description}</p>
