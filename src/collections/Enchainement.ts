@@ -1,4 +1,9 @@
-import type { CollectionBeforeChangeHook, CollectionConfig, Where } from 'payload'
+import type {
+  CollectionBeforeChangeHook,
+  CollectionBeforeDeleteHook,
+  CollectionConfig,
+  Where,
+} from 'payload'
 
 import { lienSur } from '../liens'
 import { normaliserTexte } from '../recherche'
@@ -69,6 +74,34 @@ const normaliserLeTitre: CollectionBeforeChangeHook = async ({ data, originalDoc
 }
 
 /**
+ * Retire les FAVORIS qui pointaient sur l'enchaînement, AVANT de le supprimer
+ * (Story 4.5).
+ *
+ * `beforeDelete` ET PAS `afterDelete`, et ce n'est pas un détail de style : la
+ * colonne `favoris.enchainement_id` est NOT NULL, et la clé étrangère la met à
+ * NULL quand la cible disparaît. Sans ce ménage préalable, SQLite REFUSE la
+ * suppression (`SQLITE_CONSTRAINT_NOTNULL`) — autrement dit, un auteur ne
+ * pouvait pas supprimer un enchaînement que quelqu'un avait mis en favori. Un
+ * `afterDelete` ne s'exécuterait même jamais : la ligne n'est pas partie.
+ * Constaté en test d'intégration, pas déduit.
+ *
+ * SUR LA COLLECTION ET NON DANS L'ACTION : /admin, l'API et le site suppriment
+ * tous les trois. Un ménage écrit dans une seule de ces portes laisserait les
+ * deux autres buter sur la même contrainte (ADD-5).
+ *
+ * `overrideAccess: true` : le ménage n'appartient à personne en particulier. Ce
+ * sont les favoris D'AUTRES COMPTES qu'on retire, et l'auteur qui supprime son
+ * enchaînement n'a évidemment pas le droit de les lire.
+ */
+const retirerLesFavoris: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  await req.payload.delete({
+    collection: 'favoris',
+    where: { enchainement: { equals: id } },
+    overrideAccess: true,
+  })
+}
+
+/**
  * Enchaînement — suite ORDONNÉE de passes (FR-14, ADD-18).
  *
  * L'ordre est porté par le tableau `passes` lui-même : l'index EST l'ordre.
@@ -135,6 +168,7 @@ export const Enchainement: CollectionConfig = {
   },
   hooks: {
     beforeChange: [completerTitreMusique, normaliserLeTitre],
+    beforeDelete: [retirerLesFavoris],
   },
   fields: [
     {

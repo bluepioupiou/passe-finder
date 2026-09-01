@@ -59,10 +59,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * Vue lecture d'un enchaînement (E5, UX-DR10) — le cœur du besoin élève :
  * ouvrir le lien reçu et réviser, sans compte (FR-18, FR-19).
  *
- * Ce qui attend d'autres stories : les contrôles d'auteur (basculer la
- * visibilité, éditer, supprimer, Story 4.5). L'auteur n'est pas affiché tant
- * que les comptes n'ont pas de nom d'affichage — montrer une adresse e-mail sur
- * une page publique se paierait en spam.
+ * UN SEUL GESTE D'AUTEUR EN HAUT DE PAGE : « Modifier », qui mène à l'écran où
+ * tout se change — la chaîne, les informations, la visibilité — et où la
+ * suppression attend, tout en bas (Story 4.5). Poser ici un second bouton pour
+ * supprimer mettrait un geste irréversible à portée de pouce sur une page qu'on
+ * relit en cours, parfois en dansant.
  *
  * Le FAVORI (Story 5.1) n'est proposé que s'il peut aboutir : connecté,
  * partagé, et pas le sien.

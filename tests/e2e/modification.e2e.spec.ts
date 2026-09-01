@@ -49,7 +49,7 @@ test.describe('Modification', () => {
 
     const payload = await getPayload({ config })
 
-    const passes = await payload.find({ collection: 'passes', limit: 1, depth: 0 })
+    const passes = await payload.find({ collection: 'passes', limit: 500, depth: 0 })
     const comptes = await payload.find({
       collection: 'users',
       where: { email: { equals: auteur.email } },
@@ -57,10 +57,17 @@ test.describe('Modification', () => {
       depth: 0,
     })
 
+    // UNE PASSE PROLONGEABLE, et pas la premiere venue : le scenario de reprise
+    // de chaine a besoin qu'au moins une passe parte de la position d'arrivee,
+    // sinon le compositeur n'a rien a proposer et le test echouerait sur le
+    // catalogue plutot que sur le code.
+    const departs = new Set(passes.docs.map((passe) => passe.positionDebut as number))
+    const prolongeable = passes.docs.find((passe) => departs.has(passe.positionFin as number))
+
     // Le catalogue de la cible peut etre vide (la reprise est un geste manuel) :
     // sans passe, il n'y a pas d'enchainement a modifier, et les tests se
     // declarent ignores plutot que d'echouer sur l'environnement.
-    if (passes.docs[0] && comptes.docs[0]) {
+    if (prolongeable && comptes.docs[0]) {
       const cree = await payload.create({
         collection: 'enchainements',
         data: {
@@ -70,7 +77,7 @@ test.describe('Modification', () => {
           // pouvoir le modifier. Sur un enchainement prive, le 404 ne dirait
           // rien de la Story 4.5 — il viendrait de la lecture.
           visibilite: 'partage',
-          passes: [{ passe: passes.docs[0].id }],
+          passes: [{ passe: prolongeable.id }],
         },
       })
       idEnchainement = cree.id
@@ -123,6 +130,59 @@ test.describe('Modification', () => {
       'href',
       LIEN_VIDEO,
     )
+  })
+
+  test('l’auteur reprend la chaîne là où elle en est, et la prolonge', async () => {
+    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+
+    await page.goto(`/enchainements/${idEnchainement}/modifier`)
+
+    // LA CHAINE EST DEJA LA : c'est tout l'objet de la reprise. Un compositeur
+    // qui s'ouvrirait vide effacerait l'enchainement a l'enregistrement.
+    const maillons = page.locator('.compo-passe')
+    await expect(maillons).toHaveCount(1)
+
+    // Le depart est verrouille tant que la chaine porte des passes (FR-13) :
+    // en changer viderait la chaine sans prevenir.
+    await expect(page.getByLabel("D'où part l'enchaînement ?")).toBeDisabled()
+
+    // Et la suite se compose comme ailleurs : seules les passes qui partent de
+    // la position courante sont proposees (FR-10).
+    const choix = page.locator('.compo-choix__bouton')
+    await expect(choix.first()).toBeVisible()
+    await choix.first().click()
+    await expect(maillons).toHaveCount(2)
+
+    await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
+
+    await expect(page).toHaveURL(new RegExp(`/enchainements/${idEnchainement}$`))
+    // La fiche compte les passes : c'est la preuve que la chaine a bien ete
+    // REECRITE en base, et pas seulement affichee autrement.
+    await expect(page.getByText('2 passes')).toBeVisible()
+  })
+
+  test('une chaîne vidée ne peut pas être enregistrée', async () => {
+    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+
+    // Le garde-fou qui compte : sans lui, retirer toutes les passes puis
+    // enregistrer laisserait un enchainement sans chaine — ni lisible, ni
+    // reparable depuis la fiche.
+    await page.goto(`/enchainements/${idEnchainement}/modifier`)
+
+    const enregistrer = page.getByRole('button', { name: 'Enregistrer les modifications' })
+    await expect(enregistrer).toBeEnabled()
+
+    // On retire les passes une a une : seule la derniere porte une croix.
+    await page.locator('.compo-passe__retirer').click()
+    await page.locator('.compo-passe__retirer').click()
+
+    await expect(page.locator('.compo-passe')).toHaveCount(0)
+    await expect(enregistrer).toBeDisabled()
+    await expect(page.getByText('Ajoute au moins une passe pour pouvoir enregistrer.')).toBeVisible()
+
+    // On repart sans enregistrer : la chaine en base n'a pas bouge.
+    await page.goto(`/enchainements/${idEnchainement}`)
+    await expect(page.getByText('2 passes')).toBeVisible()
   })
 
   test('un lien invalide, musique ou vidéo, bloque l’enregistrement', async () => {
@@ -211,5 +271,38 @@ test.describe('Modification', () => {
     await expect(anonyme).toHaveURL(new RegExp(encodeURIComponent(`/${idEnchainement}/modifier`)))
 
     await contexte.close()
+  })
+
+  // EN DERNIER, forcement : ce test detruit l'enchainement sur lequel tous les
+  // autres travaillent.
+  test('l’auteur supprime son enchaînement, en deux temps', async () => {
+    test.skip(idEnchainement === null, 'Aucune passe sur cette cible.')
+
+    await page.goto(`/enchainements/${idEnchainement}/modifier`)
+
+    const demander = page.getByRole('button', { name: "Supprimer l'enchaînement" })
+    await demander.click()
+
+    // ON DEMANDE AVANT DE FAIRE. Le premier clic n'efface rien : c'est le seul
+    // geste irreversible de l'application, il ne part pas d'un clic isole.
+    const confirmer = page.getByRole('button', { name: 'Oui, supprimer' })
+    await expect(confirmer).toBeVisible()
+
+    // Et l'on peut se raviser sans consequence.
+    await page.getByRole('button', { name: 'Non, annuler' }).click()
+    await expect(confirmer).toHaveCount(0)
+    await expect(demander).toBeVisible()
+
+    await demander.click()
+    await page.getByRole('button', { name: 'Oui, supprimer' }).click()
+
+    // Vers la LISTE : la fiche qu'on vient de quitter n'existe plus.
+    await expect(page).toHaveURL(/\/enchainements$/)
+
+    // Et elle n'existe vraiment plus, y compris en tapant l'adresse.
+    const reponse = await page.goto(`/enchainements/${idEnchainement}`)
+    expect(reponse?.status()).toBe(404)
+
+    idEnchainement = null
   })
 })

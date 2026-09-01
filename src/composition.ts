@@ -133,6 +133,50 @@ export function positionCourante(
 }
 
 /**
+ * L'etat compose : d'ou part la chaine, et la suite des maillons.
+ *
+ * C'est tout ce qu'il faut pour REPRENDRE une composition la ou elle en est —
+ * le reste (position courante, passes possibles, changements proposes) s'en
+ * deduit.
+ */
+export type EtatCompose = { depart: number | null; chaine: MaillonCompose[] }
+
+/**
+ * Remet un enchainement enregistre dans l'etat ou le compositeur le tenait
+ * (Story 4.5, FR-18).
+ *
+ * CE QUI EST STOCKE EST PLUS PAUVRE QUE CE QUI A ETE COMPOSE : seules les
+ * passes sont enregistrees, jamais les changements de prise. On les REDEDUIT
+ * ici, par la meme regle que la lecture (`construireChaine`) : une passe qui ne
+ * part pas de la position d'arrivee de la precedente a ete atteinte par un
+ * changement de prise.
+ *
+ * La regle est donc ecrite deux fois, sur deux formes differentes — les `Pass`
+ * de Payload en lecture, les `VuePasse` allegees ici, qui partent dans le
+ * navigateur. Les unifier obligerait la lecture a se priver des positions
+ * resolues dont elle a besoin pour afficher les deux bulles d'une rupture.
+ *
+ * REPRENDRE PEUT RENDRE UNE CHAINE QUE LE COMPOSITEUR N'AURAIT PAS SU
+ * CONSTRUIRE : une quinzaine d'enchainements de l'historique ont une rupture
+ * dont la transition n'est pas encore declaree au catalogue. On la garde telle
+ * quelle plutot que de la refuser — rouvrir un enchainement pour corriger son
+ * titre ne doit pas amputer sa chaine. Le compositeur affiche alors la reprise
+ * sans la nommer, exactement comme la vue lecture.
+ */
+export function reprendreChaine(passes: VuePasse[]): EtatCompose {
+  if (passes.length === 0) return { depart: null, chaine: [] }
+
+  const chaine = passes.map((passe, index) => {
+    const precedente = index > 0 ? passes[index - 1] : null
+    const rupture = precedente !== null && precedente.fin !== passe.debut
+
+    return { passe, transitionAvant: rupture ? passe.debut : null }
+  })
+
+  return { depart: passes[0].debut, chaine }
+}
+
+/**
  * Les informations d'un enchainement : tout ce qui se SAISIT (Stories 4.3/4.5).
  *
  * A part de la chaine, et ce decoupage porte une distinction reelle : ceci se

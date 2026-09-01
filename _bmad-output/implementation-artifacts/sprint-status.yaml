@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-01 (pseudo : le nom d auteur choisi)
+# last_updated: 2026-09-01 (story 4-5 : editer la chaine et supprimer)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -1213,9 +1213,27 @@ development_status:
   # musique, visibilite) ; la CHAINE de passes n y est pas modifiable — c est
   # un autre geste, qui demandera de rouvrir le compositeur sur un existant.
   # Champs partages avec le compositeur (`ChampsEnchainement`) pour qu un champ
-  # ajoute d un cote ne manque pas de l autre. Restent : l edition de la chaine
-  # et la SUPPRESSION.
-  4-5-editer-supprimer-ses-propres-enchainements: in-progress
+  # ajoute d un cote ne manque pas de l autre.
+  # COMPLETEE le 2026-09-01 (demande d Alain, avant sa campagne de saisie).
+  # - EDITION DE LA CHAINE : /modifier rouvre LE compositeur sur l existant,
+  #   comme le demandait l AC, au lieu du formulaire de saisie seule qui le
+  #   precedait (`FormulaireEnchainement`, supprime — l ecran faisait doublon).
+  #   La chaine stockee ne garde que les passes : `reprendreChaine` rededuit les
+  #   changements de prise par la meme regle que la lecture. Les regles de
+  #   composition ne changent pas (on prolonge par la fin, on raccourcit pas a
+  #   pas) : corriger la 3e passe d une chaine de 10 en demande donc d en
+  #   retirer 7. Assume — un editeur libre ne pourrait plus garantir que la
+  #   suite reste dansable.
+  # - SUPPRESSION : en bas de l ecran de modification et pas sur la fiche (qui
+  #   se relit en cours, parfois en dansant), en deux temps, sans
+  #   `window.confirm` (non stylable, ignore par certaines webviews).
+  # - DEFAUT TROUVE PAR LE TEST D INTEGRATION : supprimer un enchainement mis en
+  #   favori par quelqu un ECHOUAIT (`favoris.enchainement_id` est NOT NULL, la
+  #   cle etrangere le met a NULL). Le menage des favoris est donc un
+  #   `beforeDelete` sur la collection — un `afterDelete` ne se serait jamais
+  #   execute, et l ecrire dans l action aurait laisse /admin et l API buter.
+  # Reste hors story : rien.
+  4-5-editer-supprimer-ses-propres-enchainements: review
   # champ VIDEO livre le 2026-08-31 : renomme a l affichage (« Video » et non
   # « Video YouTube » — le nom en base reste `urlVideo`, le renommer imposerait
   # une migration pour rien), fournisseur reconnu par l hote (YouTube, Vimeo,
