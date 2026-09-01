@@ -1,0 +1,41 @@
+/*
+ * Pied de page (UX-DR4). Toutes les valeurs viennent des tokens « Lin & Sauge ».
+ *
+ * Meme construction que la barre de navigation, en miroir : une bande pleine
+ * largeur sur `surface`, un trait qui la detache du contenu, et une largeur de
+ * lecture bornee a l'interieur. Les deux extremites de la page se repondent.
+ */
+
+.pied {
+  /* Pousse le pied en bas quand la page est courte — sans lui, une page d'une
+     seule ligne (« aucun resultat ») le laisserait flotter au milieu de
+     l'ecran, ou il se lit comme la fin d'un contenu tronque. */
+  margin-top: auto;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+
+.pied__contenu {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--page-margin);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--muted);
+  font-size: var(--label-caps-size);
+  text-align: center;
+}
+
+/*
+ * Le coeur garde SES couleurs, celles de l'emoji, la ou tout le reste du site
+ * suit `currentColor`. C'est le seul endroit ou une couleur ne vient pas des
+ * tokens, et c'est voulu : un coeur gris ne dit plus rien.
+ */
+.pied__coeur {
+  font-style: normal;
+  /* Cale l'emoji sur la ligne de base du texte : les fontes emoji ont leurs
+     propres metriques et le posaient un cheveu trop haut. */
+  vertical-align: -0.05em;
+}
