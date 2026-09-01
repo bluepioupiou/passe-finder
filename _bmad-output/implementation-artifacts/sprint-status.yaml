@@ -1026,8 +1026,10 @@ action_items:
       Pagination : moyenne, et c est elle qui structure les deux autres.
     resolution: >
       2026-09-01, en trois lots (un commit chacun).
-      AUTEUR : la partie avant l arobase, sur la fiche et sur la carte, une
-      ligne sous la date et les marqueurs. L email ne sort jamais de
+      AUTEUR : la partie avant l arobase. Sur la CARTE, une ligne sous la date
+      et les marqueurs ; sur la FICHE, sur la meme ligne que la date et le
+      nombre de passes (elle ne porte pas les marqueurs musique/video — elle
+      montre les liens eux-memes plus bas —, la ligne a donc la place). L email ne sort jamais de
       `auteurs.ts` — les pages recoivent un nom deja reduit, jamais l objet
       `User`, et un test e2e verifie que l adresse n apparait nulle part. La
       lecture des comptes contourne DELIBEREMENT les `access` (`users` n est

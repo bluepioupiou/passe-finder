@@ -40,13 +40,25 @@ test.describe('Enchaînements', () => {
     test.skip(!enchainement, 'Aucun enchaînement partagé sur cette cible.')
 
     await page.goto('/enchainements')
+    // ATTENDRE QUE LA PAGE SOIT VIVANTE AVANT DE TAPER. La recherche est un
+    // composant client : tant qu'il n'est pas hydrate, une frappe programmee
+    // pose bien le texte dans le champ, mais React n'a pas encore branche son
+    // `onChange` — la pause de 300 ms ne demarre jamais, et l'URL ne bouge pas.
+    // Un humain ne le voit pas (sa frappe suivante repart), un test si : c'est
+    // exactement ce qui rendait cette suite rouge une fois sur trois.
+    await page.waitForLoadState('networkidle')
     await page.getByLabel('Rechercher un enchaînement').fill(enchainement!.titre)
 
     // La recherche est desormais une contrainte de REQUETE : la frappe part
-    // dans l'URL (apres une courte pause), et la page revient filtree. C'est ce
-    // qui permet de paginer sans mentir — un filtre cote client n'aurait filtre
-    // que la page affichee.
-    await expect(page).toHaveURL(/[?&]q=/)
+    // dans l'URL (apres une pause de 300 ms), et la page revient filtree. C'est
+    // ce qui permet de paginer sans mentir — un filtre cote client n'aurait
+    // filtre que la page affichee.
+    //
+    // Delai allonge A DESSEIN : on attend une pause volontaire PUIS un rendu
+    // serveur, et en developpement la route peut se compiler a la demande. Les
+    // 5 secondes par defaut suffisent presque toujours — « presque » etant
+    // exactement ce qui rend une suite peu fiable.
+    await expect(page).toHaveURL(/[?&]q=/, { timeout: 15_000 })
     // Le compteur n'apparait qu'une fois un filtre actif : sa presence dit que
     // la liste a bien ete reduite, pas seulement affichee en entier.
     await expect(page.getByRole('status')).toContainText(/enchaînement/)

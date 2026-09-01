@@ -92,8 +92,3 @@
 .fiche-enchainement-ligne-titre .bouton {
   flex-shrink: 0;
 }
-
-/* L'auteur de la fiche : meme place et meme discretion que sur la carte. */
-.fiche-enchainement-auteur {
-  font-size: var(--label-caps-size);
-}
