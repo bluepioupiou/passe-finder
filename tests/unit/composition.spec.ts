@@ -6,6 +6,7 @@ import {
   jourVersISO,
   passesDepuis,
   positionCourante,
+  reprendreChaine,
   transitionsUtiles,
   type MaillonCompose,
   type VuePasse,
@@ -161,5 +162,51 @@ describe('isoVersJour', () => {
 
   it('fait l aller-retour avec jourVersISO', () => {
     expect(isoVersJour(jourVersISO('2026-03-12'))).toBe('2026-03-12')
+  })
+})
+
+describe('reprendreChaine', () => {
+  it('rend une chaîne vide sans départ', () => {
+    // Cas impossible en base (un enchaînement a au moins une passe), mais la
+    // page le traverse quand une passe a disparu du catalogue.
+    expect(reprendreChaine([])).toEqual({ depart: null, chaine: [] })
+  })
+
+  it('remet le départ et les maillons dans l ordre', () => {
+    const { depart, chaine } = reprendreChaine([pied, toupie])
+
+    expect(depart).toBe(1)
+    expect(chaine.map((maillon) => maillon.passe.id)).toEqual([10, 11])
+    expect(chaine.every((maillon) => maillon.transitionAvant === null)).toBe(true)
+  })
+
+  it('rededuit le changement de prise d une rupture', () => {
+    // `tour` finit en 3, `pied` repart de 1 : la chaîne stockée ne dit pas
+    // pourquoi, c'est ici qu'on retrouve « on a changé de prise vers 1 ».
+    const { chaine } = reprendreChaine([tour, pied])
+
+    expect(chaine[0].transitionAvant).toBeNull()
+    expect(chaine[1].transitionAvant).toBe(1)
+  })
+
+  it('reprend une rupture même sans transition déclarée', () => {
+    // Une quinzaine d'enchaînements de l'historique sont dans ce cas. Rouvrir
+    // l'un d'eux pour corriger son titre ne doit pas amputer sa chaîne : on
+    // garde la rupture, le compositeur l'affichera sans la nommer.
+    const inconnue = passe(99, 'Venue d ailleurs', 7, 8)
+    const { depart, chaine } = reprendreChaine([pied, inconnue])
+
+    expect(depart).toBe(1)
+    expect(chaine).toHaveLength(2)
+    expect(chaine[1].transitionAvant).toBe(7)
+  })
+
+  it('se recompose à l identique une fois enregistrée', () => {
+    // L'aller-retour qui compte : seules les passes sont stockées, et ce qu'on
+    // relit doit redonner exactement la chaîne qu'on avait sous les yeux.
+    const original = reprendreChaine([tour, pied, toupie])
+    const stockees = original.chaine.map((maillon) => maillon.passe)
+
+    expect(reprendreChaine(stockees)).toEqual(original)
   })
 })

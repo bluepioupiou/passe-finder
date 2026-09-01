@@ -295,6 +295,54 @@
   margin-top: 0;
 }
 
+/*
+ * Zone de suppression (Story 4.5).
+ *
+ * Elle se DETACHE du reste : bordure teintee, et une respiration au-dessus qui
+ * la separe nettement du bloc d'enregistrement. Elle vient en dernier, apres
+ * tout ce qui construit — on ne tombe pas dessus en cherchant autre chose.
+ */
+.compo-danger {
+  margin-top: var(--space-8);
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+}
+
+.compo-danger__question {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  border-radius: var(--rounded-md);
+}
+
+/*
+ * PAS le `Bouton` primaire : le vert du site dit « continue », et ce geste-ci
+ * ne se continue pas. Il reprend la forme et la taille de cible des autres
+ * boutons, avec la seule couleur du danger.
+ */
+.compo-danger__bouton {
+  padding: var(--space-3) var(--space-5);
+  font: inherit;
+  font-weight: 600;
+  color: var(--danger);
+  background: transparent;
+  border: 1px solid var(--danger);
+  border-radius: var(--rounded-full);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.compo-danger__bouton:hover:not(:disabled) {
+  color: var(--on-accent);
+  background: var(--danger);
+}
+
+.compo-danger__bouton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* --- A partir de 768px : la liste des choix et les champs se mettent en colonnes --- */
 
 @media (min-width: 768px) {

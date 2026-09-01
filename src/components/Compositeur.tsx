@@ -7,6 +7,7 @@ import {
   passesDepuis,
   positionCourante,
   transitionsUtiles,
+  type EtatCompose,
   type MaillonCompose,
   type ResultatEnregistrement,
   type SaisieEnchainement,
@@ -114,6 +115,17 @@ function Reprise({
  * serpentin : pendant la composition, chaque ajout doit se poser au bout sans
  * deplacer ce qui precede — un serpentin se recomposerait a chaque clic, et la
  * carte qu'on vient de poser sauterait ailleurs.
+ *
+ * LE MEME COMPOSANT SERT A COMPOSER ET A REPRENDRE (Story 4.5). Avec `initial`,
+ * il s'ouvre sur un enchainement existant : meme chaine, memes regles, meme
+ * bouton. Un second ecran de recomposition aurait double la surface a maintenir
+ * pour un geste identique — et l'AC de la story demande justement que
+ * « Editer » rouvre LE compositeur, pas un cousin.
+ *
+ * CE QUI CHANGE EN REPRISE, ET C'EST TOUT : le libelle du bouton, un lien
+ * « Annuler » vers la fiche, et le fait que la chaine ne parte pas de zero.
+ * Les regles de composition sont identiques — on prolonge par la fin, on
+ * raccourcit pas a pas, on n'insere pas au milieu (FR-13, FR-15).
  */
 export function Compositeur({
   positions,
@@ -122,6 +134,8 @@ export function Compositeur({
   dateParDefaut,
   visibilites,
   enregistrer,
+  initial,
+  retour,
 }: {
   positions: VuePosition[]
   passes: VuePasse[]
@@ -134,13 +148,27 @@ export function Compositeur({
    * ce fichier partant dans le navigateur, cet import y embarquerait Payload.
    */
   visibilites: { label: string; value: string }[]
-  /** Action serveur d'enregistrement, passee par la page (Story 4.3). */
+  /**
+   * Action serveur d'enregistrement, passee par la page : creation (Story 4.3)
+   * ou mise a jour (Story 4.5). Le compositeur ne sait pas laquelle des deux —
+   * il compose et il envoie.
+   */
   enregistrer: (saisie: SaisieEnchainement) => Promise<ResultatEnregistrement>
+  /**
+   * Enchainement a REPRENDRE : sa chaine et ses informations (Story 4.5).
+   * Absent, on compose un nouvel enchainement.
+   */
+  initial?: EtatCompose & { informations: SaisieMetadonnees }
+  /** Ou mene « Annuler ». Absent, aucun bouton d'annulation n'est propose. */
+  retour?: string
 }) {
   const router = useRouter()
 
-  const [depart, setDepart] = useState<number | null>(null)
-  const [chaine, setChaine] = useState<MaillonCompose[]>([])
+  /** Reprise d'un existant, ou page blanche ? Change les libelles, rien d'autre. */
+  const reprise = initial !== undefined
+
+  const [depart, setDepart] = useState<number | null>(initial?.depart ?? null)
+  const [chaine, setChaine] = useState<MaillonCompose[]>(initial?.chaine ?? [])
   // Le changement de prise choisi mais pas encore consomme par une passe. Il
   // deplace la position courante, donc il fait partie de l'etat compose — voir
   // `positionCourante`, a qui on le passe explicitement.
@@ -151,17 +179,20 @@ export function Compositeur({
   // forme que `ChampsEnchainement` attend, et celle que l'enregistrement
   // envoie. Un seul endroit ou ajouter un champ, le jour ou il y en aura un de
   // plus.
-  const [informations, setInformations] = useState<SaisieMetadonnees>({
-    titre: '',
-    date: dateParDefaut,
-    description: '',
-    musique: { titre: '', lien: '' },
-    video: '',
-    notes: '',
-    // Prive en premier dans la liste, donc par defaut : on ne partage jamais
-    // par accident (FR-17, AD-6).
-    visibilite: visibilites[0]?.value ?? 'prive',
-  })
+  const [informations, setInformations] = useState<SaisieMetadonnees>(
+    () =>
+      initial?.informations ?? {
+        titre: '',
+        date: dateParDefaut,
+        description: '',
+        musique: { titre: '', lien: '' },
+        video: '',
+        notes: '',
+        // Prive en premier dans la liste, donc par defaut : on ne partage jamais
+        // par accident (FR-17, AD-6).
+        visibilite: visibilites[0]?.value ?? 'prive',
+      },
+  )
 
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
@@ -188,10 +219,19 @@ export function Compositeur({
 
   // Une position d'ou aucune passe ne part ne peut rien commencer : la proposer
   // comme depart n'offrirait qu'un cul-de-sac immediat.
-  const departs = useMemo(
-    () => positions.filter((position) => passes.some((passe) => passe.debut === position.id)),
-    [positions, passes],
-  )
+  //
+  // SAUF LE DEPART D'UN ENCHAINEMENT REPRIS (Story 4.5), qu'on rajoute meme
+  // s'il ne mene plus nulle part : le catalogue a pu bouger depuis, et un
+  // `select` dont la valeur ne correspond a aucune option s'afficherait VIDE —
+  // rouvrir un enchainement pour changer son titre donnerait l'impression
+  // d'avoir perdu son point de depart.
+  const departs = useMemo(() => {
+    const utiles = positions.filter((position) => passes.some((passe) => passe.debut === position.id))
+    if (depart === null || utiles.some((position) => position.id === depart)) return utiles
+
+    const actuelle = positions.find((position) => position.id === depart)
+    return actuelle ? [actuelle, ...utiles] : utiles
+  }, [positions, passes, depart])
 
   const courante = positionCourante(depart, chaine, transitionEnAttente)
   const possibles = useMemo(() => passesDepuis(passes, courante), [passes, courante])
@@ -285,6 +325,10 @@ export function Compositeur({
         // enchainement. La chaine reste en etat jusqu'a la navigation, donc
         // rien n'est perdu si celle-ci echoue.
         router.push(`/enchainements/${resultat.id}`)
+        // `refresh` force la relecture cote serveur : en REPRISE, la fiche
+        // pourrait sinon se rouvrir depuis le cache du routeur, telle qu'elle
+        // etait AVANT la modification qu'on vient d'enregistrer.
+        router.refresh()
         return
       }
 
@@ -573,8 +617,20 @@ export function Compositeur({
             type="submit"
             disabled={enCours || chaine.length === 0 || lienInvalide || repriseInachevee}
           >
-            {enCours ? 'Enregistrement…' : "Enregistrer l'enchaînement"}
+            {enCours
+              ? 'Enregistrement…'
+              : reprise
+                ? 'Enregistrer les modifications'
+                : "Enregistrer l'enchaînement"}
           </Bouton>
+
+          {/* Annuler est un LIEN, pas un bouton : il ne fait rien d'autre que
+              retourner d'ou l'on vient. */}
+          {retour ? (
+            <Bouton variante="fantome" href={retour}>
+              Annuler
+            </Bouton>
+          ) : null}
 
           <p className="compo-aide texte-attenue" role="status" aria-live="polite">
             {lienInvalide

@@ -2,18 +2,18 @@
 
 import { getPayload } from 'payload'
 
-import { jourVersISO, type ResultatEnregistrement, type SaisieMetadonnees } from '@/composition'
+import { jourVersISO, type ResultatEnregistrement, type SaisieEnchainement } from '@/composition'
 import { lienSur } from '@/liens'
 import { VISIBILITES } from '@/collections/Enchainement'
 import config from '@/payload.config'
 import { sessionCourante } from '@/porte'
 
 /**
- * Met a jour les informations d'un enchainement (Story 4.5, FR-18).
+ * Met a jour un enchainement — informations ET chaine (Story 4.5, FR-18).
  *
  * MEME DISCIPLINE QUE L'ENREGISTREMENT (Story 4.3), et pour la meme raison :
  * une action serveur est une porte publique, aussi atteignable qu'une route
- * d'API. Tout est donc reverifie ici, jamais seulement dans le formulaire.
+ * d'API. Tout est donc reverifie ici, jamais seulement dans le compositeur.
  *
  *  - `overrideAccess: false` avec l'utilisateur de la SESSION : ce sont les
  *    `access` de la collection (`auteurOuAdmin`) qui decident, pas une seconde
@@ -22,21 +22,28 @@ import { sessionCourante } from '@/porte'
  *    existe ;
  *  - l'AUTEUR n'est jamais dans les donnees ecrites : on ne peut pas se donner
  *    l'enchainement d'un autre, ni le donner a quelqu'un d'autre par megarde ;
- *  - la CHAINE n'est pas touchee. Cet ecran modifie les informations, pas la
- *    suite des passes (qui se compose, elle). Ne pas l'envoyer du tout est plus
- *    sur que de la renvoyer inchangee : rien ne peut la vider par accident ;
  *  - la visibilite est ramenee a une valeur connue, defaut PRIVE : une valeur
  *    inattendue ne doit jamais aboutir a un partage (FR-17, AD-6).
  *
- * Renvoie un resultat plutot que de lever : un echec doit revenir au formulaire,
- * qui garde la saisie a l'ecran (NFR-4, UX-DR16).
+ * LA CHAINE EST DESORMAIS ENVOYEE, et elle REMPLACE l'ancienne. C'est ce que
+ * fait un tableau dans Payload, et c'est ce qu'on veut : le compositeur tient
+ * l'etat entier de la chaine a l'ecran, pas un ensemble de retouches. D'ou la
+ * garde qui suit — une chaine vide ne doit jamais arriver jusqu'a l'ecriture,
+ * sans quoi une requete malformee viderait un enchainement de ses passes tout
+ * en le laissant en place.
+ *
+ * Renvoie un resultat plutot que de lever : un echec doit revenir au
+ * compositeur, qui garde la chaine et la saisie a l'ecran (NFR-4, UX-DR16).
  */
 export async function modifierEnchainement(
   id: number,
-  saisie: SaisieMetadonnees,
+  saisie: SaisieEnchainement,
 ): Promise<ResultatEnregistrement> {
   const titre = saisie.titre.trim()
   if (titre === '') return { ok: false, message: 'Il manque un titre.' }
+  if (saisie.passes.length === 0) {
+    return { ok: false, message: 'Un enchaînement contient au moins une passe.' }
+  }
 
   const musiqueLienSaisi = saisie.musique.lien.trim()
   const musiqueLien = lienSur(musiqueLienSaisi)
@@ -89,6 +96,8 @@ export async function modifierEnchainement(
         urlVideo: video,
         date: jourVersISO(saisie.date) ?? null,
         visibilite,
+        // L'index EST l'ordre (ADD-18) : la chaine arrive deja ordonnee.
+        passes: saisie.passes.map((passe) => ({ passe })),
       },
     })
 
@@ -99,5 +108,44 @@ export async function modifierEnchainement(
       ok: false,
       message: message || "La modification a échoué. Ta saisie est toujours là : réessaie.",
     }
+  }
+}
+
+/** Ce que rend une suppression : rien a montrer si elle reussit. */
+export type ResultatSuppression = { ok: true } | { ok: false; message: string }
+
+/**
+ * Supprime un enchainement (Story 4.5, FR-18).
+ *
+ * MEMES GARDES QUE LA MODIFICATION, et c'est le point : `overrideAccess: false`
+ * avec l'utilisateur de la session laisse `auteurOuAdmin` decider. La regle
+ * etant une CONTRAINTE DE REQUETE et non un booleen, elle vaut aussi pour
+ * l'API : personne ne supprime le travail d'un autre eleve, quelle que soit la
+ * porte empruntee.
+ *
+ * NE REDIRIGE PAS ELLE-MEME. Une redirection depuis une action serveur se
+ * declenche par une exception, ce qui rendrait indistinguables un succes et un
+ * echec cote appelant. Le composant navigue, et peut donc afficher un message
+ * si ca n'aboutit pas.
+ *
+ * Le menage des FAVORIS qui pointaient dessus n'est PAS fait ici mais dans un
+ * hook de la collection : /admin et l'API suppriment aussi, et une regle
+ * ecrite dans une seule des trois portes n'en est pas une (ADD-5).
+ */
+export async function supprimerEnchainement(id: number): Promise<ResultatSuppression> {
+  try {
+    const payload = await getPayload({ config: await config })
+    const user = await sessionCourante()
+
+    if (!user) {
+      return { ok: false, message: 'Session expirée : reconnecte-toi, puis réessaie.' }
+    }
+
+    await payload.delete({ collection: 'enchainements', id, overrideAccess: false, user })
+
+    return { ok: true }
+  } catch (erreur) {
+    const message = erreur instanceof Error ? erreur.message : ''
+    return { ok: false, message: message || 'La suppression a échoué. Réessaie.' }
   }
 }
