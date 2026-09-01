@@ -270,14 +270,20 @@ jobs:
           #
           # `depends_on` ne suffisait pas : au redéploiement, seul `app` est
           # recréé (l'image a changé) et Litestream, lui, continue de tourner.
-          echo "-> Arrêt de la réplication le temps des migrations..."
-          sudo docker compose stop litestream
+          #
+          # `app` est arrêté avec lui, et ça ne coûte AUCUNE disponibilité de
+          # plus : `up -d` recrée déjà le conteneur (l'image a changé), donc il
+          # s'arrêtait de toute façon avant que le nouveau ne migre. Ça règle en
+          # revanche le cas où l'ancien conteneur est en boucle de redémarrage :
+          # il relance alors `payload migrate` toutes les quelques secondes, et
+          # redevient le deuxième écrivain qu'on cherche à écarter.
+          echo "-> Arrêt de l'application et de la réplication le temps des migrations..."
+          sudo docker compose stop app litestream
 
           # Les migrations SEULES, dans un conteneur jetable : `--no-deps` pour
           # ne réveiller personne, `--entrypoint` pour ne pas démarrer Next.js
           # dans la foulée. Si elles échouent, `set -e` arrête le déploiement
-          # ICI — l'ancienne application tourne encore, et la réplication
-          # reprend au redémarrage de la pile.
+          # ICI, avant d'avoir touché à quoi que ce soit d'autre.
           echo "-> Application des migrations, base pour nous seuls..."
           sudo docker compose run --rm --no-deps --entrypoint sh app -c 'npm run payload -- migrate'
 
