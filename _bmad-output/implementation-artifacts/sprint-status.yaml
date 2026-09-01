@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-01 (identifiant opaque et trois visibilites)
+# last_updated: 2026-09-01 (note : page « comment ca marche »)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -1185,6 +1185,78 @@ action_items:
       Pseudo : petite (un champ, un acces, un formulaire). Page auteur :
       moyenne. Suivi + fil : epic a instruire — collection, acces, requetes,
       et des questions de produit qui ne sont pas techniques.
+
+  # Demande d Alain le 2026-09-01 au soir. DEUX morceaux qui ne s adressent pas
+  # au meme lecteur, et qui n ont pas le meme cout : le MODELE (du texte) et la
+  # LECTURE DES VIGNETTES (des dessins).
+  - id: page-comment-ca-marche
+    status: open
+    titre: "Page « comment ca marche » : le modele, et la lecture des vignettes"
+    concerne:
+      - 2-5-fiche-position-publique-exploration-du-graphe
+      - 5-3-accueil-fil-des-nouveautes
+      - 5-4-catalogue-navigable-positions-passes
+    constat: >
+      Le site ne dit nulle part CE QU IL EST. Un visiteur qui arrive comprend
+      qu il y a des positions, des passes et des enchainements, mais rien ne lui
+      explique que les trois forment un modele — ni pourquoi ce modele donne un
+      generateur d enchainements plutot qu un catalogue de plus.
+      Meme chose pour les vignettes de position : la convention de dessin (vue
+      du dessus, couleurs du danseur et de la danseuse, sens du regard, noir et
+      gris des bras) n est ecrite NULLE PART. Elle vit dans une trentaine
+      d images et dans la tete d Alain. Un eleve qui ouvre une fiche voit deux
+      pastilles et des traits, et doit deviner.
+    demande:
+      - "Une page d EXPLICATION du fonctionnement : un enchainement est une
+         suite de passes ; une passe est une position de depart, une position
+         d arrivee et un deroule ; et si l on arrive a codifier tout cela, on
+         obtient un generateur d enchainements facile a utiliser et a partager."
+      - "Un MINI TUTO de lecture des vignettes : comment les petites images du
+         danseur et de la danseuse sont pensees."
+      - "Un SCHEMA qui presente le danseur et la danseuse SEPAREMENT, montre que
+         c est vu du dessus, explique le noir et le gris des bras et le sens
+         dans lequel ils regardent."
+    nuances_a_instruire:
+      - >
+        DEUX PUBLICS, DEUX MOMENTS, et c est ce qui decide de l endroit. Le
+        « pourquoi ce site » se lit UNE FOIS, en arrivant : une page se justifie.
+        La lecture d une vignette, elle, se demande DEVANT la vignette, sur une
+        fiche position, pas dans un menu « a propos » qu on ne rouvrira jamais.
+        A trancher : page unique, legende depliable sur la fiche position, ou
+        les deux avec un lien de l une vers l autre.
+      - >
+        ECRIRE LA CONVENTION, C EST LA FIXER. Elle n existe aujourd hui que dans
+        les images. La rediger obligera a decider ce qui est vrai — et fera
+        probablement apparaitre des vignettes qui ne suivent pas tout a fait la
+        regle. Prevoir ce temps-la : ce n est pas de la redaction, c est de la
+        mise au net.
+      - >
+        LE SCHEMA EST UN DESSIN A PRODUIRE, pas du texte a taper — et c est le
+        vrai cout du lot. Question de forme : un SVG dessine a la main (net a
+        toutes les tailles, lisible en theme sombre, leger) ou une image comme
+        les positions ? Le reste du site sert des JPEG, mais une legende qui
+        doit rester lisible dans les deux themes a interet a etre du SVG.
+      - >
+        « SI L ON CODIFIE, ON OBTIENT UN GENERATEUR » EST L ARGUMENT DU PRODUIT,
+        et un paragraphe le raconte mal. Une mini-demonstration vivante — une
+        position de depart, les deux ou trois passes qui en partent, la chaine
+        qui se construit sous les yeux — le dirait en trois secondes. C est le
+        compositeur en miniature, donc du travail reel : a arbitrer contre le
+        texte seul, pas a supposer acquis.
+      - >
+        LA PAGE FIXERA AUSSI LE VOCABULAIRE (« position », « passe »,
+        « enchainement », « transition »). Si elle nomme les choses autrement
+        que l interface, c est l interface qui aura tort aux yeux du lecteur.
+        Relire les libelles a cette occasion.
+      - >
+        OU ELLE SE RANGE dans la navigation : pied de page (discret, mais c est
+        la qu on cherche « a propos »), barre principale (visible, mais elle
+        porte deja trois entrees et la recherche), ou depuis l accueil. Attention
+        a la Story 5-3, qui prevoit d occuper l accueil avec le fil des
+        nouveautes : les deux se disputeront la meme place.
+    taille_estimee: >
+      Le texte : petite. Les schemas : moyenne, et c est la que passe le temps.
+      La mini-demonstration animee, si elle est retenue : moyenne a elle seule.
 
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
