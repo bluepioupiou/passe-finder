@@ -68,7 +68,10 @@ test.describe('Liste des enchaînements', () => {
 
     await expect(page.locator('.enchainement-titre').first()).toContainText(/chor[ée]graphie/i)
     // Le champ est rempli depuis l'URL : on voit ce qui est filtre.
-    await expect(page.locator('.filtres__saisie')).toHaveValue('choregraphie')
+    // `input.` a dessein : le menu des auteurs porte la meme classe (meme
+    // apparence), et un selecteur qui en attrape deux ne dit plus lequel il
+    // teste.
+    await expect(page.locator('input.filtres__saisie')).toHaveValue('choregraphie')
 
     // Un lien de pagination, s'il y en a un, emporte la recherche avec lui.
     const suivante = page.getByRole('link', { name: 'Suivante' })
@@ -76,6 +79,42 @@ test.describe('Liste des enchaînements', () => {
       const cible = await suivante.getAttribute('href')
       expect(cible).toContain('q=choregraphie')
     }
+  })
+
+  test('filtre sur la présence d’une musique, et d’une vidéo', async ({ page, request }) => {
+    test.skip((await nombrePartages(request)) === 0, 'Aucun enchaînement partagé sur cette cible.')
+
+    await page.goto('/enchainements')
+    const total = await page.locator('.enchainement-carte').count()
+
+    await page.getByLabel('Avec musique').check()
+    await expect(page).toHaveURL(/[?&]musique=1/)
+
+    const cartes = page.locator('.enchainement-carte')
+    const filtrees = await cartes.count()
+    test.skip(filtrees === 0, 'Aucune musique renseignée sur cette cible.')
+
+    // Le filtre a bien REDUIT la liste, il ne l'a pas simplement rechargee.
+    expect(filtrees).toBeLessThanOrEqual(total)
+    // Et chaque carte montrée porte bien le marqueur : le filtre et l'icône
+    // disent la même chose, y compris pour un titre sans lien.
+    for (const carte of await cartes.all()) {
+      await expect(carte).toContainText('Avec musique')
+    }
+
+    // Les deux filtres se combinent, et le lien de pagination les emporte.
+    await page.getByLabel('Avec vidéo').check()
+    await expect(page).toHaveURL(/musique=1/)
+    await expect(page).toHaveURL(/video=1/)
+
+    for (const carte of await page.locator('.enchainement-carte').all()) {
+      await expect(carte).toContainText('Avec vidéo')
+    }
+
+    // « Tout afficher » remet la liste entière.
+    await page.getByRole('link', { name: 'Tout afficher' }).click()
+    await expect(page).toHaveURL(/\/enchainements$/)
+    await expect(page.locator('.enchainement-carte')).toHaveCount(total)
   })
 
   test('une recherche sans résultat le dit, sans page vide', async ({ page }) => {

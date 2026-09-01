@@ -1,7 +1,7 @@
-import type { Payload } from 'payload'
+import type { Payload, Where } from 'payload'
 
 import { identifiant } from './enchainements'
-import type { Enchainement } from './payload-types'
+import type { Enchainement, User } from './payload-types'
 
 /**
  * Qui a ecrit cet enchainement (UX-DR10, demande d'Alain 2026-08-31).
@@ -90,4 +90,46 @@ export function nomAuteur(
   const id = identifiant(enchainement.auteur)
 
   return id === null ? null : (noms.get(id) ?? null)
+}
+
+/** Un auteur proposable au filtre. */
+export type ChoixAuteur = { id: number; nom: string }
+
+/**
+ * Les auteurs qu'on peut proposer au filtre de la liste.
+ *
+ * TIRES DES ENCHAINEMENTS VISIBLES, et surtout PAS de la table des comptes.
+ * Lister les comptes reviendrait a publier, a qui passe par la, le nom de
+ * chaque personne inscrite — y compris celles qui n'ont jamais rien partage.
+ * Ici, n'apparait que quelqu'un dont le lecteur voit deja au moins un
+ * enchainement : le filtre ne dit rien de plus que la liste elle-meme.
+ *
+ * `overrideAccess: false` avec l'utilisateur courant : la visibilite est celle
+ * de la collection (ADD-5), la meme que pour la liste.
+ *
+ * COUT : une lecture de la colonne `auteur` sur les enchainements visibles, a
+ * chaque affichage de la liste. Une colonne d'entiers, quelques milliers de
+ * lignes au plus — SQLite lit ca sans y penser. Le jour ou ce n'est plus vrai,
+ * c'est une requete DISTINCT qu'il faudra, pas une liste des comptes.
+ */
+export async function auteursProposables(
+  payload: Payload,
+  utilisateur: User | null,
+  ou?: Where,
+): Promise<ChoixAuteur[]> {
+  const { docs } = await payload.find({
+    collection: 'enchainements',
+    where: ou,
+    pagination: false,
+    depth: 0,
+    select: { auteur: true },
+    overrideAccess: false,
+    user: utilisateur,
+  })
+
+  const noms = await nomsDesAuteurs(payload, docs)
+
+  return [...noms.entries()]
+    .map(([id, nom]) => ({ id, nom }))
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
 }

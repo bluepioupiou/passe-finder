@@ -37,6 +37,12 @@ export type Criteres = {
   page: number
   /** Ne montrer que mes favoris (Story 5.1). */
   favorisSeuls: boolean
+  /** Ne montrer que ceux qui portent une musique. */
+  avecMusique: boolean
+  /** Ne montrer que ceux qui portent une vidéo. */
+  avecVideo: boolean
+  /** Ne montrer que ceux de cet auteur ; `null` = tous. */
+  auteur: number | null
 }
 
 /** Ce que l'URL peut porter. */
@@ -59,11 +65,15 @@ function valeur(parametres: ParametresURL, nom: string): string {
  */
 export function lireCriteres(parametres: ParametresURL): Criteres {
   const page = Number.parseInt(valeur(parametres, 'page'), 10)
+  const auteur = Number.parseInt(valeur(parametres, 'auteur'), 10)
 
   return {
     requete: valeur(parametres, 'q').trim(),
     page: Number.isFinite(page) && page > 0 ? page : 1,
     favorisSeuls: valeur(parametres, 'favoris') === '1',
+    avecMusique: valeur(parametres, 'musique') === '1',
+    avecVideo: valeur(parametres, 'video') === '1',
+    auteur: Number.isFinite(auteur) && auteur > 0 ? auteur : null,
   }
 }
 
@@ -81,6 +91,9 @@ export function versParametres(criteres: Partial<Criteres>): URLSearchParams {
     parametres.set('q', criteres.requete.trim())
   }
   if (criteres.favorisSeuls) parametres.set('favoris', '1')
+  if (criteres.avecMusique) parametres.set('musique', '1')
+  if (criteres.avecVideo) parametres.set('video', '1')
+  if (criteres.auteur) parametres.set('auteur', String(criteres.auteur))
   if (criteres.page && criteres.page > 1) parametres.set('page', String(criteres.page))
 
   return parametres
@@ -95,7 +108,26 @@ export function lienListe(criteres: Partial<Criteres>): string {
 
 /** Au moins un critère est-il posé ? */
 export function auMoinsUnCritere(criteres: Criteres): boolean {
-  return criteres.requete !== '' || criteres.favorisSeuls
+  return (
+    criteres.requete !== '' ||
+    criteres.favorisSeuls ||
+    criteres.avecMusique ||
+    criteres.avecVideo ||
+    criteres.auteur !== null
+  )
+}
+
+/**
+ * « Ce champ porte quelque chose ».
+ *
+ * DEUX CONDITIONS ET NON UNE : `exists` écarte les `NULL`, `not_equals` les
+ * chaînes VIDES. Les deux existent en base — une écriture récente met `null`,
+ * mais l'historique migré et /admin peuvent laisser `''`. Ne tester que l'un
+ * des deux ferait apparaître dans « avec musique » des enchaînements qui n'en
+ * ont pas, ce qui ne se remarque qu'en ouvrant la fiche.
+ */
+function renseigne(chemin: string): Where {
+  return { and: [{ [chemin]: { exists: true } }, { [chemin]: { not_equals: '' } }] }
 }
 
 /**
@@ -112,6 +144,19 @@ export function conditions(criteres: Criteres, favoris: number[]): Where | undef
   if (criteres.requete !== '') {
     et.push({ titreNormalise: { like: normaliserTexte(criteres.requete) } })
   }
+
+  if (criteres.avecMusique) {
+    // « A une musique » = l'UN OU L'AUTRE des deux champs, exactement comme
+    // l'icône de la carte (décision d'Alain) : c'est la présence de
+    // l'information qui compte, pas celle du lien. Un titre sans lien reste une
+    // musique — c'est même le cas des quatre montages de l'historique, dont le
+    // fichier a disparu avec l'ancien site.
+    et.push({ or: [renseigne('musique.titre'), renseigne('musique.lien')] })
+  }
+
+  if (criteres.avecVideo) et.push(renseigne('urlVideo'))
+
+  if (criteres.auteur !== null) et.push({ auteur: { equals: criteres.auteur } })
 
   if (criteres.favorisSeuls) {
     // Sans aucun favori, on veut une liste VIDE, pas la liste entière : un
