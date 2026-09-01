@@ -1,12 +1,20 @@
 import { headers as getHeaders } from 'next/headers.js'
-import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
 import { CarteEnchainement } from '@/components/CarteEnchainement'
-import { GrilleFiltrable } from '@/components/GrilleFiltrable'
+import { FiltresEnchainements } from '@/components/FiltresEnchainements'
+import { Pagination } from '@/components/Pagination'
 import { nomAuteur, nomsDesAuteurs } from '@/auteurs'
 import { chargerCatalogue } from '@/catalogue'
+import {
+  auMoinsUnCritere,
+  conditions,
+  lienListe,
+  lireCriteres,
+  PAR_PAGE,
+  type ParametresURL,
+} from '@/enchainements-liste'
 import { idsFavoris } from '@/favoris'
 import config from '@/payload.config'
 import './enchainements.css'
@@ -27,25 +35,39 @@ export const metadata = {
  * (FR-17 / AD-6), et l'auteur connecté voit en plus les siens. Rien ici ne
  * réimplémente cette règle : la changer se fait dans la collection.
  *
- * La recherche filtre par TITRE, côté client comme pour le reste du catalogue
- * (Story 5.4) : le volume tient en mémoire et la frappe répond sans attente.
+ * PAGINÉE ET FILTRÉE PAR LE SERVEUR (demande d'Alain, 2026-08-31). Jusqu'ici la
+ * page chargeait tout et filtrait dans le navigateur : instantané à la frappe,
+ * et tenable à 120 enchaînements. Ça ne l'aurait plus été quand les élèves
+ * créeront les leurs — une page qui télécharge mille cartes est une page qu'on
+ * n'ouvre plus au bord de la piste.
+ *
+ * Les deux vont ensemble et pas l'un sans l'autre : un filtre resté côté client
+ * ne filtrerait que la page affichée, ce qui est pire que pas de filtre du tout
+ * — il donnerait de fausses réponses (« rien trouvé » alors que le résultat est
+ * page 3).
  */
 export default async function EnchainementsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<ParametresURL>
 }) {
-  // `?q=` : requête transmise par la recherche globale (« voir tout »).
-  const { q } = await searchParams
-  const requeteInitiale = (q ?? '').trim()
+  // `?q=` arrive aussi de la recherche globale (« voir tout »), `?page=` de la
+  // pagination, `?favoris=1` de la case.
+  const criteres = lireCriteres(await searchParams)
 
   const payload = await getPayload({ config: await config })
   const { user } = await payload.auth({ headers: await getHeaders() })
 
-  const [{ docs: enchainements, totalDocs }, catalogue] = await Promise.all([
+  // Les favoris d'abord : le filtre « mes favoris » en fait une contrainte de
+  // requête, il faut donc les connaître AVANT d'interroger les enchaînements.
+  const favoris = await idsFavoris(payload, user)
+
+  const [resultat, catalogue] = await Promise.all([
     payload.find({
       collection: 'enchainements',
-      limit: 300,
+      where: conditions(criteres, [...favoris]),
+      limit: PAR_PAGE,
+      page: criteres.page,
       // Profondeur 0 : les passes et positions viennent du catalogue chargé en
       // une fois (voir `chargerCatalogue`), pas d'une résolution par maillon.
       depth: 0,
@@ -56,57 +78,60 @@ export default async function EnchainementsPage({
     chargerCatalogue(payload),
   ])
 
-  // Les favoris de la personne connectee, en UNE requete : la grille en a
-  // besoin par carte pour le filtre « mes favoris ».
-  const favoris = await idsFavoris(payload, user)
-
-  // Une seule requete pour tous les auteurs de la page, quel que soit le nombre
-  // de cartes.
+  const { docs: enchainements, totalDocs, totalPages, page } = resultat
+  // Une seule requête pour tous les auteurs de la page.
   const auteurs = await nomsDesAuteurs(payload, enchainements)
+  const filtre = auMoinsUnCritere(criteres)
 
-  const elements = enchainements.map((enchainement) => ({
-    cle: enchainement.id,
-    nom: enchainement.titre,
-    favori: favoris.has(enchainement.id),
-    carte: (
-      <CarteEnchainement
-        enchainement={enchainement}
-        catalogue={catalogue}
-        auteur={nomAuteur(enchainement, auteurs)}
-      />
-    ),
-  }))
   return (
     <div className="contenu-page">
       <header className="enchainements-entete">
         <h1>Enchaînements</h1>
         <p className="texte-attenue">
-          {totalDocs === 0
+          {totalDocs === 0 && !filtre
             ? 'Aucun enchaînement pour le moment.'
             : `${totalDocs} enchaînement${totalDocs > 1 ? 's' : ''} à réviser.`}
         </p>
       </header>
 
-      {totalDocs === 0 ? (
+      <FiltresEnchainements
+        criteres={criteres}
+        // Le filtre n'a de sens que pour qui a des favoris : le proposer à un
+        // visiteur anonyme afficherait une case qui ne peut rien donner.
+        proposerFavoris={user ? favoris.size > 0 : false}
+        total={totalDocs}
+      />
+
+      {enchainements.length === 0 ? (
         <p className="texte-attenue">
-          Rien de partagé pour l&apos;instant. Les enchaînements du cours apparaîtront ici.
+          {criteres.requete !== ''
+            ? `Rien trouvé pour « ${criteres.requete} ». Essaie un autre mot, ou retire les filtres.`
+            : criteres.favorisSeuls
+              ? 'Aucun favori ici. Décoche « Mes favoris » pour tout revoir.'
+              : "Rien de partagé pour l'instant. Les enchaînements du cours apparaîtront ici."}
         </p>
       ) : (
-        <GrilleFiltrable
-          // Remonte le composant quand la requête de l'URL change, pour que le
-          // champ suive l'URL au lieu de garder l'ancienne saisie.
-          key={requeteInitiale}
-          requeteInitiale={requeteInitiale}
-          elements={elements}
-          classeGrille="enchainements-grille"
-          etiquetteRecherche="Rechercher un enchaînement"
-          invite="Titre de l'enchaînement…"
-          singulier="enchaînement"
-          pluriel="enchaînements"
-          // Le filtre n'a de sens que pour qui a des favoris : le proposer a un
-          // visiteur anonyme afficherait une case qui ne peut rien donner.
-          filtreFavoris={user ? favoris.size > 0 : false}
-        />
+        <>
+          <ul className="enchainements-grille">
+            {enchainements.map((enchainement) => (
+              <li key={enchainement.id}>
+                <CarteEnchainement
+                  enchainement={enchainement}
+                  catalogue={catalogue}
+                  auteur={nomAuteur(enchainement, auteurs)}
+                />
+              </li>
+            ))}
+          </ul>
+
+          <Pagination
+            page={page ?? criteres.page}
+            pages={totalPages}
+            // Les critères courants sont conservés d'une page à l'autre : sans
+            // cela, passer à la page 2 relâcherait la recherche en cours.
+            lien={(numero) => lienListe({ ...criteres, page: numero })}
+          />
+        </>
       )}
     </div>
   )

@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig, Where } from 'payload'
 
 import { lienSur } from '../liens'
+import { normaliserTexte } from '../recherche'
 import { titreDuMorceau } from '../musique-oembed'
 import { auteurOuAdmin, estAdmin, peutCreerEnchainement } from './acces'
 
@@ -43,6 +44,28 @@ const completerTitreMusique: CollectionBeforeChangeHook = async ({ data, origina
   if (titre === null) return data
 
   return { ...data, musique: { ...saisie, titre } }
+}
+
+/**
+ * Tient à jour le TITRE NORMALISÉ, sur lequel la liste cherche.
+ *
+ * POURQUOI UNE COLONNE ET PAS UN `like` SUR LE TITRE : la recherche du site est
+ * insensible aux accents depuis la Story 5.4 — « chore » trouve
+ * « Chorégraphie », et c'est délibéré (on tape sans accents). Le `LIKE` de
+ * SQLite, lui, est accentué : `chore` n'y trouve pas `Choré`. Tant que la liste
+ * filtrait en mémoire, la question ne se posait pas ; le jour où elle pagine,
+ * le filtre DOIT devenir une contrainte de requête — sinon on ne filtrerait que
+ * la page affichée. Cette colonne est ce qui permet les deux à la fois.
+ *
+ * Dérivée, jamais saisie : elle se recalcule à chaque écriture du titre. C'est
+ * une seule source de vérité (le titre), plus un index.
+ */
+const normaliserLeTitre: CollectionBeforeChangeHook = async ({ data, originalDoc }) => {
+  const titre = (data as { titre?: string }).titre ?? (originalDoc as { titre?: string })?.titre
+
+  if (typeof titre !== 'string') return data
+
+  return { ...data, titreNormalise: normaliserTexte(titre) }
 }
 
 /**
@@ -111,7 +134,7 @@ export const Enchainement: CollectionConfig = {
     delete: auteurOuAdmin,
   },
   hooks: {
-    beforeChange: [completerTitreMusique],
+    beforeChange: [completerTitreMusique, normaliserLeTitre],
   },
   fields: [
     {
@@ -249,6 +272,23 @@ export const Enchainement: CollectionConfig = {
           'Le lien doit être une adresse web (commençant par http:// ou https://).'
         )
       },
+    },
+
+    {
+      // Copie normalisée du titre (sans accent ni casse), sur laquelle la liste
+      // cherche — voir `normaliserLeTitre`.
+      //
+      // PAS `hidden: true`, malgré l'envie : un champ `hidden` n'est pas
+      // QUERYABLE dans Payload (« The following path cannot be queried »), et ce
+      // champ n'existe que pour être interrogé. On le cache donc de /admin
+      // seulement, où il inviterait à le corriger à la main alors qu'il se
+      // recalcule tout seul. Rien à protéger par ailleurs : c'est le titre
+      // public, sans ses accents.
+      name: 'titreNormalise',
+      type: 'text',
+      index: true,
+      label: 'Titre normalisé',
+      admin: { hidden: true, readOnly: true },
     },
 
     // --- Champs d'archivage legacy (AD-8 / ADD-10) -------------------------

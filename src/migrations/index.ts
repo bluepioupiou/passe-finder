@@ -7,6 +7,7 @@ import * as migration_20260830_072052_enchainement from './20260830_072052_encha
 import * as migration_20260830_202812_drapeau_admin from './20260830_202812_drapeau_admin';
 import * as migration_20260831_165326_favoris from './20260831_165326_favoris';
 import * as migration_20260831_195957_musique_enchainement from './20260831_195957_musique_enchainement';
+import * as migration_20260901_042354_titre_normalise from './20260901_042354_titre_normalise';
 
 export const migrations = [
   {
@@ -52,6 +53,11 @@ export const migrations = [
   {
     up: migration_20260831_195957_musique_enchainement.up,
     down: migration_20260831_195957_musique_enchainement.down,
-    name: '20260831_195957_musique_enchainement'
+    name: '20260831_195957_musique_enchainement',
+  },
+  {
+    up: migration_20260901_042354_titre_normalise.up,
+    down: migration_20260901_042354_titre_normalise.down,
+    name: '20260901_042354_titre_normalise'
   },
 ];
