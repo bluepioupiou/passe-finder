@@ -1,0 +1,68 @@
+/* Pagination d'une liste — « Lin & Sauge » (UX-DR3). */
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-8);
+}
+
+.pagination__numeros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Cible tactile confortable (UX-DR17) : on pagine surtout au telephone, le
+   pouce sur un ecran qui bouge. */
+.pagination__numero,
+.pagination__saut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-sm);
+  color: var(--muted);
+  font-size: var(--body-size);
+  text-decoration: none;
+}
+
+.pagination__numero:hover,
+.pagination__saut:hover {
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+/* La page courante ne se clique pas : elle se REPERE. Fond plein plutot que
+   simple gras — au milieu d'une rangee de chiffres, le gras se voit mal. */
+.pagination__numero--courant {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.pagination__numero--courant:hover {
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Aux extremites, « Precedente » / « Suivante » restent a leur place plutot que
+   de disparaitre : la rangee ne sauterait pas d'un cran a chaque page. */
+.pagination__saut--inerte {
+  opacity: 0.4;
+}
+
+.pagination__trou {
+  padding: 0 var(--space-1);
+  color: var(--muted);
+}

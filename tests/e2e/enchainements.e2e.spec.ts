@@ -42,9 +42,14 @@ test.describe('Enchaînements', () => {
     await page.goto('/enchainements')
     await page.getByLabel('Rechercher un enchaînement').fill(enchainement!.titre)
 
+    // La recherche est desormais une contrainte de REQUETE : la frappe part
+    // dans l'URL (apres une courte pause), et la page revient filtree. C'est ce
+    // qui permet de paginer sans mentir — un filtre cote client n'aurait filtre
+    // que la page affichee.
+    await expect(page).toHaveURL(/[?&]q=/)
     // Le compteur n'apparait qu'une fois un filtre actif : sa presence dit que
-    // la grille a bien ete reduite, pas seulement affichee en entier.
-    await expect(page.getByRole('status')).toContainText(/sur \d+/)
+    // la liste a bien ete reduite, pas seulement affichee en entier.
+    await expect(page.getByRole('status')).toContainText(/enchaînement/)
     await expect(page.locator('.enchainement-titre').first()).toHaveText(enchainement!.titre)
   })
 

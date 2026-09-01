@@ -182,6 +182,35 @@ describe('Enchainement', () => {
     ).rejects.toThrow()
   })
 
+  it('se retrouve par une recherche SANS accent', async () => {
+    // Le point du test : la liste pagine, donc elle cherche EN BASE et non plus
+    // en memoire. Le `LIKE` de SQLite etant accentue, « choregraphie » ne
+    // trouverait jamais « Chorégraphie » sans la colonne normalisee — la
+    // recherche du site perdrait en silence ce qu'elle sait faire depuis 5.4.
+    await payload.update({
+      collection: 'enchainements',
+      id: idEnchainement,
+      data: { titre: 'Chorégraphie de test' },
+    })
+
+    const relu = await payload.findByID({
+      collection: 'enchainements',
+      id: idEnchainement,
+      depth: 0,
+    })
+    expect(relu.titreNormalise).toBe('choregraphie de test')
+
+    const trouves = await payload.find({
+      collection: 'enchainements',
+      where: { titreNormalise: { like: 'choregraphie' } },
+      depth: 0,
+    })
+    expect(trouves.docs.map((doc) => doc.id)).toContain(idEnchainement)
+
+    // Et le titre affiche, lui, garde ses accents.
+    expect(relu.titre).toBe('Chorégraphie de test')
+  })
+
   it('empeche de supprimer une passe utilisee', async () => {
     await expect(payload.delete({ collection: 'passes', id: idPasse })).rejects.toThrow(
       /Suppression impossible/,

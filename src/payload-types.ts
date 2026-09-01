@@ -294,6 +294,7 @@ export interface Enchainement {
    * Facultatif. Lien vers la vidéo de l'enchaînement — YouTube, Vimeo, Dailymotion… (FR-37).
    */
   urlVideo?: string | null;
+  titreNormalise?: string | null;
   legacyId?: number | null;
   legacyMarqueurs?:
     | {
@@ -528,6 +529,7 @@ export interface EnchainementsSelect<T extends boolean = true> {
         id?: T;
       };
   urlVideo?: T;
+  titreNormalise?: T;
   legacyId?: T;
   legacyMarqueurs?: T;
   legacyMeta?: T;
