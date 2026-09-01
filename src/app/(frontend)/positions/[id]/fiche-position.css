@@ -97,3 +97,54 @@
   border-radius: var(--rounded-sm);
   text-transform: uppercase;
 }
+
+/* --- Les changements de prise (Story 4.7) --- */
+
+/*
+ * L'icone dans le titre de section : ces deux listes ne parlent pas de passes,
+ * et l'oeil doit le voir avant de lire. Les sections de passes n'en portent
+ * pas — c'est le cas ordinaire, il n'a rien a signaler.
+ */
+.fiche-section__icone {
+  margin-right: var(--space-2);
+  color: var(--accent);
+  vertical-align: -0.15em;
+}
+
+/*
+ * Une transition n'est PAS un lien vers elle-meme : elle n'a pas de fiche, ce
+ * n'est pas un objet qu'on consulte. La carte n'est donc pas cliquable dans son
+ * ensemble, contrairement a celle d'une passe — seule la position d'arrivee
+ * l'est, et c'est elle qui prolonge l'exploration.
+ */
+.fiche-transition {
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+}
+
+.fiche-transition__ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.fiche-transition__cible {
+  font-size: var(--label-caps-size);
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.fiche-transition__cible:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.fiche-transition__deroule {
+  margin-top: var(--space-2);
+  font-size: var(--body-size);
+  line-height: var(--body-line);
+  max-width: 68ch;
+}

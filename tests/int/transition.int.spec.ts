@@ -1,6 +1,7 @@
 import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { positionsQuiChangentDePrise } from '@/catalogue'
 import config from '@/payload.config'
 
 /**
@@ -150,6 +151,38 @@ describe('Transition', () => {
 
     // La position redevient supprimable une fois sa derniere transition partie.
     await payload.delete({ collection: 'positions', id: troisieme.id })
+  })
+
+  it('marque la position de DEPART, pas celle d arrivee', async () => {
+    // Le marqueur des cartes du catalogue repond a « d'ici, on peut changer de
+    // prise sans danser ». Marquer aussi l'arrivee repondrait a une autre
+    // question (« on peut arriver ici sans passe »), qui est une information de
+    // fiche : sur une vignette, elle ne dit rien de ce qu'on peut faire.
+    //
+    // Deux positions neuves, une seule transition entre elles : c'est le seul
+    // montage qui distingue vraiment les deux sens (idA et idB sont tous deux
+    // des departs a ce stade du fichier).
+    const source = await payload.create({
+      collection: 'positions',
+      data: { nom: 'Position de test — source', danse: idDanse },
+    })
+    const cible = await payload.create({
+      collection: 'positions',
+      data: { nom: 'Position de test — cible', danse: idDanse },
+    })
+    const seule = await payload.create({
+      collection: 'transitions',
+      data: { positionDebut: source.id, positionFin: cible.id },
+    })
+
+    const marquees = await positionsQuiChangentDePrise(payload)
+
+    expect(marquees.has(source.id as number)).toBe(true)
+    expect(marquees.has(cible.id as number)).toBe(false)
+
+    await payload.delete({ collection: 'transitions', id: seule.id })
+    await payload.delete({ collection: 'positions', id: cible.id })
+    await payload.delete({ collection: 'positions', id: source.id })
   })
 
   it('est lisible par un visiteur anonyme, et non modifiable', async () => {

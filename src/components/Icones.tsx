@@ -123,7 +123,10 @@ export function IconeCompte(proprietes: ProprietesIcone) {
  * silhouette qu'elle soit posee ou non, donc la bascule ne fait pas sauter la
  * mise en page et se lit d'un coup d'oeil.
  */
-export function IconeEtoile({ rempli = false, ...proprietes }: ProprietesIcone & { rempli?: boolean }) {
+export function IconeEtoile({
+  rempli = false,
+  ...proprietes
+}: ProprietesIcone & { rempli?: boolean }) {
   return (
     <svg
       className={proprietes.className}
@@ -159,6 +162,29 @@ export function IconeNote(proprietes: ProprietesIcone) {
       <path d="M9 18V5.5l11-2V16" />
       <circle cx="6.5" cy="18" r="2.6" />
       <circle cx="17.5" cy="16" r="2.6" />
+    </Svg>
+  )
+}
+
+/**
+ * Deux fleches en cycle : le changement de prise sans passe (Story 4.7).
+ *
+ * POURQUOI DES FLECHES ET PAS UN SYMBOLE D'ECHANGE : une transition est
+ * DIRIGEE (declarer A -> B n'ouvre pas B -> A), mais ce que l'icone doit dire
+ * ici, c'est « on peut passer d'une prise a une autre », pas le sens. Le cycle
+ * dit le changement ; le sens se lit dans la liste, en toutes lettres.
+ *
+ * Le meme geste est marque « ↻ » dans la chaine d'un enchainement, ou l'espace
+ * se compte en pixels au coin d'une bulle. Ici on a la place d'une vraie icone,
+ * au trait, comme le reste du jeu.
+ */
+export function IconeTransition(proprietes: ProprietesIcone) {
+  return (
+    <Svg {...proprietes}>
+      <polyline points="21 5 21 10 16 10" />
+      <polyline points="3 19 3 14 8 14" />
+      <path d="M4.6 9.5a7.5 7.5 0 0 1 12.4-2.8L21 10" />
+      <path d="M3 14l4 3.8a7.5 7.5 0 0 0 12.4-2.8" />
     </Svg>
   )
 }
