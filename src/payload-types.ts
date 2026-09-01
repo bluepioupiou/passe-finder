@@ -136,6 +136,11 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   /**
+   * Le nom affiché comme auteur de tes enchaînements. Laissé vide, c'est le début de ton adresse e-mail qui s'affiche.
+   */
+  pseudo?: string | null;
+  pseudoNormalise?: string | null;
+  /**
    * Donne le droit d'editer le catalogue (danses, positions, passes, fichiers). S'attribue hors de l'application : ne peut etre coche que par un administrateur.
    */
   admin?: boolean | null;
@@ -464,6 +469,8 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  pseudo?: T;
+  pseudoNormalise?: T;
   admin?: T;
   updatedAt?: T;
   createdAt?: T;

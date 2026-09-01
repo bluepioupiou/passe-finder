@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-08-31 (story 5-1 : favoris)
+# last_updated: 2026-09-01 (pseudo : le nom d auteur choisi)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -1073,8 +1073,36 @@ action_items:
   # Demande d Alain le 2026-08-31 au soir. EXPLICITEMENT notee POUR UNE AUTRE
   # BRANCHE : ce n est pas la suite immediate.
   - id: pseudo-et-page-auteur
-    status: open
+    status: in-progress
     titre: "Pseudo, page publique d un auteur, et suivi"
+    # LE PSEUDO EST LIVRE (2026-09-01, demande d Alain). Restent la PAGE d un
+    # auteur et le SUIVI, qui gardent cet item ouvert.
+    livre_pseudo: >
+      Champ `pseudo` sur les comptes, page /compte atteignable par le menu de
+      compte, et `src/auteurs.ts` qui arbitre : pseudo s il existe, sinon la
+      partie avant l arobase — exactement la ou le commentaire du lot precedent
+      annoncait que ca se brancherait. Aucune page d affichage n a change.
+      Trois decisions prises au passage, sur les nuances notees plus bas :
+        - LE VIDE RETOMBE SUR L EMAIL, il ne masque pas l auteur. 119
+          enchainements migres ont deja un auteur : faire disparaitre la ligne
+          jusqu a ce que chacun passe par son compte aurait fait regresser
+          l affichage au lieu de l ameliorer.
+        - L UNICITE EST IMPOSEE, sur une colonne derivee `pseudoNormalise`
+          (sans casse ni accent, meme normalisation que la recherche), avec un
+          index unique. C etait le moment ou jamais : la nuance disait
+          elle-meme que c est indolore a dix comptes et penible ensuite.
+          Consequence assumee : la disponibilite d un pseudo est constatable
+          par qui essaie d en prendre un — inherent a l unicite, et il s agit
+          justement du nom qui s affiche en public.
+        - LE PSEUDO NE PEUT PAS CONTENIR D AROBASE. Tout le module existe pour
+          ne pas publier d adresse ; on ne laisse pas quelqu un en publier une
+          volontairement.
+      Defaut corrige en chemin : React 19 REINITIALISE un formulaire des que son
+      action serveur se termine, erreur comprise. Un champ non controle perdait
+      donc la saisie refusee (NFR-4 / UX-DR16). Constate en end-to-end.
+      A VERIFIER AILLEURS : `FormulaireCompte` (connexion / inscription) est non
+      controle et son commentaire promet de garder l email saisi — il ne le
+      tient probablement plus.
     concerne:
       - 5-2-profil-a-deux-listes-mes-enchainements-mes-favoris
       - 5-3-accueil-fil-des-nouveautes

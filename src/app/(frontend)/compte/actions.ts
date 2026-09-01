@@ -4,7 +4,9 @@ import { cookies } from 'next/headers.js'
 import { redirect } from 'next/navigation'
 import { getPayload, type Payload } from 'payload'
 
+import { erreurPseudo, nettoyerPseudo, pseudoComparable } from '@/auteurs'
 import config from '@/payload.config'
+import { sessionCourante } from '@/porte'
 
 /**
  * Inscription, connexion, deconnexion (Stories 3.1 / 3.2, FR-26).
@@ -154,4 +156,83 @@ export async function seDeconnecter(): Promise<void> {
   magasin.delete(`${payload.config.cookiePrefix ?? 'payload'}-token`)
 
   redirect('/')
+}
+
+/** Etat du formulaire de pseudo : une erreur, ou la confirmation d'un enregistrement. */
+export type EtatPseudo = { erreur?: string; enregistre?: boolean }
+
+/**
+ * Choisir (ou effacer) son pseudo — le nom affiche comme auteur.
+ *
+ * PAS DE REDIRECTION : on reste sur la page du compte et on confirme sur place.
+ * Renvoyer ailleurs apres un changement de nom obligerait a revenir verifier ce
+ * qui a ete enregistre.
+ *
+ * TROIS VERIFICATIONS, ET AUCUNE N'EST DE TROP :
+ *
+ *  - la FORME, par `erreurPseudo` — la meme fonction que le champ de la
+ *    collection, pour que /admin et l'API ne soient pas plus permissifs ;
+ *  - la DISPONIBILITE, ici, pour pouvoir dire « ce pseudo est deja pris »
+ *    plutot que de laisser remonter l'erreur d'index de SQLite ;
+ *  - l'index UNIQUE de la base, qui reste le seul garant reel : entre la
+ *    verification et l'ecriture, quelqu'un d'autre peut avoir pris le nom. Le
+ *    `catch` traduit ce cas plutot que d'afficher un message technique.
+ *
+ * L'ECRITURE PASSE PAR LES `access` (`overrideAccess: false` avec l'utilisateur
+ * de la session, ADD-5) : c'est `soiMemeOuAdmin` qui garantit qu'on ne renomme
+ * que soi, et non une regle recopiee ici.
+ *
+ * Rien a revalider : toutes les pages qui affichent un auteur sont en
+ * `force-dynamic`, elles reliront le nom au prochain affichage.
+ */
+export async function enregistrerPseudo(
+  _precedent: EtatPseudo,
+  donnees: FormData,
+): Promise<EtatPseudo> {
+  const utilisateur = await sessionCourante()
+  if (!utilisateur) return { erreur: 'Session expirée : reconnecte-toi, puis réessaie.' }
+
+  const pseudo = nettoyerPseudo(texte(donnees, 'pseudo'))
+
+  const probleme = erreurPseudo(pseudo)
+  if (probleme !== null) return { erreur: probleme }
+
+  const payload = await getPayload({ config: await config })
+
+  if (pseudo !== '') {
+    // Contourne les `access` a dessein : la disponibilite d'un pseudo se
+    // constate sur TOUS les comptes, y compris ceux qu'on n'a pas le droit de
+    // lire. Seule l'existence du nom fuit — c'est le prix de l'unicite, et ce
+    // nom est justement celui qui s'affiche en public.
+    const { totalDocs } = await payload.count({
+      collection: 'users',
+      where: {
+        and: [
+          { pseudoNormalise: { equals: pseudoComparable(pseudo) } },
+          { id: { not_equals: utilisateur.id } },
+        ],
+      },
+    })
+
+    if (totalDocs > 0) return { erreur: 'Ce pseudo est déjà pris. Essaie une variante.' }
+  }
+
+  try {
+    await payload.update({
+      collection: 'users',
+      id: utilisateur.id,
+      overrideAccess: false,
+      user: utilisateur,
+      // `null` et non `undefined` : un champ vide doit EFFACER le pseudo et
+      // remettre l'affichage sur l'email. `undefined` laisserait l'ancien.
+      data: { pseudo: pseudo === '' ? null : pseudo },
+    })
+  } catch (erreur) {
+    const message = erreur instanceof Error ? erreur.message : ''
+
+    if (/pseudo/i.test(message)) return { erreur: 'Ce pseudo est déjà pris. Essaie une variante.' }
+    return { erreur: message || "L'enregistrement a échoué. Réessaie." }
+  }
+
+  return { enregistre: true }
 }

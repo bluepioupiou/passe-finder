@@ -28,6 +28,10 @@ type Proprietes = {
  * Un menu qui reste ouvert par-dessus la page oblige a revenir cliquer la
  * bascule pour s'en debarrasser.
  *
+ * « Mon compte » y mene au choix du PSEUDO — le nom sous lequel on apparait
+ * comme auteur. Il vient EN PREMIER : c'est le reglage, les deux entrees
+ * suivantes sont des listes.
+ *
  * « Mes favoris » mene desormais a une vraie page (Story 5.1). « Mes
  * enchaînements » reste annonce comme A VENIR plutot que pose en lien mort :
  * sa destination arrive a la Story 5.2, et un lien qui mene a une page vide se
@@ -72,6 +76,15 @@ export function MenuCompte({ email, seDeconnecter }: Proprietes) {
       {ouvert ? (
         <div className="menu-compte__panneau" role="menu">
           <p className="menu-compte__identite texte-attenue">{email}</p>
+
+          <Link
+            className="menu-compte__item"
+            role="menuitem"
+            href="/compte"
+            onClick={() => setOuvert(false)}
+          >
+            Mon compte
+          </Link>
 
           <Link
             className="menu-compte__item"

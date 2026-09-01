@@ -95,6 +95,61 @@ test.describe('Compte', () => {
     await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()
   })
 
+  test('le pseudo se choisit depuis le menu de compte', async () => {
+    // Action item `pseudo-et-page-auteur`. Le parcours complet : le reglage
+    // s'atteint depuis le menu, il annonce ce qui s'affiche AUJOURD'HUI (le
+    // debut de l'adresse), et il confirme sur place sans quitter la page.
+    await page.getByRole('button', { name: 'Mon compte' }).click()
+    await page.getByRole('menuitem', { name: 'Mon compte' }).click()
+
+    await expect(page).toHaveURL(/\/compte$/)
+    await expect(page.getByText(`Connecté avec ${compte.email}`)).toBeVisible()
+    // Le defaut est ANNONCE : sans cela, le seul moyen de savoir ce que fait un
+    // champ vide serait de l'essayer.
+    await expect(page.locator('#aide-pseudo')).toContainText(compte.email.split('@')[0])
+
+    await page.fill('#pseudo', 'Prof de rock')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+
+    await expect(page.locator('.formulaire-compte').getByRole('status')).toHaveText(
+      "C'est enregistré.",
+    )
+
+    // Enregistre pour de bon, et pas seulement affiche.
+    await page.reload()
+    await expect(page.locator('#pseudo')).toHaveValue('Prof de rock')
+  })
+
+  test('un pseudo qui ressemble à une adresse est refusé', async () => {
+    // Tout le module `auteurs` existe pour ne pas publier d'adresse : on ne
+    // laisse pas quelqu'un en publier une volontairement.
+    await page.goto('/compte')
+
+    await page.fill('#pseudo', 'quelquun@exemple.fr')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+
+    const erreur = page.locator('.formulaire-compte').getByRole('alert')
+    await expect(erreur).toContainText('arobase')
+    // La saisie refusee reste a l'ecran : on la corrige, on ne la retape pas.
+    await expect(page.locator('#pseudo')).toHaveValue('quelquun@exemple.fr')
+
+    // Et le pseudo enregistre n'a pas bouge.
+    await page.reload()
+    await expect(page.locator('#pseudo')).toHaveValue('Prof de rock')
+  })
+
+  test('effacer le pseudo remet l’affichage sur l’adresse', async () => {
+    await page.goto('/compte')
+
+    await page.fill('#pseudo', '')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+
+    await expect(page.locator('.formulaire-compte').getByRole('status')).toBeVisible()
+
+    await page.reload()
+    await expect(page.locator('#pseudo')).toHaveValue('')
+  })
+
   test("un mot de passe faux ne dit pas si le compte existe", async () => {
     const contexte = await page.context().browser()!.newContext()
     const anonyme = await contexte.newPage()

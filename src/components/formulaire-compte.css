@@ -58,6 +58,20 @@
   border-radius: var(--rounded);
 }
 
+/*
+ * La confirmation prend la meme place que l'erreur, et le meme dessin : c'est
+ * la meme question (« qu'est-il arrive a mon envoi ? »), posee au meme endroit.
+ * Seule la couleur change — l'accent du site plutot que le rouge.
+ */
+.formulaire-compte__succes {
+  margin: 0;
+  padding: var(--space-3);
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--rounded);
+}
+
 .formulaire-compte__alternative {
   margin: 0;
 }
