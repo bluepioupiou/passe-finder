@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { getPayload } from 'payload'
 
 import config from '../../src/payload.config.js'
+import { login } from '../helpers/login'
 import { cleanupTestUser, seedTestUser, type Identifiants } from '../helpers/seedUser'
 
 /**
@@ -131,8 +132,13 @@ test.describe('Visibilité', () => {
     await page.goto(`/enchainements?q=${encodeURIComponent(TITRE_OUVERT)}`)
     await expect(page.locator('.enchainement-carte', { hasText: TITRE_OUVERT })).toHaveCount(1)
 
+    // La recherche globale non plus. On regarde DANS LES RESULTATS et pas dans
+    // la page entiere : l'en-tete rappelle la requete telle qu'on l'a tapee, et
+    // un `getByText` global s'y accrocherait — le test passerait au vert en
+    // lisant sa propre question.
     await page.goto(`/recherche?q=${encodeURIComponent(TITRE_CACHE)}`)
-    await expect(page.getByText(TITRE_CACHE)).toHaveCount(0)
+    await expect(page.locator('.resultats').getByText(TITRE_CACHE)).toHaveCount(0)
+    await expect(page.getByText('Rien trouvé pour')).toBeVisible()
   })
 
   test('l’API publique ne le liste pas non plus', async ({ request }) => {
@@ -159,10 +165,11 @@ test.describe('Visibilité', () => {
     const contexte = await browser.newContext()
     const sien = await contexte.newPage()
 
-    await sien.goto('/connexion')
-    await sien.fill('#email', auteur.email)
-    await sien.fill('#motDePasse', auteur.password)
-    await sien.getByRole('button', { name: 'Se connecter' }).click()
+    // Le helper ATTEND que la session soit ouverte (le menu de compte
+    // apparait). Enchainer une navigation sur le clic sans attendre partirait
+    // parfois avant que le cookie ne soit pose, et la liste repondrait en
+    // anonyme.
+    await login({ page: sien, user: auteur })
 
     await sien.goto(`/enchainements?q=${encodeURIComponent(TITRE_CACHE)}`)
     await expect(sien.locator('.enchainement-carte', { hasText: TITRE_CACHE })).toHaveCount(1)

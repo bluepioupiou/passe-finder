@@ -122,7 +122,10 @@ test.describe('Compositeur', () => {
     await enregistrer.click()
 
     // On atterrit sur la fiche : la confirmation, c'est de voir son travail.
-    await expect(page).toHaveURL(/\/enchainements\/\d+$/)
+    // L'adresse est l'IDENTIFIANT PUBLIC et non le numero de la ligne — 12
+    // caracteres tires au hasard (action item
+    // `identifiant-opaque-et-visibilites`).
+    await expect(page).toHaveURL(/\/enchainements\/[A-Za-z0-9_-]{12}$/)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(TITRE)
     // Ne s'affiche que pour l'auteur, et dit que ce lien ne mene nulle part
     // pour ses eleves tant qu'il ne l'a pas partage.
