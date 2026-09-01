@@ -8,6 +8,7 @@ import * as migration_20260830_202812_drapeau_admin from './20260830_202812_drap
 import * as migration_20260831_165326_favoris from './20260831_165326_favoris';
 import * as migration_20260831_195957_musique_enchainement from './20260831_195957_musique_enchainement';
 import * as migration_20260901_042354_titre_normalise from './20260901_042354_titre_normalise';
+import * as migration_20260901_075115_transition from './20260901_075115_transition';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20260901_042354_titre_normalise.up,
     down: migration_20260901_042354_titre_normalise.down,
-    name: '20260901_042354_titre_normalise'
+    name: '20260901_042354_titre_normalise',
+  },
+  {
+    up: migration_20260901_075115_transition.up,
+    down: migration_20260901_075115_transition.down,
+    name: '20260901_075115_transition'
   },
 ];

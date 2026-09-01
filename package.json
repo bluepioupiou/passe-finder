@@ -20,7 +20,9 @@
     "migrate:positions": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/migrate-positions.ts",
     "migrate:passes": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/migrate-passes.ts",
     "migrate:enchainements": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/migrate-enchainements.ts",
-    "migrate:all": "npm run migrate:positions && npm run migrate:passes && npm run migrate:enchainements",
+    "migrate:transitions": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/migrate-transitions.ts",
+    "migrate:all": "npm run migrate:positions && npm run migrate:passes && npm run migrate:transitions && npm run migrate:enchainements",
+    "rapport:transitions": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/rapport-transitions.ts",
     "promouvoir:admin": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env migrate/promouvoir-admin.ts"
   },
   "dependencies": {
@@ -40,6 +42,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.59.1",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "16.3.0",
     "@types/node": "24.12.3",
     "@types/react": "19.2.14",

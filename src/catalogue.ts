@@ -1,19 +1,29 @@
 import type { Payload } from 'payload'
 
 import { libelleDifficulte } from './collections/Passe'
-import type { VuePasse, VuePosition } from './composition'
-import { identifiant } from './enchainements'
-import type { Pass, Position } from './payload-types'
+import { nomDeTransition } from './collections/Transition'
+import type { VuePasse, VuePosition, VueTransition } from './composition'
+import { cleDeTransition, identifiant } from './enchainements'
+import type { Pass, Position, Transition } from './payload-types'
 import { imageDePosition } from './positions'
 
-/** Les deux tables de référence, indexées par identifiant. */
+/**
+ * Les tables de référence, indexées par ce qui sert à les retrouver.
+ *
+ * Les transitions ne sont PAS indexées par identifiant, contrairement aux deux
+ * autres : on ne les cherche jamais par leur `id`, toujours par leur trajet
+ * (`cleDeTransition`). Une reprise ne stocke rien — la vue la retrouve par le
+ * seul couple (position d'arrivée, position de départ suivante), ce que
+ * l'unicité de A → B rend possible.
+ */
 export type Catalogue = {
   passes: Map<number, Pass>
   positions: Map<number, Position>
+  transitions: Map<string, Transition>
 }
 
 /**
- * Charge le catalogue entier en mémoire, en deux requêtes.
+ * Charge le catalogue entier en mémoire, en trois requêtes.
  *
  * POURQUOI ne pas laisser Payload résoudre la profondeur : afficher un
  * enchaînement demande enchaînement -> passe -> position -> image, soit une
@@ -26,14 +36,24 @@ export type Catalogue = {
  * pour que `ImagePosition` affiche autre chose que le placeholder.
  */
 export async function chargerCatalogue(payload: Payload): Promise<Catalogue> {
-  const [{ docs: positions }, { docs: passes }] = await Promise.all([
+  const [{ docs: positions }, { docs: passes }, { docs: transitions }] = await Promise.all([
     payload.find({ collection: 'positions', limit: 500, depth: 1, sort: 'nom' }),
     payload.find({ collection: 'passes', limit: 500, depth: 0, sort: 'nom' }),
+    // Une vingtaine de documents : la troisième requête est du même ordre que
+    // les deux autres, et elle évite de rouvrir la base à chaque reprise
+    // rencontrée dans une chaîne.
+    payload.find({ collection: 'transitions', limit: 500, depth: 0, sort: 'nom' }),
   ])
 
   return {
     positions: new Map(positions.map((position: Position) => [position.id, position])),
     passes: new Map(passes.map((passe: Pass) => [passe.id, passe])),
+    transitions: new Map(
+      transitions.flatMap((transition: Transition) => {
+        const cle = cleDeTransition(transition.positionDebut, transition.positionFin)
+        return cle === null ? [] : [[cle, transition] as const]
+      }),
+    ),
   }
 }
 
@@ -48,12 +68,13 @@ export async function chargerCatalogue(payload: Payload): Promise<Catalogue> {
  * et `imageDePosition`, cote serveur, alors que `composition.ts` part dans le
  * navigateur et doit rester libre de toute dependance a Payload.
  *
- * L'ordre des deux tables est celui du catalogue (tri par nom) : les listes du
+ * L'ordre des tables est celui du catalogue (tri par nom) : les listes du
  * compositeur se lisent donc dans l'ordre attendu sans retrier.
  */
 export function vuesDuCatalogue(catalogue: Catalogue): {
   positions: VuePosition[]
   passes: VuePasse[]
+  transitions: VueTransition[]
 } {
   const positions = [...catalogue.positions.values()].map((position) => ({
     id: position.id,
@@ -80,5 +101,24 @@ export function vuesDuCatalogue(catalogue: Catalogue): {
     ]
   })
 
-  return { positions, passes }
+  // Le nom arrive DEJA RESOLU (« Changement de prise » à défaut) : la règle de
+  // repli vit à côté du champ facultatif qui la rend nécessaire, et le
+  // compositeur n'a pas à la reimplémenter. La description part aussi — une
+  // vingtaine de phrases courtes, et c'est le contenu pédagogique du geste.
+  const transitions = [...catalogue.transitions.values()].flatMap((transition) => {
+    const debut = identifiant(transition.positionDebut)
+    const fin = identifiant(transition.positionFin)
+    if (debut === null || fin === null) return []
+
+    return [
+      {
+        debut,
+        fin,
+        nom: nomDeTransition(transition.nom),
+        description: transition.description ?? null,
+      },
+    ]
+  })
+
+  return { positions, passes, transitions }
 }

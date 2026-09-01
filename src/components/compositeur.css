@@ -216,6 +216,58 @@
   flex: 0 0 auto;
 }
 
+/*
+ * Un changement de prise se lit sur DEUX lignes : le geste et sa destination,
+ * puis son deroule. Le deroule est la vraie valeur du catalogue de transitions
+ * (« il vous suffit juste de lacher votre main gauche ») ; le mettre sur la
+ * meme ligne le reduirait a une note de bas de page.
+ */
+.compo-choix__bouton--reprise {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  row-gap: var(--space-1);
+}
+
+.compo-choix__deroule {
+  grid-column: 1 / -1;
+  font-size: var(--label-caps-size);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+/* Choisi : le bouton reste enfonce tant que la passe qui le consomme n'est pas
+   posee. Recliquer l'annule — l'etat doit donc se voir. */
+.compo-choix__bouton[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/*
+ * Une reprise dans la chaine : NI RANG NI CARTE, contrairement a une passe.
+ * Une transition ne prend pas de temps musical — lui donner la meme boite
+ * qu'une passe la ferait compter comme un pas de plus.
+ */
+.compo-reprise {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: var(--space-5);
+  padding: var(--space-1) 0;
+  font-size: var(--label-caps-size);
+  color: var(--muted);
+}
+
+.compo-reprise__nom {
+  margin-right: auto;
+  font-style: italic;
+}
+
+.compo-reprise__marque {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
 /* --- Barre de sauvegarde --- */
 
 .compo-champs {

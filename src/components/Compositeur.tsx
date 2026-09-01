@@ -6,11 +6,14 @@ import React, { useId, useMemo, useState } from 'react'
 import {
   passesDepuis,
   positionCourante,
+  transitionsUtiles,
+  type MaillonCompose,
   type ResultatEnregistrement,
   type SaisieEnchainement,
   type SaisieMetadonnees,
   type VuePasse,
   type VuePosition,
+  type VueTransition,
 } from '@/composition'
 import { correspondAuNom } from '@/recherche'
 import { ChampsEnchainement, auMoinsUnLienInvalide } from './ChampsEnchainement'
@@ -40,6 +43,56 @@ function Etape({ position, role }: { position: VuePosition | undefined; role?: s
 }
 
 /**
+ * Un changement de prise pose dans la chaine (Story 4.7).
+ *
+ * Il n'a NI RANG NI CARTE, contrairement a une passe, et c'est le point : une
+ * transition ne prend pas de temps musical, ce n'est pas un pas de plus. Une
+ * ligne discrete marquee « ↻ » entre deux passes, et la position vers laquelle
+ * on repart — le meme vocabulaire que la vue lecture, qui superpose les deux
+ * bulles.
+ *
+ * `nom` peut manquer si la transition a ete retiree du catalogue entre-temps :
+ * on montre alors le changement sans le nommer, plutot que de faire disparaitre
+ * un pas que l'utilisateur vient de poser.
+ */
+function Reprise({
+  nom,
+  position,
+  role,
+  surRetrait,
+}: {
+  nom: string | undefined
+  position: VuePosition | undefined
+  role?: string
+  /** Fourni seulement pour le changement en attente, qui est l'action annulable. */
+  surRetrait?: () => void
+}) {
+  return (
+    <>
+      <div className="compo-reprise">
+        <span className="compo-reprise__marque" aria-hidden="true">
+          ↻
+        </span>
+        <span className="compo-reprise__nom">{nom ?? 'Changement de prise'}</span>
+        {surRetrait ? (
+          <button
+            type="button"
+            className="compo-passe__retirer"
+            onClick={surRetrait}
+            aria-label={`Annuler « ${nom ?? 'Changement de prise'} »`}
+            title="Annuler le changement de prise"
+          >
+            ×
+          </button>
+        ) : null}
+      </div>
+
+      <Etape position={position} role={role} />
+    </>
+  )
+}
+
+/**
  * Compositeur d'enchainement (Stories 4.2 / 4.3) — le geste central du produit.
  *
  * POURQUOI un composant client et non des liens vers une page serveur : rien de
@@ -51,10 +104,11 @@ function Etape({ position, role }: { position: VuePosition | undefined; role?: s
  * Il ne recoit PAS le catalogue mais sa projection (`VuePasse` / `VuePosition`,
  * ~10 Ko au lieu de ~130 Ko) : il n'affiche ni description ni deroule.
  *
- * La chaine construite ici est CONTINUE par construction : on ne propose que
- * les passes qui partent de la position courante (FR-10). Les ruptures de
- * l'historique (transitions de main) ne sont pas composables en v1 — elles
- * attendent l'objet Transition, cf. la note du sprint-status.
+ * La chaine construite ici est JUSTIFIEE par construction (FR-10, FR-45) : on
+ * ne propose que les passes qui partent de la position courante, et les seuls
+ * changements de prise proposes sont des transitions DECLAREES. Elle n'est donc
+ * plus forcement continue au sens du graphe — mais chaque discontinuite qu'elle
+ * produit s'appuie sur une arete du catalogue, jamais sur un saut libre.
  *
  * Le rendu de la chaine est ici VERTICAL, la ou la vue lecture deroule un
  * serpentin : pendant la composition, chaque ajout doit se poser au bout sans
@@ -64,12 +118,15 @@ function Etape({ position, role }: { position: VuePosition | undefined; role?: s
 export function Compositeur({
   positions,
   passes,
+  transitions,
   dateParDefaut,
   visibilites,
   enregistrer,
 }: {
   positions: VuePosition[]
   passes: VuePasse[]
+  /** Les changements de prise declares (Story 4.7). */
+  transitions: VueTransition[]
   /** Jour propose par defaut (aujourd'hui), calcule par le serveur. */
   dateParDefaut: string
   /**
@@ -83,7 +140,11 @@ export function Compositeur({
   const router = useRouter()
 
   const [depart, setDepart] = useState<number | null>(null)
-  const [chaine, setChaine] = useState<VuePasse[]>([])
+  const [chaine, setChaine] = useState<MaillonCompose[]>([])
+  // Le changement de prise choisi mais pas encore consomme par une passe. Il
+  // deplace la position courante, donc il fait partie de l'etat compose — voir
+  // `positionCourante`, a qui on le passe explicitement.
+  const [transitionEnAttente, setTransitionEnAttente] = useState<number | null>(null)
   const [filtre, setFiltre] = useState('')
 
   // Les informations tiennent en UN objet plutot qu'en six etats : c'est la
@@ -113,6 +174,18 @@ export function Compositeur({
     [positions],
   )
 
+  // Les transitions par TRAJET, comme la lecture les retrouve : la chaine ne
+  // retient que la position vers laquelle on a change de prise, jamais quelle
+  // transition on a cliquee. Une seule facon de renommer une reprise, ici comme
+  // dans `construireChaine`.
+  const parTrajet = useMemo(
+    () =>
+      new Map(
+        transitions.map((transition) => [`${transition.debut}>${transition.fin}`, transition]),
+      ),
+    [transitions],
+  )
+
   // Une position d'ou aucune passe ne part ne peut rien commencer : la proposer
   // comme depart n'offrirait qu'un cul-de-sac immediat.
   const departs = useMemo(
@@ -120,9 +193,20 @@ export function Compositeur({
     [positions, passes],
   )
 
-  const courante = positionCourante(depart, chaine)
+  const courante = positionCourante(depart, chaine, transitionEnAttente)
   const possibles = useMemo(() => passesDepuis(passes, courante), [passes, courante])
   const proposees = possibles.filter((passe) => correspondAuNom(passe.nom, filtre))
+
+  // Les changements de prise restent ANCRES SUR L'ARRIVEE DE LA DERNIERE PASSE,
+  // pas sur la position courante. Deux consequences voulues : on peut changer
+  // d'avis (recliquer une autre transition remplace la precedente), mais on ne
+  // peut pas enchainer deux transitions d'affilee — ce que l'historique ne fait
+  // jamais, et qui reviendrait a se deplacer librement dans le graphe.
+  const arrivee = positionCourante(depart, chaine)
+  const changements = useMemo(
+    () => transitionsUtiles(transitions, passes, arrivee),
+    [transitions, passes, arrivee],
+  )
 
   // Signale le lien inutilisable DES LA SAISIE plutot qu'au retour du serveur :
   // l'action revalide de son cote (c'est elle qui decide), mais decouvrir la
@@ -130,17 +214,58 @@ export function Compositeur({
   const lienInvalide = auMoinsUnLienInvalide(informations)
 
   const ajouter = (passe: VuePasse) => {
-    setChaine((precedente) => [...precedente, passe])
+    // La passe CONSOMME le changement de prise en attente : il devient sa
+    // transition d'entree, et la chaine redevient la seule source de la
+    // position courante.
+    setChaine((precedente) => [...precedente, { passe, transitionAvant: transitionEnAttente }])
+    setTransitionEnAttente(null)
     // Le filtre valait pour la position qu'on vient de quitter : le garder
     // masquerait des passes possibles depuis la nouvelle.
     setFiltre('')
   }
 
-  const annulerDerniere = () => setChaine((precedente) => precedente.slice(0, -1))
+  const changerDePrise = (transition: VueTransition) => {
+    setTransitionEnAttente(transition.fin)
+    setFiltre('')
+  }
+
+  /**
+   * Defait exactement la DERNIERE ACTION, et il y en a maintenant deux sortes.
+   *
+   * Un changement de prise en attente s'annule seul : la passe precedente reste
+   * posee. Sinon on retire la derniere passe, et son changement de prise
+   * REDEVIENT en attente — sans quoi retirer une passe effacerait au passage un
+   * choix qu'on n'avait pas demande a defaire, et il faudrait le refaire pour
+   * essayer une autre passe depuis la meme prise.
+   */
+  const annulerDernier = () => {
+    if (transitionEnAttente !== null) {
+      setTransitionEnAttente(null)
+      setFiltre('')
+      return
+    }
+
+    const dernier = chaine[chaine.length - 1]
+    if (!dernier) return
+
+    setChaine((precedente) => precedente.slice(0, -1))
+    setTransitionEnAttente(dernier.transitionAvant)
+    setFiltre('')
+  }
+
+  /**
+   * Un changement de prise en attente EMPECHE l'enregistrement.
+   *
+   * Pas par principe, par honnetete : seules les passes sont stockees, et la
+   * reprise se rededuit du couple (arrivee, depart suivant). Un changement qui
+   * n'est suivi d'aucune passe n'a donc rien pour survivre — l'enregistrer le
+   * ferait disparaitre en silence. On le dit, plutot que de le perdre.
+   */
+  const repriseInachevee = transitionEnAttente !== null
 
   const soumettre = async (evenement: React.FormEvent) => {
     evenement.preventDefault()
-    if (enCours || chaine.length === 0 || lienInvalide) return
+    if (enCours || chaine.length === 0 || lienInvalide || repriseInachevee) return
 
     setEnCours(true)
     setErreur(null)
@@ -149,7 +274,10 @@ export function Compositeur({
       const resultat = await enregistrer({
         ...informations,
         titre: informations.titre.trim(),
-        passes: chaine.map((passe) => passe.id),
+        // SEULES LES PASSES SONT ENVOYEES : une transition ne prend pas de
+        // temps musical, donc elle n'est pas un maillon. La lecture la
+        // rededuira du couple (arrivee, depart suivant) — voir `construireChaine`.
+        passes: chaine.map((maillon) => maillon.passe.id),
       })
 
       if (resultat.ok) {
@@ -224,13 +352,27 @@ export function Compositeur({
                 <Etape position={parId.get(depart)} role="Départ" />
               </li>
 
-              {chaine.map((passe, index) => {
+              {chaine.map((maillon, index) => {
+                const { passe } = maillon
+                // Le pas retirable n'est la derniere passe que si aucun
+                // changement de prise n'attend derriere elle : sinon la
+                // derniere action, c'est le changement, et c'est lui qui porte
+                // son propre bouton plus bas.
                 const dernier = index === chaine.length - 1
+                const retirable = dernier && transitionEnAttente === null
+                const precedente = index > 0 ? chaine[index - 1].passe.fin : depart
 
                 return (
                   // L'index EST l'ordre (ADD-18), et une meme passe peut revenir
                   // dans la chaine : c'est bien le rang qui identifie le pas.
                   <li className="compo-chaine__item" key={index}>
+                    {maillon.transitionAvant !== null ? (
+                      <Reprise
+                        nom={parTrajet.get(`${precedente}>${maillon.transitionAvant}`)?.nom}
+                        position={parId.get(maillon.transitionAvant)}
+                      />
+                    ) : null}
+
                     <div className="compo-passe">
                       <span className="compo-passe__rang donnee texte-attenue">{index + 1}</span>
                       <span className="compo-passe__nom">{passe.nom}</span>
@@ -239,13 +381,13 @@ export function Compositeur({
                           {passe.difficulte}
                         </span>
                       ) : null}
-                      {dernier ? (
+                      {retirable ? (
                         // Seule la DERNIERE se retire : on raccourcit pas a pas,
                         // on n'insere ni ne reordonne au milieu (FR-13).
                         <button
                           type="button"
                           className="compo-passe__retirer"
-                          onClick={annulerDerniere}
+                          onClick={annulerDernier}
                           aria-label={`Retirer « ${passe.nom} », la dernière passe`}
                           title="Retirer la dernière passe"
                         >
@@ -254,13 +396,31 @@ export function Compositeur({
                       ) : null}
                     </div>
 
-                    <Etape position={parId.get(passe.fin)} role={dernier ? 'Arrivée' : undefined} />
+                    <Etape
+                      position={parId.get(passe.fin)}
+                      role={dernier && transitionEnAttente === null ? 'Arrivée' : undefined}
+                    />
                   </li>
                 )
               })}
+
+              {transitionEnAttente !== null ? (
+                // Le changement de prise deja choisi, en attente de la passe qui
+                // le consommera. Il vit dans la CHAINE et non dans la liste des
+                // propositions : c'est deja un pas de l'enchainement, la seule
+                // chose qui lui manque est la suite.
+                <li className="compo-chaine__item">
+                  <Reprise
+                    nom={parTrajet.get(`${arrivee}>${transitionEnAttente}`)?.nom}
+                    position={parId.get(transitionEnAttente)}
+                    role="Arrivée"
+                    surRetrait={annulerDernier}
+                  />
+                </li>
+              ) : null}
             </ol>
 
-            {chaine.length === 0 ? (
+            {chaine.length === 0 && transitionEnAttente === null ? (
               <p className="compo-aide texte-attenue">
                 Ajoute une première passe depuis la liste ci-dessous.
               </p>
@@ -281,8 +441,10 @@ export function Compositeur({
           <p className="texte-attenue">La liste s&apos;ouvrira une fois le départ choisi.</p>
         ) : possibles.length === 0 ? (
           <p className="texte-attenue">
-            Aucune passe ne part d&apos;ici. Enregistre l&apos;enchaînement tel quel, ou retire la
-            dernière passe.
+            Aucune passe ne part d&apos;ici.{' '}
+            {changements.length > 0
+              ? 'Change de prise ci-dessous pour rouvrir le catalogue, enregistre l’enchaînement tel quel, ou retire la dernière passe.'
+              : 'Enregistre l’enchaînement tel quel, ou retire la dernière passe.'}
           </p>
         ) : (
           <>
@@ -333,6 +495,62 @@ export function Compositeur({
         )}
       </section>
 
+      {/*
+        Les changements de prise viennent APRES les passes, et c'est un ordre de
+        priorite : ce qu'on cherche d'abord, c'est la passe suivante. Le
+        changement de prise est le recours — quand rien de ce qu'on veut ne part
+        d'ici, ou quand on est arrive dans un cul-de-sac.
+      */}
+      {changements.length > 0 ? (
+        <section className="compo-bloc">
+          <h2 className="compo-bloc__titre">
+            Changer de prise
+            {arrivee !== null ? (
+              <span className="texte-attenue"> depuis « {parId.get(arrivee)?.nom} »</span>
+            ) : null}
+          </h2>
+
+          <p className="compo-aide texte-attenue">
+            Sans danser de passe : on change de prise à la fin de la précédente, et la liste des
+            passes possibles se rouvre depuis la nouvelle position.
+          </p>
+
+          <ul className="compo-choix">
+            {changements.map((transition) => {
+              const choisie = transitionEnAttente === transition.fin
+
+              return (
+                <li key={`${transition.debut}>${transition.fin}`}>
+                  <button
+                    type="button"
+                    className="compo-choix__bouton compo-choix__bouton--reprise"
+                    // Recliquer la transition deja choisie l'annule : le meme
+                    // bouton fait et defait, sans avoir a viser la croix.
+                    onClick={() => (choisie ? annulerDernier() : changerDePrise(transition))}
+                    aria-pressed={choisie}
+                  >
+                    <span className="compo-choix__nom">
+                      <span className="compo-reprise__marque" aria-hidden="true">
+                        ↻
+                      </span>{' '}
+                      {transition.nom}
+                    </span>
+                    <span className="compo-choix__vers texte-attenue">
+                      → {parId.get(transition.fin)?.nom}
+                    </span>
+                    {transition.description ? (
+                      <span className="compo-choix__deroule texte-attenue">
+                        {transition.description}
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ) : null}
+
       <section className="compo-bloc">
         <h2 className="compo-bloc__titre">4. Enregistrer</h2>
 
@@ -351,7 +569,10 @@ export function Compositeur({
         ) : null}
 
         <div className="compo-actions">
-          <Bouton type="submit" disabled={enCours || chaine.length === 0 || lienInvalide}>
+          <Bouton
+            type="submit"
+            disabled={enCours || chaine.length === 0 || lienInvalide || repriseInachevee}
+          >
             {enCours ? 'Enregistrement…' : "Enregistrer l'enchaînement"}
           </Bouton>
 
@@ -360,7 +581,9 @@ export function Compositeur({
               ? 'Corrige le lien de la musique pour pouvoir enregistrer.'
               : chaine.length === 0
                 ? 'Ajoute au moins une passe pour pouvoir enregistrer.'
-                : `${chaine.length} passe${chaine.length > 1 ? 's' : ''} dans la chaîne.`}
+                : repriseInachevee
+                  ? 'Termine le changement de prise par une passe, ou annule-le : seul, il ne serait pas enregistré.'
+                  : `${chaine.length} passe${chaine.length > 1 ? 's' : ''} dans la chaîne.`}
           </p>
         </div>
       </section>
