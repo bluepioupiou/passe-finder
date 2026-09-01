@@ -116,6 +116,44 @@
   box-shadow: 0 0 0 2px var(--carte-fond, var(--surface));
 }
 
+/*
+ * Infobulle d'une reprise NOMMÉE : le geste, son déroulé, puis le trajet.
+ *
+ * Trois lignes plutôt qu'une phrase : le nom du geste est ce qu'on cherche
+ * (« lâcher la main gauche »), le trajet ce qu'on vérifie. Les empiler donne
+ * cette hiérarchie sans allonger la bulle, là où une phrase unique les met sur
+ * le même plan.
+ */
+.pile__geste,
+.pile__deroule,
+.pile__trajet {
+  display: block;
+}
+
+.pile__geste {
+  font-weight: 600;
+}
+
+.pile__deroule,
+.pile__trajet {
+  margin-top: 4px;
+  /* Le fond de l'infobulle est l'encre : on atténue par l'opacité, la seule
+     façon de rester lisible sur ce fond quel que soit le thème. */
+  opacity: 0.75;
+}
+
+.pile__deroule {
+  font-weight: 400;
+  text-wrap: pretty;
+}
+
+/* Une reprise nommée dit plus de choses : on laisse la bulle respirer. Les
+   reprises non déclarées gardent l'infobulle centrée d'origine. */
+.pile--nommee .bulle__info {
+  max-width: 260px;
+  text-align: left;
+}
+
 /* Petite marque, dans le coin que le décalage laisse libre. */
 .pile__marque {
   position: absolute;

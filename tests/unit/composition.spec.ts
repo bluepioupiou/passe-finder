@@ -6,7 +6,10 @@ import {
   jourVersISO,
   passesDepuis,
   positionCourante,
+  transitionsUtiles,
+  type MaillonCompose,
   type VuePasse,
+  type VueTransition,
 } from '@/composition'
 
 /**
@@ -19,6 +22,15 @@ import {
 
 function passe(id: number, nom: string, debut: number, fin: number): VuePasse {
   return { id, nom, difficulte: null, debut, fin }
+}
+
+/** Une passe posee dans la chaine, sans changement de prise avant elle. */
+function pose(passe: VuePasse): MaillonCompose {
+  return { passe, transitionAvant: null }
+}
+
+function transition(debut: number, fin: number, nom: string): VueTransition {
+  return { debut, fin, nom, description: null }
 }
 
 // Un petit graphe : 1 --pied--> 2 --toupie--> 1, et 1 --tour--> 3 (cul-de-sac).
@@ -43,6 +55,37 @@ describe('passesDepuis', () => {
   })
 })
 
+describe('transitionsUtiles', () => {
+  // Depuis 3 (cul-de-sac : aucune passe n'en part), on peut lacher une main
+  // pour revenir en 1, d'ou trois passes repartent. C'est exactement ce que
+  // fait l'historique pour sortir de « Berceau gauche » et « Enroulee gauche ».
+  const sortieDuCulDeSac = transition(3, 1, 'Lâcher la main gauche')
+
+  it('propose le changement de prise qui rouvre le catalogue', () => {
+    expect(transitionsUtiles([sortieDuCulDeSac], catalogue, 3)).toEqual([sortieDuCulDeSac])
+  })
+
+  it('ecarte celui qui mene vers une position sans passe sortante', () => {
+    // Echanger un cul-de-sac contre un autre n'offre rien : la proposer serait
+    // promettre une suite qui n'existe pas.
+    expect(transitionsUtiles([transition(2, 3, 'Vers nulle part')], catalogue, 2)).toEqual([])
+  })
+
+  it('ne propose que celles qui partent d ici', () => {
+    expect(transitionsUtiles([sortieDuCulDeSac], catalogue, 2)).toEqual([])
+  })
+
+  it('ne propose rien tant que la position de depart est inconnue', () => {
+    expect(transitionsUtiles([sortieDuCulDeSac], catalogue, null)).toEqual([])
+  })
+
+  it('respecte le sens de l arete', () => {
+    // 31 fois « main gauche / main droite » vers « main droite / main droite »
+    // dans l'historique, l'inverse jamais : declarer un sens n'ouvre pas l'autre.
+    expect(transitionsUtiles([transition(1, 2, 'Aller')], catalogue, 2)).toEqual([])
+  })
+})
+
 describe('positionCourante', () => {
   it('vaut la position de depart tant que la chaine est vide', () => {
     expect(positionCourante(1, [])).toBe(1)
@@ -50,15 +93,27 @@ describe('positionCourante', () => {
   })
 
   it("avance vers la position d'arrivee de la derniere passe posee", () => {
-    expect(positionCourante(1, [pied])).toBe(2)
-    expect(positionCourante(1, [pied, toupie])).toBe(1)
+    expect(positionCourante(1, [pose(pied)])).toBe(2)
+    expect(positionCourante(1, [pose(pied), pose(toupie)])).toBe(1)
   })
 
   it('recule d’un cran quand on retire la derniere passe', () => {
     // L'annulation ne touche que la chaine : la position courante s'en deduit,
     // elle n'est jamais un etat tenu a cote qui pourrait se desynchroniser.
-    const chaine = [pied, toupie]
+    const chaine = [pose(pied), pose(toupie)]
     expect(positionCourante(1, chaine.slice(0, -1))).toBe(2)
+  })
+
+  it('suit le changement de prise choisi mais pas encore consomme', () => {
+    // Entre le clic sur la transition et la passe qui la consomme, la position
+    // courante n'est plus deductible de la chaine seule : c'est pourquoi elle
+    // est un parametre et non un calcul du composant.
+    expect(positionCourante(1, [pose(pied)], 3)).toBe(3)
+    expect(positionCourante(1, [], 3)).toBe(3)
+  })
+
+  it('revient a l arrivee de la derniere passe quand le changement est annule', () => {
+    expect(positionCourante(1, [pose(pied)], null)).toBe(2)
   })
 })
 

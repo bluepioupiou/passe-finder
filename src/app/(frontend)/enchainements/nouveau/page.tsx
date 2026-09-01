@@ -41,10 +41,10 @@ export default async function NouvelEnchainement() {
   if (!estAdmin(utilisateur)) redirect('/enchainements')
 
   const payload = await getPayload({ config: await config })
-  // Le catalogue entier tient en memoire (30 positions, ~110 passes) et se lit
-  // en deux requetes ; le compositeur n'en recoit que la projection dont il a
-  // besoin (voir `vuesDuCatalogue`).
-  const { positions, passes } = vuesDuCatalogue(await chargerCatalogue(payload))
+  // Le catalogue entier tient en memoire (30 positions, ~110 passes, une
+  // vingtaine de transitions) et se lit en trois requetes ; le compositeur n'en
+  // recoit que la projection dont il a besoin (voir `vuesDuCatalogue`).
+  const { positions, passes, transitions } = vuesDuCatalogue(await chargerCatalogue(payload))
 
   return (
     <div className="contenu-page">
@@ -56,13 +56,16 @@ export default async function NouvelEnchainement() {
         <h1>Composer un enchaînement</h1>
         <p className="texte-attenue">
           Choisis une position de départ, puis enchaîne les passes proposées : seules celles qui
-          partent réellement de la position courante te sont offertes.
+          partent réellement de la position courante te sont offertes. Entre deux passes, tu peux
+          changer de prise sans danser — les changements possibles depuis la position d&apos;arrivée
+          te sont proposés.
         </p>
       </header>
 
       <Compositeur
         positions={positions}
         passes={passes}
+        transitions={transitions}
         dateParDefaut={dateDuJour()}
         visibilites={[...VISIBILITES]}
         enregistrer={enregistrerEnchainement}

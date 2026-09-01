@@ -34,6 +34,37 @@ export type VuePasse = {
 }
 
 /**
+ * Transition reduite a ce que le compositeur et la lecture affichent.
+ *
+ * Le `nom` est facultatif en base (les dix transitions de 2009 n'en ont pas) :
+ * il arrive ici DEJA RESOLU par `nomDeTransition`, pour que la regle de repli
+ * (« Changement de prise ») vive au meme endroit que le champ.
+ */
+export type VueTransition = {
+  debut: number
+  fin: number
+  nom: string
+  description: string | null
+}
+
+/**
+ * Un maillon en cours de composition : la passe, et la transition posee juste
+ * AVANT elle.
+ *
+ * POURQUOI « avant » et pas « apres » : une transition ne vaut que par la passe
+ * qu'elle permet d'atteindre. Rattachee a la passe suivante, elle disparait
+ * exactement quand cette passe est retiree — il n'existe jamais de transition
+ * orpheline au bout de la chaine.
+ *
+ * `transitionAvant` porte la position vers laquelle on a change de prise, et
+ * c'est redondant avec `passe.debut` : c'est voulu. La redondance dit
+ * l'INTENTION (« ici, on a change de prise ») la ou `passe.debut` ne dit qu'un
+ * fait. A l'enregistrement elle disparait de toute facon — seules les passes
+ * sont stockees, et la lecture rededuit la rupture du couple de positions.
+ */
+export type MaillonCompose = { passe: VuePasse; transitionAvant: number | null }
+
+/**
  * Les passes qui partent d'ici (FR-10, ADD-4) — le differenciateur du produit :
  * le compositeur ne propose jamais un mouvement impossible.
  *
@@ -48,16 +79,57 @@ export function passesDepuis(passes: VuePasse[], position: number | null): VuePa
 }
 
 /**
- * Ou en est le danseur : la position d'arrivee de la derniere passe posee, ou
- * la position de depart tant que la chaine est vide.
+ * Les changements de prise possibles d'ici (FR-45, Story 4.7).
  *
- * C'est la seule source de la « position courante » : elle se DEDUIT de la
- * chaine, elle n'est jamais un etat tenu a cote (qui pourrait se desynchroniser
- * a l'annulation d'une passe).
+ * Une transition mene d'une position a une autre SANS PASSE : on lache une main
+ * a la fin de la passe precedente, et on repart. Elle ne prend pas de temps
+ * musical, donc elle ne compte pas comme un pas — mais elle deplace la position
+ * courante, et c'est ce qui rouvre le catalogue quand on est arrive dans un
+ * cul-de-sac (« Berceau gauche » et « Enroulee gauche » n'ont aucune passe
+ * sortante ; l'historique n'en sort que par une transition).
+ *
+ * UTILES, et pas « toutes » : une transition qui mene vers une position d'ou
+ * aucune passe ne part n'offre rien — on aurait seulement echange un cul-de-sac
+ * contre un autre. Meme raison que le filtre des positions de depart du
+ * compositeur.
  */
-export function positionCourante(depart: number | null, chaine: VuePasse[]): number | null {
+export function transitionsUtiles(
+  transitions: VueTransition[],
+  passes: VuePasse[],
+  position: number | null,
+): VueTransition[] {
+  if (position === null) return []
+
+  return transitions.filter(
+    (transition) =>
+      transition.debut === position && passes.some((passe) => passe.debut === transition.fin),
+  )
+}
+
+/**
+ * Ou en est le danseur : la position vers laquelle on vient de changer de prise,
+ * sinon la position d'arrivee de la derniere passe posee, sinon la position de
+ * depart tant que la chaine est vide.
+ *
+ * C'est la seule source de la « position courante » : elle se DEDUIT de l'etat
+ * compose, elle n'est jamais recalculee a cote (ce qui pourrait diverger a
+ * l'annulation d'une passe).
+ *
+ * POURQUOI LA TRANSITION EN ATTENTE EST UN PARAMETRE ET NON UN CALCUL DU
+ * COMPOSANT (Story 4.7) : entre le moment ou l'on choisit un changement de prise
+ * et celui ou l'on pose la passe qui le consomme, la position courante n'est
+ * plus deductible de la chaine seule. Ce choix FAIT PARTIE de l'etat compose.
+ * Le laisser au composant recreerait exactement la seconde source de verite que
+ * cette fonction existe pour eviter.
+ */
+export function positionCourante(
+  depart: number | null,
+  chaine: MaillonCompose[],
+  transitionEnAttente: number | null = null,
+): number | null {
+  if (transitionEnAttente !== null) return transitionEnAttente
   if (chaine.length === 0) return depart
-  return chaine[chaine.length - 1].fin
+  return chaine[chaine.length - 1].passe.fin
 }
 
 /**

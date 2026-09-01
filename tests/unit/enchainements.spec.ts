@@ -2,21 +2,23 @@ import { describe, expect, it } from 'vitest'
 
 import {
   chaineDe,
+  cleDeTransition,
   construireChaine,
   extremites,
   formaterDate,
   peutModifier,
   typologie,
 } from '@/enchainements'
-import type { Pass, Position, User } from '@/payload-types'
+import type { Pass, Position, Transition, User } from '@/payload-types'
 
 /**
  * Lecture d'un enchainement (Story 4.4).
  *
- * Ce qui compte vraiment ici, c'est la RUPTURE : 59 des 119 enchainements
+ * Ce qui compte vraiment ici, c'est la RUPTURE : 59 des 120 enchainements
  * repris de l'ancienne appli enchainent une passe qui ne part pas de la
  * position d'arrivee de la precedente (transitions de main). La vue lecture
- * doit les nommer, jamais les masquer ni les traiter comme une erreur.
+ * doit les nommer quand la transition est declaree, et les MONTRER QUAND MEME
+ * quand elle ne l'est pas — jamais les masquer ni les traiter comme une erreur.
  *
  * Fonctions pures : aucune base, aucun rendu.
  */
@@ -32,6 +34,25 @@ function passe(id: number, nom: string, debut: Position, fin: Position): Pass {
 const fermee = position(1, 'Position fermée')
 const ouverte = position(2, 'Position ouverte')
 const mainDroite = position(3, 'Main droite / main droite')
+
+function transition(debut: Position, fin: Position, nom?: string | null): Transition {
+  return {
+    id: 1,
+    positionDebut: debut,
+    positionFin: fin,
+    nom,
+    description: 'Il vous suffit juste de lâcher votre main gauche',
+    updatedAt: '',
+    createdAt: '',
+  } as Transition
+}
+
+/** Le catalogue de transitions, indexe par trajet — comme `chargerCatalogue`. */
+function catalogueDe(...transitions: Transition[]): Map<string, Transition> {
+  return new Map(
+    transitions.map((t) => [cleDeTransition(t.positionDebut, t.positionFin) as string, t]),
+  )
+}
 
 describe('construireChaine', () => {
   it('ne signale aucune rupture quand la chaine est continue', () => {
@@ -52,7 +73,59 @@ describe('construireChaine', () => {
     ])
 
     expect(maillons[0].rupture).toBeNull()
-    expect(maillons[1].rupture).toEqual({ arrivait: ouverte, reprend: mainDroite })
+    expect(maillons[1].rupture).toEqual({
+      arrivait: ouverte,
+      reprend: mainDroite,
+      // Sans catalogue de transitions, la rupture est vue mais pas nommee :
+      // c'est le cas de la quinzaine de reprises de l'historique qu'Alain n'a
+      // pas encore ecrites, et elles doivent s'afficher comme avant.
+      transition: null,
+    })
+  })
+
+  it('nomme la reprise quand la transition est declaree', () => {
+    const maillons = construireChaine(
+      [passe(10, 'Passe pied', fermee, ouverte), passe(12, 'Caresse', mainDroite, fermee)],
+      catalogueDe(transition(ouverte, mainDroite, 'Lâcher la main gauche')),
+    )
+
+    expect(maillons[1].rupture?.transition).toEqual({
+      nom: 'Lâcher la main gauche',
+      description: 'Il vous suffit juste de lâcher votre main gauche',
+    })
+  })
+
+  it('donne un libelle par defaut a la transition sans nom', () => {
+    // Les dix transitions migrees de 2009 n'ont qu'une description : elles
+    // doivent s'afficher, pas rester anonymes.
+    const maillons = construireChaine(
+      [passe(10, 'Passe pied', fermee, ouverte), passe(12, 'Caresse', mainDroite, fermee)],
+      catalogueDe(transition(ouverte, mainDroite, null)),
+    )
+
+    expect(maillons[1].rupture?.transition?.nom).toBe('Changement de prise')
+  })
+
+  it('ne nomme pas la reprise avec la transition du sens inverse', () => {
+    // L'arete est DIRIGEE : declarer B -> A n'explique pas A -> B.
+    const maillons = construireChaine(
+      [passe(10, 'Passe pied', fermee, ouverte), passe(12, 'Caresse', mainDroite, fermee)],
+      catalogueDe(transition(mainDroite, ouverte, 'Sens inverse')),
+    )
+
+    expect(maillons[1].rupture).not.toBeNull()
+    expect(maillons[1].rupture?.transition).toBeNull()
+  })
+
+  it('ne nomme rien quand la chaine est continue', () => {
+    // Une transition qui existe entre deux positions ne doit pas se declencher
+    // la ou la passe suivante part bien de l'arrivee de la precedente.
+    const maillons = construireChaine(
+      [passe(10, 'Passe pied', fermee, ouverte), passe(11, 'Toupie', ouverte, fermee)],
+      catalogueDe(transition(ouverte, mainDroite, 'Lâcher la main gauche')),
+    )
+
+    expect(maillons.map((maillon) => maillon.rupture)).toEqual([null, null])
   })
 
   it('ne signale jamais de rupture sur le premier maillon', () => {

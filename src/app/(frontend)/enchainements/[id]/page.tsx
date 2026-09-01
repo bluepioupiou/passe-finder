@@ -93,6 +93,7 @@ export default async function FicheEnchainement({ params }: { params: Promise<{ 
   const catalogue = await chargerCatalogue(payload)
   const maillons = construireChaine(
     chaineDe(enchainement.passes, catalogue.passes, catalogue.positions),
+    catalogue.transitions,
   )
 
   const auteur = nomAuteur(enchainement, await nomsDesAuteurs(payload, [enchainement]))

@@ -32,24 +32,38 @@ function Bulle({ position }: { position: Position }) {
  * encadré ni phrase au milieu de la chaîne. L'explication complète arrive au
  * survol (et au clavier, via `:focus-within`) : rien n'est perdu pour qui ne
  * lit pas la superposition.
+ *
+ * LA TRANSITION SE NOMME QUAND ON LA CONNAÎT (Story 4.7). Le changement de prise
+ * est du contenu de cours — « il vous suffit juste de lâcher votre main
+ * gauche » — et c'est la seule chose que le dessin ne peut pas dire. Quand elle
+ * n'est pas déclarée, l'infobulle reste celle d'avant, au mot près : on ne
+ * remplace pas un fait constaté par une explication qu'on n'a pas.
+ *
+ * Le rendu, lui, ne change PAS selon les cas : une reprise nommée et une reprise
+ * inconnue se dessinent pareil. C'est le même événement de danse ; seul notre
+ * savoir sur lui diffère.
  */
 function PileReprise({
   arrivait,
   reprend,
+  transition,
 }: {
   arrivait: Position | null
   reprend: Position | null
+  transition: { nom: string; description: string | null } | null
 }) {
   if (!reprend) return null
 
   return (
-    <span className="bulle pile">
+    <span className={transition ? 'bulle pile pile--nommee' : 'bulle pile'}>
       {arrivait ? <ImagePosition position={arrivait} className="pile__dessous" /> : null}
 
       <Link
         className="pile__dessus"
         href={`/positions/${reprend.id}`}
-        aria-label={`Reprise en ${reprend.nom}`}
+        aria-label={
+          transition ? `${transition.nom} — reprise en ${reprend.nom}` : `Reprise en ${reprend.nom}`
+        }
       >
         <ImagePosition position={reprend} className="bulle__image" />
       </Link>
@@ -59,7 +73,15 @@ function PileReprise({
       </span>
 
       <span className="bulle__info" role="tooltip">
-        {arrivait ? (
+        {transition ? (
+          <>
+            <span className="pile__geste">{transition.nom}</span>
+            {transition.description ? (
+              <span className="pile__deroule">{transition.description}</span>
+            ) : null}
+            <span className="pile__trajet">on repart de « {reprend.nom} »</span>
+          </>
+        ) : arrivait ? (
           <>
             On arrivait en « {arrivait.nom} » — on repart de « {reprend.nom} »
           </>
@@ -114,7 +136,11 @@ export function ChaineEnchainement({ maillons }: { maillons: Maillon[] }) {
               <Bulle position={maillon.debut} />
             ) : null
           ) : maillon.rupture ? (
-            <PileReprise arrivait={maillon.rupture.arrivait} reprend={maillon.rupture.reprend} />
+            <PileReprise
+              arrivait={maillon.rupture.arrivait}
+              reprend={maillon.rupture.reprend}
+              transition={maillon.rupture.transition}
+            />
           ) : null
 
         // Juste avant une reprise, l'arrivée n'est pas dessinée ici : c'est la

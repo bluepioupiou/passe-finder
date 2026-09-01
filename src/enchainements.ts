@@ -1,4 +1,5 @@
-import type { Enchainement, Pass, Position, User } from './payload-types'
+import { nomDeTransition } from './collections/Transition'
+import type { Enchainement, Pass, Position, Transition, User } from './payload-types'
 
 /**
  * Lecture d'un enchaînement : la chaîne et ses ruptures (Stories 4.4 / 6.3).
@@ -52,6 +53,27 @@ export function positionDe(valeur: number | Position | null | undefined): Positi
 }
 
 /**
+ * Clé d'une transition : son TRAJET, pas son identifiant (Story 4.7).
+ *
+ * C'est par là qu'une transition se retrouve, parce que c'est tout ce dont on
+ * dispose : un enchaînement ne stocke que ses passes, et la reprise entre deux
+ * maillons n'est connue que par le couple (position d'arrivée, position de
+ * départ suivante). La collection garantit qu'un couple ne désigne qu'une seule
+ * transition, ce qui rend cette lecture non ambiguë.
+ *
+ * `null` si une extrémité manque : on préfère ne pas nommer la reprise plutôt
+ * que de la nommer de travers.
+ */
+export function cleDeTransition(
+  debut: number | { id: number } | null | undefined,
+  fin: number | { id: number } | null | undefined,
+): string | null {
+  const a = identifiant(debut)
+  const b = identifiant(fin)
+  return a === null || b === null ? null : `${a}>${b}`
+}
+
+/**
  * Un maillon : la passe et ses deux extrémités, prêtes à afficher.
  */
 export type Maillon = {
@@ -62,38 +84,66 @@ export type Maillon = {
    * Rupture de continuité : cette passe ne part PAS de la position d'arrivée
    * de la précédente. `null` dans le cas normal (chaîne continue).
    *
-   * Ce n'est pas une anomalie de données : l'ancienne appli notait ainsi les
-   * TRANSITIONS de main (lâcher une main pour changer de prise), et 59 des 119
-   * enchaînements repris en portent. La vue lecture les nomme au lieu de les
-   * masquer — voir la note « Transitions » du sprint-status.
+   * Ce n'est pas une anomalie de données : c'est une TRANSITION de main (lâcher
+   * une main pour changer de prise), et 59 des 120 enchaînements repris en
+   * portent. La vue lecture la nomme au lieu de la masquer.
+   *
+   * `transition` porte le geste quand il est DÉCLARÉ dans le catalogue, et
+   * `null` sinon. Ce second cas n'est pas une erreur : une quinzaine de reprises
+   * de l'historique n'ont pas encore de transition écrite, et elles doivent
+   * continuer à s'afficher exactement comme avant. Nommer ce qu'on sait, montrer
+   * ce qu'on ne sait pas.
    */
-  rupture: { arrivait: Position | null; reprend: Position | null } | null
+  rupture: {
+    arrivait: Position | null
+    reprend: Position | null
+    transition: { nom: string; description: string | null } | null
+  } | null
 }
 
 /**
- * Suite ordonnée des maillons, ruptures repérées au passage.
+ * Suite ordonnée des maillons, ruptures repérées et nommées au passage.
  *
  * Les passes arrivent dans l'ordre du tableau de l'enchaînement (l'index EST
  * l'ordre — ADD-18) ; leurs positions doivent être résolues au préalable
  * (`resoudrePasse`) pour être affichables.
+ *
+ * Les transitions sont indexées par trajet (`cleDeTransition`) et le paramètre
+ * est FACULTATIF : sans elles, la fonction rend exactement ce qu'elle rendait
+ * avant la Story 4.7 — la rupture est vue, elle n'est simplement pas nommée.
  */
-export function construireChaine(passes: Pass[]): Maillon[] {
+export function construireChaine(
+  passes: Pass[],
+  transitions: Map<string, Transition> = new Map(),
+): Maillon[] {
   return passes.map((passe, index) => {
     const precedente = index > 0 ? passes[index - 1] : null
     const finPrecedente = precedente ? identifiant(precedente.positionFin) : null
     const debut = identifiant(passe.positionDebut)
 
+    if (!precedente || finPrecedente === debut) {
+      return {
+        passe,
+        debut: positionDe(passe.positionDebut),
+        fin: positionDe(passe.positionFin),
+        rupture: null,
+      }
+    }
+
+    const cle = cleDeTransition(precedente.positionFin, passe.positionDebut)
+    const declaree = cle === null ? undefined : transitions.get(cle)
+
     return {
       passe,
       debut: positionDe(passe.positionDebut),
       fin: positionDe(passe.positionFin),
-      rupture:
-        precedente && finPrecedente !== debut
-          ? {
-              arrivait: positionDe(precedente.positionFin),
-              reprend: positionDe(passe.positionDebut),
-            }
+      rupture: {
+        arrivait: positionDe(precedente.positionFin),
+        reprend: positionDe(passe.positionDebut),
+        transition: declaree
+          ? { nom: nomDeTransition(declaree.nom), description: declaree.description ?? null }
           : null,
+      },
     }
   })
 }

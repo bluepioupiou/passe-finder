@@ -129,13 +129,21 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 #     dans `legacyMarqueurs` ;
 #   - visibilite fidele au legacy : 107 partages, 12 prives.
 #
-# A INSTRUIRE — story « Transitions » a ecrire dans epics.md :
-#   1. objet Transition = arete position -> position sans passe ;
-#   2. vue lecture : nommer la transition au lieu d'afficher une rupture ;
-#   3. compositeur : faire glisser la position d'arrivee d'une passe vers une
-#      position atteignable par transition, ce qui elargit les passes proposees
-#      ensuite — sans polluer le catalogue de passes.
-#   Les 82 marqueurs archives disent quelles transitions existent reellement.
+# INSTRUIT le 2026-09-01 — Story 4.7, ecrite dans epics.md, FR-44 a FR-46.
+#   Les trois volets prevus sont livres : objet Transition, reprise nommee en
+#   lecture, changement de prise composable.
+#   Ce qui a tranche, ce sont les DONNEES et pas l'intuition. Trois modeles
+#   etaient en balance (libre / arete entre positions / arete portee par la
+#   passe) ; le depouillement des 120 enchainements donne 103 reprises sur 18
+#   trajets seulement, et 19 passes differentes arrivant en « main gauche /
+#   main droite » rupturent toutes vers le meme petit groupe de cibles, sans
+#   exception. Le determinant est la POSITION d'arrivee, jamais la passe.
+#   Et l'ancienne appli avait deja l'objet : table `alternative`, dix lignes de
+#   2009 avec leur texte de prof, jamais migree jusqu'ici. Elle expliquait plus
+#   de quatre reprises sur cinq ; ce qui lui manquait, ce sont surtout les
+#   RECIPROQUES (`A -> B` declaree, `B -> A` non).
+#   Suite a la main d'Alain : `npm run rapport:transitions` liste les trajets
+#   encore sans explication, tries par frequence, avec des exemples.
 #
 # Effets sur le suivi :
 #   - 6-1 et 6-2 passent en `review` : tous les volets sont livres (30 positions,
@@ -226,11 +234,12 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # la page ET l'action verifient la session, independamment l'une de l'autre, et
 # l'ecriture passe par les `access` de la collection (`overrideAccess: false`).
 #
-# AUCUNE RUPTURE N'EST COMPOSABLE, comme demande : le rail ne propose que les
-# passes qui partent de la position courante. Les enchainements crees dans
-# l'app sont donc continus par construction, ce qui laisse intact l'historique
-# migre et ses 59 chaines discontinues (transitions de main, toujours a
-# instruire).
+# AUCUNE RUPTURE N'EST COMPOSABLE, comme demande a cette date : le rail ne
+# propose que les passes qui partent de la position courante.
+# [MIS A JOUR le 2026-09-01 par la Story 4.7] Les ruptures sont desormais
+# composables, mais JAMAIS LIBREMENT : seules les transitions declarees sont
+# proposees. La chaine n'est donc plus continue par construction, elle est
+# JUSTIFIEE par construction.
 #
 # DECISIONS a valider a l'ecran avec Alain :
 #   - la chaine EN CONSTRUCTION est verticale, la ou la vue lecture deroule un
@@ -1187,6 +1196,12 @@ development_status:
   # compositeur ET l ecran de modification, garde http(s) comme la musique.
   # Reste : rien de prevu au-dela — pas de lecteur integre, c est voulu (FR-39).
   4-6-lier-une-video-youtube-a-un-enchainement: review
+  # collection Transition (arete position -> position, dirigee, unique par
+  # trajet), migration des 10 `alternative` de 2009, rapport de couverture,
+  # section « Changer de prise » dans le compositeur, reprise NOMMEE en lecture.
+  # Reste : Alain ecrit les trajets manquants dans /admin (`npm run
+  # rapport:transitions` les liste, tries par frequence).
+  4-7-transitions-de-position: review
   epic-4-retrospective: optional
 
   # --- Epic 5: Découverte, favoris & profil ---

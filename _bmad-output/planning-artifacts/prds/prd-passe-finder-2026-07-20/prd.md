@@ -170,6 +170,12 @@ Le succès du v1 se mesure à l'**usage réel**, pas à l'adoption multi-écoles
 
 - **FR-43.** Le site est **instrumenté** pour la mesure d'audience (nombre de visiteurs/jour, distinction connectés vs. anonymes). La **consultation** peut se faire via une **interface externe** (Google Analytics, console AWS…) — **aucun écran de statistiques intégré n'est requis en v1**. Un tableau de bord in-app est hors v1.
 
+**Transitions de position** _(ajoutés le 2026-09-01 — besoin remonté par la migration de l'historique, postérieur à la rédaction initiale du PRD ; voir Story 4.7)_
+
+- **FR-44.** Un administrateur peut déclarer une **transition** : un changement de prise entre deux positions **sans passe**, donc **sans temps musical**. Elle est **dirigée** (déclarer A → B n'ouvre pas B → A), relie deux positions **différentes** de la **même danse**, porte une **description du geste** et un nom court facultatif, et un même trajet A → B ne peut exister **qu'une seule fois**.
+- **FR-45.** Le compositeur **propose** les transitions qui partent de la position d'arrivée de la dernière passe, **et seulement celles qui mènent vers une position d'où une passe repart**. En choisir une déplace la position courante et rouvre la liste des passes possibles — y compris depuis une position sans passe sortante. Aucun changement de position **libre** n'est possible : toute discontinuité composée s'appuie sur une transition déclarée.
+- **FR-46.** La vue lecture **nomme** la reprise quand la transition existe (geste, déroulé, position de reprise), et l'**affiche sans la nommer** quand elle n'existe pas — une reprise non déclarée n'est pas une erreur, c'est un geste dont le texte reste à écrire.
+
 ## 8. Hors scope v1 & Vision
 
 ### Explicitement hors v1

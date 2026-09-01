@@ -13,6 +13,7 @@ import { Favori } from './collections/Favori'
 import { Media } from './collections/Media'
 import { Passe } from './collections/Passe'
 import { Position } from './collections/Position'
+import { Transition } from './collections/Transition'
 import { initialiser } from './seed'
 import { Users } from './collections/Users'
 
@@ -28,8 +29,10 @@ export default buildConfig({
   },
   // v1 : une seule collection d'authentification. Les collections métier
   // suivent l'ordre des dépendances : Danse → Position → Passe → Enchaînement,
-  // et Favori qui pointe vers Enchaînement et Users.
-  collections: [Users, Danse, Media, Position, Passe, Enchainement, Favori],
+  // et Favori qui pointe vers Enchaînement et Users. Transition se pose juste
+  // après Passe : c'est l'autre arête du graphe, celle qui ne coûte pas de
+  // temps musical (Story 4.7).
+  collections: [Users, Danse, Media, Position, Passe, Transition, Enchainement, Favori],
   editor: lexicalEditor(),
   secret: PAYLOAD_SECRET,
   typescript: {

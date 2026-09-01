@@ -1,8 +1,9 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Where } from 'payload'
 import { APIError } from 'payload'
 
 import { adminSeul } from './acces'
 import { DANSE_V1 } from './Danse'
+import { nomDeTransition } from './Transition'
 
 /**
  * Position — etat statique de la danse (FR-1).
@@ -38,27 +39,57 @@ export const Position: CollectionConfig = {
         // AD-6 / FR-8 : on ne supprime jamais une position encore utilisee.
         // Sans cette garde, supprimer une position casserait toutes les passes
         // qui s'y rattachent — donc le contenu de revision des eleves.
-        const utilisee = await req.payload.find({
-          collection: 'passes',
-          where: {
-            or: [{ positionDebut: { equals: id } }, { positionFin: { equals: id } }],
-          },
-          limit: 5,
-          depth: 0,
-        })
+        //
+        // LES DEUX ARETES DU GRAPHE SONT GARDEES, pas seulement les passes : une
+        // transition (Story 4.7) pointe elle aussi vers deux positions, et rien
+        // ne la protegerait sinon. Elle survivrait a la suppression en pointant
+        // dans le vide, et le compositeur proposerait un changement de prise
+        // vers une position qui n'existe plus.
+        // Annotation explicite : sans elle, TypeScript deduit de ce `or` une
+        // union de formes distinctes plutot que le type `Where` de Payload.
+        const aretes: Where = {
+          or: [{ positionDebut: { equals: id } }, { positionFin: { equals: id } }],
+        }
 
-        if (utilisee.totalDocs === 0) return
+        const [passes, transitions] = await Promise.all([
+          req.payload.find({ collection: 'passes', where: aretes, limit: 5, depth: 0 }),
+          req.payload.find({ collection: 'transitions', where: aretes, limit: 5, depth: 0 }),
+        ])
 
-        // Message actionnable : on nomme les passes fautives pour que l'admin
+        if (passes.totalDocs === 0 && transitions.totalDocs === 0) return
+
+        // Message actionnable : on nomme les documents fautifs pour que l'admin
         // sache exactement quoi retirer d'abord.
-        const noms = utilisee.docs.map((passe) => `« ${passe.nom} »`)
-        const reste = utilisee.totalDocs - noms.length
-        const liste = noms.join(', ') + (reste > 0 ? ` et ${reste} autre${reste > 1 ? 's' : ''}` : '')
+        const enumerer = (total: number, noms: string[]) => {
+          const reste = total - noms.length
+          return noms.join(', ') + (reste > 0 ? ` et ${reste} autre${reste > 1 ? 's' : ''}` : '')
+        }
+
+        const griefs: string[] = []
+
+        if (passes.totalDocs > 0) {
+          const noms = passes.docs.map((passe) => `« ${passe.nom} »`)
+          griefs.push(
+            `${passes.totalDocs} passe${passes.totalDocs > 1 ? 's' : ''} ` +
+              `(${enumerer(passes.totalDocs, noms)})`,
+          )
+        }
+
+        if (transitions.totalDocs > 0) {
+          // Le nom d'une transition est facultatif : on la designe par son
+          // trajet, qui l'identifie toujours (l'unicite de A -> B y veille).
+          const noms = transitions.docs.map(
+            (transition) => `« ${nomDeTransition(transition.nom)} »`,
+          )
+          griefs.push(
+            `${transitions.totalDocs} transition${transitions.totalDocs > 1 ? 's' : ''} ` +
+              `(${enumerer(transitions.totalDocs, noms)})`,
+          )
+        }
 
         throw new APIError(
-          `Suppression impossible : cette position est utilisée par ${utilisee.totalDocs} passe` +
-            `${utilisee.totalDocs > 1 ? 's' : ''} (${liste}). ` +
-            "Retire d'abord ces passes, ou fais-les pointer vers une autre position.",
+          `Suppression impossible : cette position est utilisée par ${griefs.join(' et ')}. ` +
+            "Retire d'abord ces éléments, ou fais-les pointer vers une autre position.",
           400,
         )
       },
@@ -87,7 +118,7 @@ export const Position: CollectionConfig = {
       required: false,
       label: 'Image',
       admin: {
-        description: "Optionnelle. A defaut, le placeholder « no_position » est affiche.",
+        description: 'Optionnelle. A defaut, le placeholder « no_position » est affiche.',
       },
     },
     {

@@ -72,6 +72,7 @@ export interface Config {
     media: Media;
     positions: Position;
     passes: Pass;
+    transitions: Transition;
     enchainements: Enchainement;
     favoris: Favoris;
     'payload-kv': PayloadKv;
@@ -86,6 +87,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     positions: PositionsSelect<false> | PositionsSelect<true>;
     passes: PassesSelect<false> | PassesSelect<true>;
+    transitions: TransitionsSelect<false> | TransitionsSelect<true>;
     enchainements: EnchainementsSelect<false> | EnchainementsSelect<true>;
     favoris: FavorisSelect<false> | FavorisSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -247,6 +249,34 @@ export interface Pass {
   createdAt: string;
 }
 /**
+ * Changer de prise sans danser de passe — « lâcher la main gauche ». Le sens compte : déclarer A → B n'ouvre pas B → A.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transitions".
+ */
+export interface Transition {
+  id: number;
+  /**
+   * La position où l'on arrive à la fin de la passe précédente.
+   */
+  positionDebut: number | Position;
+  /**
+   * La position d'où l'on repart, sans avoir dansé de passe.
+   */
+  positionFin: number | Position;
+  /**
+   * Court, à l'impératif. Ex. « Lâcher la main gauche ». Facultatif.
+   */
+  nom?: string | null;
+  /**
+   * Comment faire le changement de prise, en une phrase.
+   */
+  description?: string | null;
+  legacyId?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "enchainements".
  */
@@ -376,6 +406,10 @@ export interface PayloadLockedDocument {
         value: number | Pass;
       } | null)
     | ({
+        relationTo: 'transitions';
+        value: number | Transition;
+      } | null)
+    | ({
         relationTo: 'enchainements';
         value: number | Enchainement;
       } | null)
@@ -501,6 +535,19 @@ export interface PassesSelect<T extends boolean = true> {
   difficulte?: T;
   legacyYoutubeUrl?: T;
   legacyPersonnalisations?: T;
+  legacyId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transitions_select".
+ */
+export interface TransitionsSelect<T extends boolean = true> {
+  positionDebut?: T;
+  positionFin?: T;
+  nom?: T;
+  description?: T;
   legacyId?: T;
   updatedAt?: T;
   createdAt?: T;

@@ -656,22 +656,6 @@ So that la connexion s'intègre sans friction dans mon parcours plutôt que de m
 
 Le geste central. Tout utilisateur connecté compose un enchaînement guidé par le graphe (le catalogue ne propose que les passes possibles depuis la position courante), annule pas-à-pas, l'enregistre avec titre/description/notes/date et visibilité (défaut privé), l'édite/supprime, et peut y associer une vidéo YouTube. Un enchaînement partagé s'ouvre en lecture seule sans connexion via une URL simple, avec le rendu de chaîne partagé (zigzag PC / vertical mobile).
 
-> **À INSTRUIRE — mécanisme de Transition (relevé le 2026-08-30, hors périmètre v1 actuel).**
-> La migration de l'historique (Story 6.3) a fait ressurgir un mécanisme métier
-> absent du modèle v2 : entre deux passes, un danseur peut **changer de prise
-> sans passe** — depuis « mains décroisées », lâcher une main pour se retrouver
-> en « main droite / main gauche ». L'ancienne appli notait cela en insérant une
-> position seule dans la chaîne (82 cas), ce qui rend **59 des 119 enchaînements
-> historiques discontinus** au sens du graphe.
-> Décision d'Alain : on migre tout tel quel et la vue lecture affiche la reprise ;
-> le mécanisme lui-même est reporté. À écrire ensuite comme story dédiée :
-> (1) objet **Transition** = arête position → position sans passe ;
-> (2) vue lecture : nommer la transition au lieu d'afficher une rupture ;
-> (3) compositeur : pouvoir déplacer la position d'arrivée d'une passe vers une
-> position atteignable par transition, ce qui élargit les passes proposées
-> ensuite — sans polluer le catalogue de passes.
-> Matière première disponible : les 82 marqueurs archivés dans
-> `enchainement.legacyMarqueurs` par la migration.
 
 ### Story 4.1: Moteur de composition — passes possibles depuis la position courante
 
@@ -824,6 +808,41 @@ So that mes élèves peuvent voir une exécution filmée en complément de la ch
 **Given** un enchaînement sans vidéo
 **When** je consulte sa vue lecture
 **Then** aucune section vidéo n'est affichée (le champ reste optionnel)
+
+### Story 4.7: Transitions de position — changer de prise sans danser de passe
+
+As a danseur qui compose un enchaînement,
+I want changer de prise entre deux passes sans danser de passe,
+So that je peux aller jusqu'au bout d'un enchaînement comme on le fait réellement sur la piste, au lieu de rester bloqué dès que la passe suivante ne part pas d'où je suis.
+
+**Contexte tranché le 2026-09-01, sur les données.** Trois modèles étaient en balance : (1) changement libre entre deux positions, (2) transitions déclarées entre positions, (3) transitions déclarées sur la passe d'arrivée. Le dépouillement des 120 enchaînements repris a tranché pour (2) : **103 reprises réelles, sur seulement 18 trajets distincts**, dont 95 à l'intérieur du petit groupe des prises de main. Surtout, **19 passes différentes arrivent en « main gauche / main droite » et rupturent, toutes vers le même petit groupe de cibles, sans une seule exception** — le déterminant est la position d'arrivée, jamais la passe, ce qui écarte (3). Et l'ancienne appli avait déjà exactement cet objet : la table `alternative(positionStart_id, positionAlternative_id, description)`, dix lignes de 2009 qui expliquent à elles seules plus de quatre reprises sur cinq. Le modèle n'était pas faux, il était incomplet — il lui manquait surtout les réciproques.
+
+**Acceptance Criteria:**
+
+**Given** le catalogue de référence
+**When** un administrateur déclare une transition
+**Then** elle relie deux positions **différentes** de la **même** danse, dans un **sens donné** (déclarer A → B n'ouvre pas B → A), avec un nom court facultatif et une description du geste (FR-44)
+**And** un même trajet A → B ne peut être déclaré qu'une seule fois — c'est ce qui permet à la vue lecture de retrouver la transition d'une reprise par son seul couple de positions
+
+**Given** que je compose un enchaînement et que je viens de poser une passe
+**When** des transitions partent de sa position d'arrivée vers une position d'où au moins une passe repart
+**Then** elles me sont proposées sous les passes possibles, nommées et décrites (FR-45)
+**And** en choisir une déplace la position courante et rouvre la liste des passes possibles depuis la nouvelle position — y compris depuis un cul-de-sac, d'où aucune passe ne partait
+
+**Given** un changement de prise choisi mais pas encore suivi d'une passe
+**When** j'annule pas-à-pas
+**Then** c'est le changement de prise qui est défait en premier, la passe précédente restant posée ; retirer ensuite cette passe remet en attente le changement qui la précédait
+**And** l'enregistrement est refusé tant que le changement n'est suivi d'aucune passe, avec la raison affichée — seules les passes sont stockées, un changement en fin de chaîne n'aurait rien pour survivre
+
+**Given** un enchaînement enregistré, ancien ou nouveau, comportant une reprise
+**When** je consulte sa vue lecture
+**Then** la reprise est **nommée** quand la transition est déclarée (le geste, son déroulé, la position d'où l'on repart) (FR-46)
+**And** elle reste affichée **telle qu'avant**, sans nom, quand elle ne l'est pas — une vingtaine de reprises de l'historique attendent encore d'être écrites, et ce n'est pas une erreur
+
+**Given** une position référencée par une transition
+**When** un administrateur tente de la supprimer
+**Then** la suppression est refusée, comme pour une passe (FR-8, AD-6) — sinon la transition survivrait en pointant dans le vide
+**And** supprimer une **transition**, elle, ne casse rien : aucun enchaînement ne la référence, la reprise cesse simplement d'être nommée
 
 ---
 
