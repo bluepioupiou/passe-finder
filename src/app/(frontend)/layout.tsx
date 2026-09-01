@@ -2,6 +2,7 @@ import React from 'react'
 
 import { AnalytiqueAudience } from '@/components/AnalytiqueAudience'
 import { Navigation } from '@/components/Navigation'
+import { PiedDePage } from '@/components/PiedDePage'
 import './styles.css'
 
 export const metadata = {
@@ -33,6 +34,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       <body>
         <Navigation />
         <main>{children}</main>
+        <PiedDePage />
         <AnalytiqueAudience />
       </body>
     </html>

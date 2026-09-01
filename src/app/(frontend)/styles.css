@@ -19,9 +19,23 @@ html {
   color-scheme: light dark;
 }
 
+/*
+ * COLONNE PLEINE HAUTEUR, pour que le pied de page tienne le bas.
+ *
+ * `min-height: 100%` ne faisait rien : un pourcentage se resout contre la
+ * hauteur du parent, et `html` n'en a pas de declaree. `100dvh` est la hauteur
+ * reellement visible, barre d'adresse des navigateurs mobiles deduite — avec
+ * `100vh`, le pied se serait cache sous cette barre sur telephone.
+ *
+ * La colonne, elle, sert au `margin-top: auto` du pied : sur une page courte
+ * (« aucun resultat »), il descend au bas de l'ecran au lieu de flotter au
+ * milieu, ou il se lirait comme la fin d'un contenu tronque.
+ */
 body {
   margin: 0;
-  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
