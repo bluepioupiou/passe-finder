@@ -54,20 +54,25 @@
   .filtres__champ--court {
     flex: 0 0 200px;
   }
+
+  /* Aligne les cases sur le BAS des champs voisins, qui portent une etiquette
+     au-dessus. Uniquement en ligne : en colonne (telephone), `flex-end` les
+     collerait a DROITE de l'ecran — l'axe transversal n'est plus le meme. */
+  .filtres__champ--case {
+    align-self: flex-end;
+  }
 }
 
 /*
- * Case « Mes favoris » (Story 5.1). Elle se pose sur la meme ligne que la
- * recherche et la difficulte, mais ne s'etire pas : c'est un interrupteur, pas
- * un champ de saisie.
+ * Cases a cocher des filtres (« Mes favoris », « Avec musique », « Avec
+ * video »). Elles se posent sur la meme ligne que la recherche, mais ne
+ * s'etirent pas : ce sont des interrupteurs, pas des champs de saisie.
  */
 .filtres__champ--case {
   flex: 0 0 auto;
   flex-direction: row;
   align-items: center;
   gap: var(--space-2);
-  /* Aligne la case sur les champs voisins, qui portent une etiquette au-dessus. */
-  align-self: flex-end;
   min-height: 44px;
 }
 

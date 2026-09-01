@@ -1,6 +1,7 @@
 import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { conditions } from '@/enchainements-liste'
 import config from '@/payload.config'
 
 /**
@@ -209,6 +210,61 @@ describe('Enchainement', () => {
 
     // Et le titre affiche, lui, garde ses accents.
     expect(relu.titre).toBe('Chorégraphie de test')
+  })
+
+  it('se retrouve par le filtre « avec musique » AVEC UN TITRE SEUL', async () => {
+    // LE CAS QUI COMPTE, et qui ne se voit pas en lisant le code : un titre sans
+    // lien EST une musique (decision d'Alain, comme l'icone de la carte). Quatre
+    // des cinq musiques de l'historique sont dans ce cas — leur fichier a
+    // disparu avec l'ancien site. Un filtre qui ne regarderait que le lien les
+    // rendrait invisibles.
+    //
+    // Teste EN BASE et pas seulement en unitaire : ce sont les operateurs de
+    // Payload (`exists`, `not_equals`) qui decident, et leur comportement sur
+    // une chaine vide ou un NULL n'est pas devinable a la lecture.
+    const criteres = {
+      requete: '',
+      page: 1,
+      favorisSeuls: false,
+      avecMusique: true,
+      avecVideo: false,
+      auteur: null,
+    }
+
+    await payload.update({
+      collection: 'enchainements',
+      id: idEnchainement,
+      data: { musique: { titre: 'Un morceau sans lien', lien: null }, urlVideo: null },
+    })
+
+    const avecMusique = await payload.find({
+      collection: 'enchainements',
+      where: conditions(criteres, []),
+      depth: 0,
+    })
+    expect(avecMusique.docs.map((doc) => doc.id)).toContain(idEnchainement)
+
+    // Et il ne remonte PAS dans « avec video », qu'il n'a pas.
+    const avecVideo = await payload.find({
+      collection: 'enchainements',
+      where: conditions({ ...criteres, avecMusique: false, avecVideo: true }, []),
+      depth: 0,
+    })
+    expect(avecVideo.docs.map((doc) => doc.id)).not.toContain(idEnchainement)
+
+    // Une musique effacee ne doit plus compter : la chaine vide comme le `null`
+    // valent « pas de musique ».
+    await payload.update({
+      collection: 'enchainements',
+      id: idEnchainement,
+      data: { musique: { titre: '', lien: '' } },
+    })
+    const apresEffacement = await payload.find({
+      collection: 'enchainements',
+      where: conditions(criteres, []),
+      depth: 0,
+    })
+    expect(apresEffacement.docs.map((doc) => doc.id)).not.toContain(idEnchainement)
   })
 
   it('empeche de supprimer une passe utilisee', async () => {

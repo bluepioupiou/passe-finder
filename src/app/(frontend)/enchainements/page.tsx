@@ -5,7 +5,7 @@ import React from 'react'
 import { CarteEnchainement } from '@/components/CarteEnchainement'
 import { FiltresEnchainements } from '@/components/FiltresEnchainements'
 import { Pagination } from '@/components/Pagination'
-import { nomAuteur, nomsDesAuteurs } from '@/auteurs'
+import { auteursProposables, nomAuteur, nomsDesAuteurs } from '@/auteurs'
 import { chargerCatalogue } from '@/catalogue'
 import {
   auMoinsUnCritere,
@@ -81,6 +81,9 @@ export default async function EnchainementsPage({
   const { docs: enchainements, totalDocs, totalPages, page } = resultat
   // Une seule requête pour tous les auteurs de la page.
   const auteurs = await nomsDesAuteurs(payload, enchainements)
+  // Les auteurs PROPOSABLES ne dépendent pas de la page affichée : filtrer par
+  // « alain » depuis la page 3 doit rester possible même s'il n'y apparaît pas.
+  const auteursDuFiltre = await auteursProposables(payload, user ?? null)
   const filtre = auMoinsUnCritere(criteres)
 
   return (
@@ -99,6 +102,7 @@ export default async function EnchainementsPage({
         // Le filtre n'a de sens que pour qui a des favoris : le proposer à un
         // visiteur anonyme afficherait une case qui ne peut rien donner.
         proposerFavoris={user ? favoris.size > 0 : false}
+        auteurs={auteursDuFiltre}
         total={totalDocs}
       />
 
@@ -106,8 +110,8 @@ export default async function EnchainementsPage({
         <p className="texte-attenue">
           {criteres.requete !== ''
             ? `Rien trouvé pour « ${criteres.requete} ». Essaie un autre mot, ou retire les filtres.`
-            : criteres.favorisSeuls
-              ? 'Aucun favori ici. Décoche « Mes favoris » pour tout revoir.'
+            : filtre
+              ? 'Aucun enchaînement ne répond à ces filtres. Retire-en un pour élargir.'
               : "Rien de partagé pour l'instant. Les enchaînements du cours apparaîtront ici."}
         </p>
       ) : (

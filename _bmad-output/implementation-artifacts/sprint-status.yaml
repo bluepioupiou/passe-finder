@@ -968,7 +968,7 @@ action_items:
   # sujets qui se tiennent (ils portent tous sur la LISTE des enchainements)
   # mais qui se livrent separement.
   - id: liste-enchainements-auteur-filtres-pagination
-    status: open
+    status: done
     titre: "Auteur affiche, filtres musique/video/auteur, et pagination de la liste"
     concerne:
       - 5-4-catalogue-navigable-positions-passes
@@ -1024,6 +1024,40 @@ action_items:
     taille_estimee: >
       Auteur affiche : petite. Filtres : moyenne (requetes + interface).
       Pagination : moyenne, et c est elle qui structure les deux autres.
+    resolution: >
+      2026-09-01, en trois lots (un commit chacun).
+      AUTEUR : la partie avant l arobase, sur la fiche et sur la carte, une
+      ligne sous la date et les marqueurs. L email ne sort jamais de
+      `auteurs.ts` — les pages recoivent un nom deja reduit, jamais l objet
+      `User`, et un test e2e verifie que l adresse n apparait nulle part. La
+      lecture des comptes contourne DELIBEREMENT les `access` (`users` n est
+      lisible que par soi-meme), sans quoi l auteur ne s afficherait que pour
+      lui-meme. Le pseudo, quand il viendra, se branchera la et nulle part
+      ailleurs.
+      PAGINATION : 24 par page, tout dans l URL, des LIENS et non des boutons
+      (donc partageable, retour navigateur, et fonctionne sans JavaScript).
+      NON SEPARABLE DE LA RECHERCHE : un filtre reste cote client n aurait
+      filtre que la page affichee — pire que pas de filtre, il aurait repondu
+      « rien trouve » alors que le resultat etait page 3. D ou une colonne
+      `titreNormalise` derivee du titre a chaque ecriture : le LIKE de SQLite
+      est ACCENTUE, et chercher en base sans elle aurait fait perdre en silence
+      l insensibilite aux accents acquise en 5.4 (« chore » trouve
+      « Chorégraphie »). La migration reprend les 120 existants — une migration
+      de schema qui laisse les donnees derriere elle est une panne a retardement.
+      FILTRES : musique, video, auteur. « A une musique » = l UN OU L AUTRE des
+      deux champs, exactement comme l icone de la carte (tranche par Alain) :
+      c est la presence de l INFORMATION qui compte, pas celle du lien — quatre
+      des cinq musiques de l historique n ont qu un titre. Deux conditions et
+      non une (`exists` ET `not_equals: ''`) : les NULL et les chaines vides
+      existent tous deux en base, et un test d integration le verrouille.
+      Le menu des auteurs est tire des enchainements VISIBLES et non de la table
+      des comptes : lister les comptes publierait le nom de chaque inscrit, y
+      compris de ceux qui n ont rien partage. Il n apparait qu a partir de deux
+      auteurs.
+      Corrige au passage : les cases a cocher etaient collees a DROITE sur
+      telephone (`align-self: flex-end` herite de la mise en ligne, ou l axe
+      transversal n est pas le meme). Defaut anterieur, devenu visible a trois
+      cases.
 
   # Demande d Alain le 2026-08-31 au soir. EXPLICITEMENT notee POUR UNE AUTRE
   # BRANCHE : ce n est pas la suite immediate.

@@ -22,10 +22,15 @@ import { numerosVisibles } from '@/components/Pagination'
 
 describe('lireCriteres', () => {
   it('lit ce que porte l URL', () => {
-    expect(lireCriteres({ q: ' chore ', page: '3', favoris: '1' })).toEqual({
+    expect(
+      lireCriteres({ q: ' chore ', page: '3', favoris: '1', musique: '1', video: '1', auteur: '7' }),
+    ).toEqual({
       requete: 'chore',
       page: 3,
       favorisSeuls: true,
+      avecMusique: true,
+      avecVideo: true,
+      auteur: 7,
     })
   })
 
@@ -36,6 +41,8 @@ describe('lireCriteres', () => {
     expect(lireCriteres({ page: '-4' }).page).toBe(1)
     expect(lireCriteres({ page: 'deux' }).page).toBe(1)
     expect(lireCriteres({ favoris: 'oui' }).favorisSeuls).toBe(false)
+    expect(lireCriteres({ auteur: 'moi' }).auteur).toBeNull()
+    expect(lireCriteres({ auteur: '-3' }).auteur).toBeNull()
   })
 
   it('prend la première valeur quand un paramètre est répété', () => {
@@ -43,22 +50,42 @@ describe('lireCriteres', () => {
   })
 })
 
+/** Aucun critere pose : la base de tous les cas. */
+const vide = {
+  requete: '',
+  page: 1,
+  favorisSeuls: false,
+  avecMusique: false,
+  avecVideo: false,
+  auteur: null,
+}
+
 describe('versParametres / lienListe', () => {
   it('omet les valeurs par défaut', () => {
     // Une URL propre se partage et se lit ; celle qui traine ses valeurs vides
     // ressemble a une fuite de code.
-    expect(versParametres({ requete: '', page: 1, favorisSeuls: false }).toString()).toBe('')
-    expect(lienListe({ requete: '', page: 1, favorisSeuls: false })).toBe('/enchainements')
+    expect(versParametres({ ...vide }).toString()).toBe('')
+    expect(lienListe({ ...vide })).toBe('/enchainements')
   })
 
   it('garde les critères posés', () => {
-    expect(lienListe({ requete: 'chore', page: 3, favorisSeuls: true })).toBe(
+    expect(lienListe({ ...vide, requete: 'chore', page: 3, favorisSeuls: true })).toBe(
       '/enchainements?q=chore&favoris=1&page=3',
+    )
+    expect(lienListe({ ...vide, avecMusique: true, auteur: 7 })).toBe(
+      '/enchainements?musique=1&auteur=7',
     )
   })
 
   it('fait l aller-retour avec lireCriteres', () => {
-    const criteres = { requete: 'passe croisée', page: 4, favorisSeuls: true }
+    const criteres = {
+      ...vide,
+      requete: 'passe croisée',
+      page: 4,
+      favorisSeuls: true,
+      avecVideo: true,
+      auteur: 3,
+    }
     const parametres = Object.fromEntries(versParametres(criteres))
 
     expect(lireCriteres(parametres)).toEqual(criteres)
@@ -66,8 +93,6 @@ describe('versParametres / lienListe', () => {
 })
 
 describe('conditions', () => {
-  const vide = { requete: '', page: 1, favorisSeuls: false }
-
   it('ne contraint rien sans critère', () => {
     // `undefined` et non `{}` : la visibilite vient des `access` de la
     // collection, qu'on laisse decider seuls.
@@ -90,8 +115,26 @@ describe('conditions', () => {
     expect(conditions({ ...vide, favorisSeuls: true }, [])).toEqual({ id: { equals: 0 } })
   })
 
+  it('reconnaît une musique par l UN OU L AUTRE de ses deux champs', () => {
+    // Decision d'Alain : c'est la presence de l'INFORMATION qui compte, pas
+    // celle du lien — comme l'icone de la carte. Les quatre montages de
+    // l'historique n'ont qu'un titre, leur fichier a disparu avec l'ancien site.
+    const presence = (chemin: string) => ({
+      and: [{ [chemin]: { exists: true } }, { [chemin]: { not_equals: '' } }],
+    })
+
+    expect(conditions({ ...vide, avecMusique: true }, [])).toEqual({
+      or: [presence('musique.titre'), presence('musique.lien')],
+    })
+    expect(conditions({ ...vide, avecVideo: true }, [])).toEqual(presence('urlVideo'))
+  })
+
+  it('filtre par auteur', () => {
+    expect(conditions({ ...vide, auteur: 7 }, [])).toEqual({ auteur: { equals: 7 } })
+  })
+
   it('combine les critères', () => {
-    expect(conditions({ requete: 'chore', page: 2, favorisSeuls: true }, [4])).toEqual({
+    expect(conditions({ ...vide, requete: 'chore', page: 2, favorisSeuls: true }, [4])).toEqual({
       and: [{ titreNormalise: { like: 'chore' } }, { id: { in: [4] } }],
     })
   })

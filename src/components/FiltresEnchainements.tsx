@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useId, useRef, useState } from 'react'
 
+import type { ChoixAuteur } from '@/auteurs'
 import { lienListe, type Criteres } from '@/enchainements-liste'
 import { Bouton } from './Bouton'
 import './grille-filtrable.css'
@@ -27,6 +28,7 @@ import './grille-filtrable.css'
 export function FiltresEnchainements({
   criteres,
   proposerFavoris,
+  auteurs,
   total,
 }: {
   criteres: Criteres
@@ -36,12 +38,21 @@ export function FiltresEnchainements({
    * pire que pas de case.
    */
   proposerFavoris: boolean
+  /**
+   * Les auteurs qu'on peut choisir. Tirés des enchaînements VISIBLES et non de
+   * la table des comptes : le filtre ne doit rien apprendre que la liste
+   * elle-même ne montre déjà (voir `auteursProposables`).
+   */
+  auteurs: ChoixAuteur[]
   /** Nombre de résultats, pour l'annonce aux lecteurs d'écran. */
   total: number
 }) {
   const router = useRouter()
   const idRecherche = useId()
   const idFavoris = useId()
+  const idMusique = useId()
+  const idVideo = useId()
+  const idAuteur = useId()
 
   // La saisie est tenue localement pour rester fluide sous les doigts ; l'URL,
   // elle, ne suit qu'après la pause.
@@ -49,7 +60,11 @@ export function FiltresEnchainements({
   // La case suit le doigt AVANT que la navigation n'aboutisse : liee a la seule
   // valeur de l'URL, elle se decocherait toute seule pendant l'aller-retour,
   // comme si le clic n'avait pas pris.
-  const [favorisSeuls, setFavorisSeuls] = useState(criteres.favorisSeuls)
+  const [cases, setCases] = useState({
+    favorisSeuls: criteres.favorisSeuls,
+    avecMusique: criteres.avecMusique,
+    avecVideo: criteres.avecVideo,
+  })
   const [derniereURL, setDerniereURL] = useState(criteres)
   const minuterie = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -63,11 +78,17 @@ export function FiltresEnchainements({
   // navigation — c'est-à-dire au milieu de la frappe.
   if (
     derniereURL.requete !== criteres.requete ||
-    derniereURL.favorisSeuls !== criteres.favorisSeuls
+    derniereURL.favorisSeuls !== criteres.favorisSeuls ||
+    derniereURL.avecMusique !== criteres.avecMusique ||
+    derniereURL.avecVideo !== criteres.avecVideo
   ) {
     setDerniereURL(criteres)
     setRequete(criteres.requete)
-    setFavorisSeuls(criteres.favorisSeuls)
+    setCases({
+      favorisSeuls: criteres.favorisSeuls,
+      avecMusique: criteres.avecMusique,
+      avecVideo: criteres.avecVideo,
+    })
   }
 
   useEffect(
@@ -87,7 +108,18 @@ export function FiltresEnchainements({
     minuterie.current = setTimeout(() => naviguer({ requete: valeur }), 300)
   }
 
-  const filtreActif = criteres.requete !== '' || criteres.favorisSeuls
+  /** Coche une case : l'affichage suit tout de suite, l'URL juste après. */
+  const cocher = (nom: 'favorisSeuls' | 'avecMusique' | 'avecVideo', valeur: boolean) => {
+    setCases((precedentes) => ({ ...precedentes, [nom]: valeur }))
+    naviguer({ [nom]: valeur })
+  }
+
+  const filtreActif =
+    criteres.requete !== '' ||
+    criteres.favorisSeuls ||
+    criteres.avecMusique ||
+    criteres.avecVideo ||
+    criteres.auteur !== null
 
   return (
     <>
@@ -118,6 +150,65 @@ export function FiltresEnchainements({
           />
         </div>
 
+        {/* Un auteur ne se propose que s'il y a QUELQU'UN A CHOISIR : sur un
+            site ou tout vient d'Alain, un menu a une seule entree n'est qu'un
+            clic pour rien. */}
+        {auteurs.length > 1 ? (
+          <div className="filtres__champ filtres__champ--court">
+            <label className="filtres__label label-caps" htmlFor={idAuteur}>
+              Auteur
+            </label>
+            <select
+              id={idAuteur}
+              name="auteur"
+              className="filtres__saisie"
+              value={criteres.auteur === null ? '' : String(criteres.auteur)}
+              onChange={(evenement) =>
+                naviguer({
+                  auteur: evenement.target.value === '' ? null : Number(evenement.target.value),
+                })
+              }
+            >
+              <option value="">Tous</option>
+              {auteurs.map((auteur) => (
+                <option key={auteur.id} value={auteur.id}>
+                  {auteur.nom}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
+        <div className="filtres__champ filtres__champ--case">
+          <input
+            id={idMusique}
+            name="musique"
+            value="1"
+            type="checkbox"
+            className="filtres__case"
+            checked={cases.avecMusique}
+            onChange={(evenement) => cocher('avecMusique', evenement.target.checked)}
+          />
+          <label className="filtres__label-case" htmlFor={idMusique}>
+            Avec musique
+          </label>
+        </div>
+
+        <div className="filtres__champ filtres__champ--case">
+          <input
+            id={idVideo}
+            name="video"
+            value="1"
+            type="checkbox"
+            className="filtres__case"
+            checked={cases.avecVideo}
+            onChange={(evenement) => cocher('avecVideo', evenement.target.checked)}
+          />
+          <label className="filtres__label-case" htmlFor={idVideo}>
+            Avec vidéo
+          </label>
+        </div>
+
         {proposerFavoris ? (
           <div className="filtres__champ filtres__champ--case">
             <input
@@ -126,11 +217,8 @@ export function FiltresEnchainements({
               value="1"
               type="checkbox"
               className="filtres__case"
-              checked={favorisSeuls}
-              onChange={(evenement) => {
-                setFavorisSeuls(evenement.target.checked)
-                naviguer({ favorisSeuls: evenement.target.checked })
-              }}
+              checked={cases.favorisSeuls}
+              onChange={(evenement) => cocher('favorisSeuls', evenement.target.checked)}
             />
             <label className="filtres__label-case" htmlFor={idFavoris}>
               Mes favoris
