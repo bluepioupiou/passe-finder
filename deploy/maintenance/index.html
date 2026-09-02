@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mise à jour en cours — Passe Finder</title>
+    <meta name="robots" content="noindex" />
+    <!--
+      La page se recharge toute seule : quand la mise à jour est finie, le
+      visiteur revient sur le site sans avoir rien à faire. C'est le seul
+      comportement « actif » de cette page — tout le reste est immobile, parce
+      qu'elle est servie précisément quand l'application ne répond plus.
+    -->
+    <meta http-equiv="refresh" content="30" />
+    <style>
+      /*
+        TOUT EST EN LIGNE, ET C'EST LE POINT : aucune requête vers
+        l'application, aucune police distante, aucune image. Cette page est
+        affichée quand le reste est éteint — ce qu'elle demanderait à côté
+        n'arriverait pas.
+
+        Les couleurs sont celles du site (« Lin & Sauge »), recopiées ici plutôt
+        qu'importées, pour la même raison.
+      */
+      :root {
+        color-scheme: light dark;
+        --fond: #f6f7f3;
+        --encre: #202519;
+        --attenue: #5e6553;
+        --accent: #5e8a5a;
+        --surface: #ffffff;
+        --ligne: #e3e7dd;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fond: #14170f;
+          --encre: #e9eee2;
+          --attenue: #a8b0a0;
+          --accent: #8fbe8a;
+          --surface: #1d211a;
+          --ligne: #2b3026;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        font-size: 16px;
+        line-height: 1.55;
+        color: var(--encre);
+        background: var(--fond);
+      }
+
+      main {
+        max-width: 34rem;
+        padding: 32px;
+        text-align: center;
+        background: var(--surface);
+        border: 1px solid var(--ligne);
+        border-radius: 0.85rem;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 30px;
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+      }
+
+      p {
+        margin: 0 0 12px;
+        color: var(--attenue);
+      }
+
+      p:last-child {
+        margin-bottom: 0;
+      }
+
+      .marque {
+        display: block;
+        margin-bottom: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="marque">Passe Finder</span>
+
+      <h1>Mise à jour en cours</h1>
+
+      <p>
+        Le site est en train d’être mis à jour. Ça ne dure généralement qu’une poignée de
+        minutes.
+      </p>
+
+      <p>Cette page se recharge toute seule&nbsp;: rien à faire, reste là.</p>
+    </main>
+  </body>
+</html>

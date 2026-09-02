@@ -43,6 +43,11 @@ services:
       DOMAINE: ${DOMAINE}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # La page de mise a jour, et le drapeau qui l'active. En LECTURE SEULE :
+      # c'est le deploiement qui pose et retire le drapeau sur l'hote, jamais
+      # Caddy. Le dossier doit exister meme vide, sinon Docker le cree en
+      # root et le matcher `file` ne trouve rien.
+      - ./maintenance:/srv/maintenance:ro
       - caddy_donnees:/data
       - caddy_config:/config
 

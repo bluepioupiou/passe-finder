@@ -5,9 +5,53 @@
 {$DOMAINE}, www.{$DOMAINE} {
 	encode gzip zstd
 
-	# Tout le trafic est relaye vers l'application, qui n'est pas exposee
-	# directement sur Internet.
-	reverse_proxy app:3000
+	# --- Page de mise a jour ------------------------------------------------
+	#
+	# DEUX CHEMINS Y MENENT, et il faut les deux :
+	#
+	#  1. VOLONTAIRE — le deploiement pose le fichier `maintenance/actif` avant
+	#     d'arreter l'application, et le retire quand tout est revenu. La page
+	#     s'affiche alors AVANT la coupure, pas seulement pendant : le visiteur
+	#     ne voit jamais l'application tomber sous ses yeux.
+	#
+	#  2. SUBI — `handle_errors` rattrape le cas ou l'application ne repond pas
+	#     sans qu'on l'ait demande : plantage, redemarrage de la machine,
+	#     deploiement interrompu. Sans lui, le visiteur recevait un 502 brut de
+	#     Caddy, qui ne dit rien a personne.
+	#
+	# Le second couvre le premier en cas de pepin (si le drapeau n'a pas pu
+	# etre pose), et c'est voulu : la page de mise a jour est le comportement
+	# par defaut de « l'application ne repond pas », quelle qu'en soit la cause.
+	@maintenance file {
+		root /srv/maintenance
+		try_files /actif
+	}
+	handle @maintenance {
+		# `error` et non `file_server` : on veut le CODE 503, que
+		# `handle_errors` traduira ensuite en page. Servir la page en 200 dirait
+		# aux moteurs de recherche « voila le site, maintenant » — et c'est
+		# cette page-la qu'ils garderaient en memoire.
+		error 503
+	}
+
+	handle {
+		# Tout le trafic est relaye vers l'application, qui n'est pas exposee
+		# directement sur Internet.
+		reverse_proxy app:3000
+	}
+
+	handle_errors {
+		root * /srv/maintenance
+		rewrite * /index.html
+		# `Retry-After` : la reponse dit quand revenir. C'est ce qui distingue
+		# une indisponibilite temporaire d'une page disparue.
+		header Retry-After 120
+		file_server {
+			# Conserve le code d'origine (502, 503, 504) au lieu du 200 que
+			# `file_server` renverrait de lui-meme.
+			status {err.status_code}
+		}
+	}
 
 	# Journaux au format JSON, lisibles via `docker compose logs caddy`.
 	log {

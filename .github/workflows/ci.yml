@@ -39,6 +39,18 @@ jobs:
 
       - run: npm ci
 
+      # LE CADDYFILE EST VALIDÉ ICI, ET C'EST IMPORTANT : Caddy est la seule
+      # porte publique du site. Une faute de syntaxe et il refuse de démarrer —
+      # le site entier tombe, y compris la page de mise à jour censée le
+      # couvrir. On le vérifie donc AVANT qu'il n'atteigne le serveur, avec
+      # l'image même qui l'exécutera.
+      - name: Validation du Caddyfile
+        run: |
+          docker run --rm \
+            -e DOMAINE=exemple.test \
+            -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile
+
       - name: Vérification des types
         run: npx tsc --noEmit
 
@@ -211,8 +223,16 @@ jobs:
             'sudo mkdir -p /opt/passe-finder && sudo chown $USER:$USER /opt/passe-finder'
           scp -i ~/.ssh/deploiement \
             deploy/docker-compose.yml deploy/Caddyfile deploy/litestream.yml deploy/bootstrap.sh \
-            deploy/sauvegarde-medias.sh deploy/restaurer.sh \
+            deploy/sauvegarde-medias.sh deploy/restaurer.sh deploy/mettre-en-prod.sh \
             "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}:/opt/passe-finder/"
+          # La page de mise à jour et son dossier : Caddy le monte en lecture
+          # seule, et le déploiement y pose le drapeau `actif`.
+          scp -i ~/.ssh/deploiement -r deploy/maintenance \
+            "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}:/opt/passe-finder/"
+          # Le drapeau laissé par un déploiement interrompu ne doit pas
+          # survivre : on repart toujours site visible.
+          ssh -i ~/.ssh/deploiement "${{ secrets.SSH_UTILISATEUR }}@${{ secrets.SSH_HOTE }}" \
+            'rm -f /opt/passe-finder/maintenance/actif'
 
       # Prépare la machine (Docker, swap, dossiers). Idempotent : sans effet si
       # tout est déjà en place. Évite tout geste manuel sur un serveur neuf.
@@ -241,6 +261,11 @@ jobs:
           set -e
           cd /opt/passe-finder
 
+          # L'image ACTUELLEMENT en service, lue avant qu'on écrase le .env :
+          # c'est elle que le retour arrière remettra si le déploiement échoue.
+          # Vide au tout premier déploiement — le script le dit et continue.
+          IMAGE_PRECEDENTE="$(sed -n 's/^IMAGE=//p' .env 2>/dev/null || true)"
+
           # Le fichier .env reste sur le serveur, accessible au seul propriétaire.
           umask 077
           cat > .env <<ENV
@@ -254,44 +279,14 @@ jobs:
           CLOUDFLARE_ANALYTICS_TOKEN=$CLOUDFLARE_ANALYTICS_TOKEN
           ENV
 
-          echo "-> Récupération de l'image..."
-          sudo docker compose pull
-
-          # LITESTREAM EST ARRÊTÉ LE TEMPS DES MIGRATIONS, et ce n'est pas une
-          # précaution de confort (incident du 2026-09-01).
+          # Tout le reste — page de mise à jour, arrêt des écrivains, instantané
+          # de la base, migrations, redémarrage, retour arrière en cas
+          # d'échec — vit dans `deploy/mettre-en-prod.sh`. Il y est LISIBLE et
+          # relisible ; noyé dans ce YAML, il ne le serait pas.
           #
-          # Litestream v0.5 ÉCRIT dans la base (table `_litestream_seq`) : le
-          # laisser tourner pendant `payload migrate`, c'est DEUX écrivains sur
-          # le même fichier SQLite. Une migration un peu longue se fait alors
-          # couper au milieu — et une migration interrompue laisse un schéma à
-          # moitié appliqué que Payload n'a pas enregistré. Au redémarrage
-          # suivant elle repart de zéro, bute sur sa propre colonne, et
-          # `set -e` arrête le conteneur. La production ne redémarre plus.
-          #
-          # `depends_on` ne suffisait pas : au redéploiement, seul `app` est
-          # recréé (l'image a changé) et Litestream, lui, continue de tourner.
-          #
-          # `app` est arrêté avec lui, et ça ne coûte AUCUNE disponibilité de
-          # plus : `up -d` recrée déjà le conteneur (l'image a changé), donc il
-          # s'arrêtait de toute façon avant que le nouveau ne migre. Ça règle en
-          # revanche le cas où l'ancien conteneur est en boucle de redémarrage :
-          # il relance alors `payload migrate` toutes les quelques secondes, et
-          # redevient le deuxième écrivain qu'on cherche à écarter.
-          echo "-> Arrêt de l'application et de la réplication le temps des migrations..."
-          sudo docker compose stop app litestream
-
-          # Les migrations SEULES, dans un conteneur jetable : `--no-deps` pour
-          # ne réveiller personne, `--entrypoint` pour ne pas démarrer Next.js
-          # dans la foulée. Si elles échouent, `set -e` arrête le déploiement
-          # ICI, avant d'avoir touché à quoi que ce soit d'autre.
-          echo "-> Application des migrations, base pour nous seuls..."
-          sudo docker compose run --rm --no-deps --entrypoint sh app -c 'npm run payload -- migrate'
-
-          echo "-> Redémarrage des conteneurs..."
-          sudo docker compose up -d --remove-orphans
-
-          echo "-> Nettoyage des images devenues inutiles..."
-          sudo docker image prune -f
+          # `IMAGE_PRECEDENTE` est lue AVANT l'écriture du .env ci-dessus :
+          # c'est vers cette image que le retour arrière ramène.
+          IMAGE_PRECEDENTE="$IMAGE_PRECEDENTE" sh /opt/passe-finder/mettre-en-prod.sh
           DISTANT
 
       - name: Vérifier que le site répond
