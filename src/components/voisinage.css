@@ -1,0 +1,131 @@
+/*
+ * Les listes du voisinage : passes qui mènent quelque part, passes qui en
+ * partent, changements de prise. Deux fiches les rendent — position et passe —
+ * donc les règles vivent avec le composant plutôt que dans la CSS d'une route.
+ *
+ * Les noms de classes restent préfixés `fiche-` : c'est bien de la fiche qu'il
+ * s'agit, et les renommer aurait touché deux pages, leurs tests et rien d'autre.
+ */
+
+/* Une ligne sous le titre d'une section : « transitions » ne dit rien à un élève
+   qui découvre le site, et sur la fiche passe la liste parle d'une position
+   qu'il faut nommer. PAS de `max-width` ici, contrairement aux textes de la
+   fiche : la mesure de confort protège un paragraphe, pas une phrase unique —
+   à 68ch et dans cette petite taille, celle-ci se cassait en deux lignes
+   courtes sous le titre. La largeur de la page suffit à la tenir. */
+.fiche-section__precision {
+  margin-top: calc(var(--space-4) * -1 + var(--space-1));
+  margin-bottom: var(--space-4);
+  font-size: var(--label-caps-size);
+}
+
+/* --- Les listes de passes --- */
+
+.fiche-passes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fiche-passe-lien {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* Survol : accent-soft + bordure accent (chip de passe, DESIGN.md). */
+.fiche-passe-lien:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.fiche-passe-nom {
+  font-weight: 600;
+}
+
+.fiche-passe-cible {
+  font-size: var(--label-caps-size);
+}
+
+.fiche-passe-difficulte {
+  margin-left: auto;
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-container);
+  color: var(--muted);
+  border-radius: var(--rounded-sm);
+  text-transform: uppercase;
+}
+
+/* --- Les changements de prise (Story 4.7) --- */
+
+/*
+ * L'icone dans le titre de section : ces listes ne parlent pas de passes, et
+ * l'oeil doit le voir avant de lire. Les sections de passes n'en portent pas —
+ * c'est le cas ordinaire, il n'a rien à signaler.
+ */
+.fiche-section__icone {
+  margin-right: var(--space-2);
+  color: var(--accent);
+  vertical-align: -0.15em;
+}
+
+/*
+ * Une transition n'est PAS un lien vers elle-meme : elle n'a pas de fiche, ce
+ * n'est pas un objet qu'on consulte. La carte n'est donc pas cliquable dans son
+ * ensemble, contrairement à celle d'une passe — seule l'autre position l'est,
+ * et c'est elle qui prolonge l'exploration.
+ */
+.fiche-transition {
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+}
+
+.fiche-transition__ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+/*
+ * LA FLECHE POINTE TOUJOURS A DROITE, dans les deux sens de lecture : c'est ce
+ * qui permet de mélanger les deux dans une seule liste. Ce qui change de place,
+ * c'est le geste — à gauche quand il part d'ici, à droite quand il y mène.
+ * En accent, comme la flèche de trajet des cartes Enchaînement : c'est la
+ * couleur du graphe dans tout le produit.
+ */
+.fiche-transition__fleche {
+  color: var(--accent);
+}
+
+/* La POSITION est atténuée, le GESTE est en gras (`fiche-passe-nom`) : la
+   typographie dit de quel côté de la flèche on se trouve, sans avoir à lire. */
+.fiche-transition__cible {
+  font-size: var(--label-caps-size);
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.fiche-transition__cible:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.fiche-transition__deroule {
+  margin-top: var(--space-2);
+  font-size: var(--body-size);
+  line-height: var(--body-line);
+  max-width: 68ch;
+}

@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-02 (note : fiche passe, voisines et troncage des listes)
+# last_updated: 2026-09-02 (fiche passe : passes voisines et transitions livrees ; troncage en pause)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -1371,6 +1371,39 @@ action_items:
       position, deja ecrite). Le troncage generalise avec compteur juste :
       moyenne — il touche les deux fiches. La moitie enchainements : moyenne,
       et c est la Story 5-6 qui la porte, avec le filtre `?passe=` en prime.
+    avancement: >
+      2026-09-02, branche `feat/fiche-passe-voisines`. LA MOITIE « PASSES » EST
+      LIVREE, LE TRONCAGE EST MIS EN PAUSE (decision d Alain le meme jour : « pas
+      encore clair pour moi, peut-etre en V2 »). La demande a ete reformulee par
+      lui en trois listes, et c est celle-la qui a ete faite : passes qui menent
+      a la position de DEBUT, passes qui partent de la position de FIN, et
+      TRANSITIONS partant de la position de fin.
+      La nuance « l incomplet se lit comme exhaustif » est donc refermee par la
+      TROISIEME LISTE et non par un titre etroit : apres une passe, on voit les
+      deux facons de continuer, celle qui coute une passe et celle qui ne coute
+      rien. Les titres nomment quand meme leur position (« Elles partent de
+      Berceau gauche »), parce que sur une fiche passe les listes parlent de
+      DEUX positions dont aucune n est le sujet de la page.
+      Un seul sens pour les transitions (sortant), comme sur les cartes du
+      catalogue : « on aurait pu arriver ici sans passe » repond a une question
+      qui ne se pose plus une fois arrive.
+      LES LISTES SONT ENTIERES, faute de troncage : la pire fiche affiche 44 + 24
+      passes et mesure 24 000 px de haut. C est le prix assume de la pause ; les
+      trois listes sont placees APRES le deroule pour que le contenu de cours ne
+      soit pas repousse hors de vue.
+      DECISION A CONNAITRE : une passe qui part et revient a la meme position
+      (24 des 110) figure dans ses PROPRES listes. Elle se danse reellement deux
+      fois de suite — l ecarter cacherait une option vraie. Verrouille par un
+      test, pour que ca reste un choix et pas un oubli.
+      Code : `voisinesDePasse` (src/catalogue.ts) porte la regle et se teste ;
+      les listes elles-memes sont sorties de la fiche position dans un composant
+      partage `Voisinage` (+ voisinage.css), les deux fiches le rendent.
+      4 tests d integration ajoutes (71 verts), 158 unitaires, 56 e2e, build OK.
+    reste_a_faire: >
+      Le TRONCAGE a un apercu (avec compteur juste, alignement sur les 6 de
+      /recherche, et une destination « voir plus » qui existe) : en pause,
+      peut-etre V2. La moitie ENCHAINEMENTS (+ videos, + filtre `?passe=`) reste
+      entiere et appartient toujours a la Story 5-6, au backlog.
 
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
