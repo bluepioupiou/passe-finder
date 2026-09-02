@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-01 (note : page « comment ca marche »)
+# last_updated: 2026-09-02 (note : fiche passe, voisines et troncage des listes)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -1257,6 +1257,120 @@ action_items:
     taille_estimee: >
       Le texte : petite. Les schemas : moyenne, et c est la que passe le temps.
       La mini-demonstration animee, si elle est retenue : moyenne a elle seule.
+
+  # Demande d Alain le 2026-09-02. Trois morceaux qui tiennent ensemble : deux
+  # listes de PLUS sur la fiche passe, et une regle de TRONCAGE qui vaut pour
+  # toutes les listes de fiche, anciennes comprises.
+  - id: fiche-passe-voisines-et-troncage-des-listes
+    status: open
+    titre: "Fiche passe : ce qui mene ici, ce qui enchaine apres, et troncage des listes a ~5"
+    concerne:
+      - 5-6-fiche-passe-complete-enchainements-videos-reverse-lookup
+      - 2-6-fiche-passe-publique-navigation-vers-les-positions
+      - 2-5-fiche-position-publique-exploration-du-graphe
+    constat: >
+      La fiche PASSE est un cul-de-sac de lecture : elle montre la position de
+      depart et celle d arrivee, et rien de ce qui se danse AVANT ou APRES. La
+      fiche POSITION, elle, fait deja exactement cela avec ses deux listes
+      (« qui partent d ici », « qui arrivent ici »). L eleve qui lit une passe
+      se pose la meme question qu il se pose devant une position — « et
+      ensuite ? » — et doit aujourd hui repasser par la fiche position pour
+      l obtenir.
+      Les enchainements qui utilisent la passe manquent aussi : c est FR-24,
+      deja note en Story 5-6 (backlog), jamais fait — l emplacement est reserve
+      en commentaire dans le composant depuis la 2-6.
+      Et le probleme qui vient avec : ces listes ne sont pas courtes. Sur les
+      positions les plus frequentees, « qui partent d ici » depasse largement ce
+      qui se lit d un coup d oeil, et la fiche charge tout (limit 200) pour tout
+      afficher. Ajouter deux listes de plus a la fiche passe sans regle de
+      troncage empilerait quatre listes longues au-dessus du deroule.
+    demande:
+      - "Sur la fiche PASSE, lister les passes qui MENENT ICI (celles dont la
+         position d arrivee est la position de depart de celle-ci) et celles qui
+         ENCHAINENT APRES (celles qui partent de sa position d arrivee), comme
+         le fait deja la fiche position."
+      - "Sur la fiche PASSE, lister les ENCHAINEMENTS qui la contiennent
+         (FR-24 / Story 5-6)."
+      - "TRONQUER ces listes a un nombre limite — genre 5 — et offrir un lien
+         « voir plus » depuis la fiche pour la suite."
+    nuances_a_instruire:
+      - >
+        LES DEUX NOUVELLES LISTES SONT DEJA AILLEURS, ET C EST LE VRAI
+        ARBITRAGE. « Ce qui enchaine apres cette passe » EST, mot pour mot, la
+        liste « passes qui partent d ici » de sa position d arrivee — deja
+        affichee, a un clic. On ne rajoute donc pas une information, on epargne
+        un clic. Ca peut suffire a justifier le lot (la question « et
+        ensuite ? » se pose DEVANT la passe, pas apres un detour), mais ca doit
+        etre dit : le cout n est pas nul et le gain est un raccourci, pas une
+        donnee neuve. A trancher explicitement avant de coder.
+      - >
+        LES TRANSITIONS FONT PARTIE DE LA REPONSE. Depuis la position d arrivee,
+        on peut aussi changer de prise SANS passe (Story 4.7) — le compositeur
+        le propose. Une fiche qui annonce « ce qui enchaine apres » en ne
+        montrant que les passes donne une reponse incomplete, et l incomplet est
+        pire que l absent : il se lit comme exhaustif. Deux issues acceptables —
+        inclure les transitions dans la meme liste (comme le compositeur), ou
+        nommer la liste assez etroitement (« Passes qui enchainent ») pour
+        qu elle ne promette que ce qu elle tient. Pas d issue « on verra ».
+      - >
+        CHOISIR 5 PARMI 30, C EST CHOISIR. Le troncage n est pas un reglage
+        d affichage, c est un classement : lesquelles montre-t-on ? Alphabetique
+        (stable, mais arbitraire — la fiche mettrait toujours en avant les
+        memes), par difficulte croissante (pedagogique : les plus accessibles
+        d abord, ce qui correspond a l usage reel de la fiche), ou par
+        popularite (nombre d enchainements qui l utilisent — le plus utile, le
+        plus cher, et il faudra le calculer). A trancher ; l ordre alphabetique
+        d aujourd hui est un choix par defaut, pas un choix.
+      - >
+        LE COMPTEUR DOIT RESTER LE TOTAL, PAS 5. Les titres affichent deja
+        « Passes qui partent d ici (12) ». Si le nombre devient celui des
+        elements montres, le « voir plus » ment sur ce qu il cache. Donc compter
+        en base (`totalDocs`) et ne charger que 5 — jamais tout charger pour
+        compter.
+      - >
+        « VOIR PLUS » DOIT MENER QUELQUE PART QUI EXISTE. Pour les passes, la
+        destination est gratuite et coherente : la FICHE POSITION porte deja la
+        liste complete — le lien y renvoie, et la fiche passe redevient un
+        raccourci assume vers elle. Pour les ENCHAINEMENTS, rien n existe :
+        /enchainements filtre par musique, video et auteur, pas par passe. Il
+        faudra soit ajouter un filtre `?passe=<id>`, soit assumer une liste
+        tronquee sans suite. Le lot n est pas symetrique : la moitie
+        « enchainements » coute plus cher que la moitie « passes ».
+      - >
+        LE SITE A DEJA UN APERCU TRONQUE, ET IL VAUT 6. La page /recherche
+        montre `APERCU = 6` resultats par groupe avant « voir tout ». Deux
+        conventions voisines (5 ici, 6 la-bas) et deux libelles voisins
+        (« voir plus », « voir tout ») pour le meme geste, c est du bruit
+        gratuit. Aligner les deux, ou savoir dire pourquoi ils different.
+      - >
+        LA REGLE VAUT AUSSI POUR LA FICHE POSITION, qui est le vrai endroit ou
+        les listes debordent. Ne tronquer que la fiche passe laisserait la
+        version longue exactement la ou le probleme a ete constate. Attention
+        alors a son « voir plus » : la fiche position EST la destination des
+        autres — il lui en faudra une a elle (catalogue pre-filtre, ou depliage
+        sur place).
+      - >
+        LA VISIBILITE DES ENCHAINEMENTS EST UNE REGLE DE COMPTAGE, pas seulement
+        d affichage (ADD-6). Un total de 12 affiche a un lecteur qui n a le droit
+        d en voir que 3 fuite l existence de 9 enchainements prives. Le compteur
+        se calcule sur ce que les `access` laissent passer, comme le menu des
+        auteurs de la liste.
+      - >
+        NE PAS NOYER LE DEROULE. C est le contenu de cours, la raison d etre de
+        la fiche. Quatre listes empilees autour de lui le repousseraient hors de
+        vue sur telephone. L ordre de la fiche est a reprendre EN MEME TEMPS que
+        l ajout, pas apres.
+      - >
+        LE LOT RECOUPE LA STORY 5-6, deja au backlog (enchainements + videos,
+        FR-24 / FR-38). Ne pas ouvrir un doublon : cette note l ETEND (les deux
+        listes de passes voisines, et le troncage) et sa moitie enchainements
+        DOIT s y fondre — y compris la liste des VIDEOS, qui heritera de la meme
+        regle de troncage.
+    taille_estimee: >
+      Les deux listes de passes voisines : petite (meme requete que la fiche
+      position, deja ecrite). Le troncage generalise avec compteur juste :
+      moyenne — il touche les deux fiches. La moitie enchainements : moyenne,
+      et c est la Story 5-6 qui la porte, avec le filtre `?passe=` en prime.
 
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
