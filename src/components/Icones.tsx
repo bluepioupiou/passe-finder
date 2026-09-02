@@ -204,3 +204,58 @@ export function IconeVideo(proprietes: ProprietesIcone) {
     </Svg>
   )
 }
+
+/**
+ * Deux partenaires vus du dessus : une POSITION (fil des nouveautes, E1).
+ *
+ * L'icone reprend la convention des vignettes du catalogue — la position est
+ * un couple, vu d'en haut. Un disque plein et un disque au trait : c'est ce qui
+ * distingue les deux danseurs quand la couleur n'est pas disponible (l'icone
+ * suit `currentColor`, elle n'a qu'une encre).
+ */
+export function IconePosition(proprietes: ProprietesIcone) {
+  return (
+    <Svg {...proprietes}>
+      <circle cx="7.5" cy="12" r="4" />
+      <circle cx="16.5" cy="12" r="4" fill="currentColor" stroke="none" />
+    </Svg>
+  )
+}
+
+/**
+ * Une position, une fleche, une autre position : une PASSE (fil des
+ * nouveautes, E1).
+ *
+ * C'est exactement ce que montre la carte du catalogue (« depart -> arrivee »),
+ * reduit a la taille d'une puce : une passe est une ARETE du graphe (AD-2), et
+ * la fleche est la seule chose qui la distingue d'une position.
+ */
+export function IconePasse(proprietes: ProprietesIcone) {
+  return (
+    <Svg {...proprietes}>
+      <circle cx="4.5" cy="12" r="2.8" />
+      <circle cx="19.5" cy="12" r="2.8" />
+      <line x1="8" y1="12" x2="15.4" y2="12" />
+      <polyline points="13 9.8 15.4 12 13 14.2" />
+    </Svg>
+  )
+}
+
+/**
+ * Le serpentin de la chaine : un ENCHAINEMENT (fil des nouveautes, E1).
+ *
+ * Le trace EST celui de la vue lecture — une ligne vers la droite, on descend,
+ * la suivante repart vers la gauche (voir `chaine-enchainement.css`). Il dit
+ * « une suite ordonnee » la ou une chaine de maillons aurait dit « un lien ».
+ *
+ * Le point plein marque le DEPART : un enchainement se lit dans un sens, et
+ * sans lui le serpentin se lirait aussi bien a l'envers.
+ */
+export function IconeEnchainement(proprietes: ProprietesIcone) {
+  return (
+    <Svg {...proprietes}>
+      <path d="M5 6h10a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h10" />
+      <circle cx="5" cy="6" r="1.5" fill="currentColor" stroke="none" />
+    </Svg>
+  )
+}

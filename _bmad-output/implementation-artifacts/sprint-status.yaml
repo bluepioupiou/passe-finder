@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-02 (fiche passe : passes voisines et transitions livrees ; troncage en pause)
+# last_updated: 2026-09-02 (accueil : fil des nouveautes livre ; fiche passe : voisines livrees, troncage en pause)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -428,6 +428,8 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # <email> » (heritage du scaffold). Maintenant que de vrais comptes existent,
 # publier l email en h1 n a plus de sens. A reprendre avec 5-3 (accueil, E1),
 # qui doit de toute facon remplacer cette page.
+# FAIT le 2026-09-02 avec 5-3 : le h1 est « Passe Finder » pour tout le monde,
+# le compte connecte se lit dans la barre de navigation.
 #
 # 37 unitaires, 21 integration (9 ajoutes), 23 e2e (6 ajoutes), build de prod OK.
 # ---------------------------------------------------------------------------
@@ -1514,7 +1516,13 @@ development_status:
   # la liste « mes favoris » est livree (/favoris) ; « mes enchainements » reste
   # a faire, et le menu de compte l annonce comme a venir
   5-2-profil-a-deux-listes-mes-enchainements-mes-favoris: in-progress
-  5-3-accueil-fil-des-nouveautes: backlog
+  # fil des 10 derniers ajouts, trois types melanges, une icone par type
+  # (position = deux danseurs, passe = A -> B, enchainement = le serpentin de
+  # la chaine) ; enchainements PUBLICS seulement ; etat vide. Le « Bienvenue,
+  # <email> » du scaffold est retire par la meme occasion.
+  # Reste : la vignette prevue par l AC est remplacee par l icone (demande
+  # d Alain), et le fil ne montre pas encore d auteur — il attend le pseudo.
+  5-3-accueil-fil-des-nouveautes: review
   # recherche par nom, filtre difficulte, etat sans resultat. Pas d'onglets :
   # le choix Positions/Passes vit dans la barre de navigation, a un seul endroit.
   # Etendu le 2026-08-30 : /enchainements, meme grille filtrable, meme rythme

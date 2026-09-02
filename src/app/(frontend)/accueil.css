@@ -1,0 +1,90 @@
+/*
+ * Accueil — le fil des nouveautes (E1, UX-DR6). Tokens « Lin & Sauge »
+ * uniquement (voir tokens.css) : aucune valeur en dur.
+ */
+
+.accueil-intro {
+  margin-top: var(--space-2);
+}
+
+.accueil-section {
+  margin-top: var(--space-8);
+}
+
+.accueil-fil {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+
+/* Un FILET entre les lignes, pas une carte par ligne : dix cartes empilees
+   font une grille qu'on parcourt, alors qu'on veut ici une liste qu'on balaie
+   du regard en trois secondes. */
+.accueil-fil > li + li {
+  border-top: 1px solid var(--line);
+}
+
+.nouveaute {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  /* Cible tactile confortable, hauteur de ligne comprise (UX-DR17). */
+  min-height: 56px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--rounded-md);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nouveaute:hover {
+  background: var(--surface-container);
+}
+
+/* La pastille d'icone : c'est elle qui donne au fil son rythme vertical, et
+   qui rend le type lisible avant meme d'avoir lu le titre. */
+.nouveaute__icone {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--rounded-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* `min-width: 0` : sans lui, un titre long refuse de se couper et fait
+   deborder la ligne au lieu de s'abreger. */
+.nouveaute__texte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.nouveaute__titre {
+  font-weight: 600;
+  /* Une seule ligne, coupee a « … » : le fil garde une hauteur reguliere, le
+     titre entier se lit sur la fiche. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nouveaute:hover .nouveaute__titre {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.nouveaute__meta {
+  font-size: var(--label-caps-size);
+  line-height: var(--label-caps-line);
+}
+
+.accueil-portes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
