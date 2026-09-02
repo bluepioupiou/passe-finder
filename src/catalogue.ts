@@ -91,6 +91,80 @@ export async function positionsQuiChangentDePrise(payload: Payload): Promise<Set
 }
 
 /**
+ * Le VOISINAGE d'une passe : ce qui se danse juste avant, juste après.
+ *
+ * Une passe est une ARÊTE du graphe. Ses voisines ne se lisent donc jamais sur
+ * elle, mais sur ses deux EXTRÉMITÉS — et c'est toute la règle :
+ *   - `menentIci`       : les passes qui ARRIVENT à sa position de départ ;
+ *   - `enchainentApres` : les passes qui PARTENT de sa position d'arrivée ;
+ *   - `prisesApres`     : les changements de prise qui partent de son arrivée.
+ *
+ * LES TROIS EXISTENT DÉJÀ sur les fiches position concernées : la fiche passe
+ * n'ajoute pas une information, elle épargne un aller-retour. Assumé — la
+ * question « et ensuite ? » se pose devant la passe, pas après un détour.
+ *
+ * LA TROISIÈME N'EST PAS UN SUPPLÉMENT. Annoncer ce qui enchaîne après en ne
+ * montrant que des passes donnerait une réponse incomplète, et l'incomplet se
+ * lit comme exhaustif : depuis l'arrivée on peut aussi changer de prise sans
+ * danser (Story 4.7), et le compositeur le propose déjà.
+ *
+ * PAS DE SENS ENTRANT POUR LES TRANSITIONS : après une passe, on veut savoir ce
+ * qu'on peut faire. « On aurait pu arriver ici sans passe » répond à une
+ * question qui ne se pose plus — même arbitrage que sur les cartes du catalogue.
+ *
+ * UNE PASSE QUI BOUCLE (départ = arrivée, 24 des 110 du catalogue) figure dans
+ * ses propres listes. Ce n'est pas un défaut : elle se danse réellement deux
+ * fois de suite, et l'écarter cacherait une option vraie.
+ *
+ * `limit: 200` comme la fiche position, et pour la même raison : les listes sont
+ * ENTIÈRES, faute d'un classement qui dirait lesquelles montrer en premier (le
+ * troncage à un aperçu reste au backlog). La plus longue atteint 44 passes.
+ */
+export async function voisinesDePasse(
+  payload: Payload,
+  passe: Pick<Pass, 'positionDebut' | 'positionFin'>,
+): Promise<{ menentIci: Pass[]; enchainentApres: Pass[]; prisesApres: Transition[] }> {
+  const debut = identifiant(passe.positionDebut)
+  const fin = identifiant(passe.positionFin)
+
+  const [menentIci, enchainentApres, prisesApres] = await Promise.all([
+    debut === null
+      ? null
+      : payload.find({
+          collection: 'passes',
+          where: { positionFin: { equals: debut } },
+          limit: 200,
+          depth: 1,
+          sort: 'nom',
+        }),
+    fin === null
+      ? null
+      : payload.find({
+          collection: 'passes',
+          where: { positionDebut: { equals: fin } },
+          limit: 200,
+          depth: 1,
+          sort: 'nom',
+        }),
+    fin === null
+      ? null
+      : payload.find({
+          collection: 'transitions',
+          where: { positionDebut: { equals: fin } },
+          limit: 200,
+          depth: 1,
+          sort: 'nom',
+        }),
+  ])
+
+  return {
+    menentIci: menentIci?.docs ?? [],
+    enchainentApres: enchainentApres?.docs ?? [],
+    prisesApres: prisesApres?.docs ?? [],
+  }
+}
+
+/**
  * Projection du catalogue pour le compositeur (Story 4.2).
  *
  * Ne traverse le reseau que ce que le compositeur affiche : nom, difficulte
