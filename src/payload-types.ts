@@ -210,6 +210,18 @@ export interface Position {
    * Optionnelle. A defaut, le placeholder « no_position » est affiche.
    */
   image?: (number | null) | Media;
+  /**
+   * Composition de l'atelier de schema. Rempli automatiquement.
+   */
+  schemaCompose?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   legacyId?: number | null;
   danse: number | Danse;
   updatedAt: string;
@@ -532,6 +544,7 @@ export interface PositionsSelect<T extends boolean = true> {
   nom?: T;
   description?: T;
   image?: T;
+  schemaCompose?: T;
   legacyId?: T;
   danse?: T;
   updatedAt?: T;

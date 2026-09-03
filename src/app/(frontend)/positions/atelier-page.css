@@ -1,0 +1,28 @@
+/* Pages de l'atelier de schema : « Composer une position » et « Modifier ». */
+
+/* Meme fil d'ariane que les fiches. Redefini ici comme il l'est deja dans
+   chaque fiche : le CSS est groupe par route, pas partage entre elles. */
+.fiche-fil {
+  margin-bottom: var(--space-4);
+  font-size: var(--label-caps-size);
+}
+
+.atelier-entete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 68ch;
+  margin-bottom: var(--space-6);
+}
+
+/* Avertissement affiche quand une composition existe mais n'a pas pu etre
+   relue : la page le DIT au lieu d'ouvrir un atelier vierge, qui laisserait le
+   prochain enregistrement ecraser un travail sans un mot. */
+.atelier-alerte {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background: var(--surface-container);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--rounded-sm);
+  color: var(--ink);
+}

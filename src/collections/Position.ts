@@ -122,6 +122,30 @@ export const Position: CollectionConfig = {
       },
     },
     {
+      name: 'schemaCompose',
+      type: 'json',
+      label: 'Schéma composé',
+      admin: {
+        // Illisible a l'oeil nu et edite par l'atelier, pas au clavier : il n'a
+        // rien a faire dans le formulaire du back-office.
+        hidden: true,
+        description: "Composition de l'atelier de schema. Rempli automatiquement.",
+      },
+      // POURQUOI `admin.hidden` ET NON `hidden: true`, contrairement a
+      // `legacyId` juste en dessous.
+      //
+      // `hidden: true` sort AUSSI le champ des reponses de l'API : il faut
+      // alors `showHiddenFields: true` a chaque relecture. C'est sans risque
+      // pour `legacyId`, que seuls des scripts de migration relisent. Ici, le
+      // champ est relu par une PAGE, a chaque edition — et un oubli n'echouerait
+      // pas : l'atelier s'ouvrirait VIERGE sur une position deja composee, et le
+      // premier enregistrement ecraserait le travail sans un mot.
+      //
+      // Le prix de ce choix est le poids du JSON dans les listes. S'il devient
+      // sensible, la parade est `select` sur les `payload.find` concernes — un
+      // reglage local, reversible, et qui ne peut pas detruire de donnees.
+    },
+    {
       name: 'legacyId',
       type: 'number',
       unique: true,

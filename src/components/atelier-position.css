@@ -1,0 +1,428 @@
+/*
+ * L'atelier de schema de position.
+ *
+ * UNE DEVIATION ASSUMEE A LA REGLE « toutes les valeurs viennent de tokens.css ».
+ * Les couleurs du DESSIN (#CCFFCC, #B9E0E5, #FF99CC, #FFFF00) n'apparaissent pas
+ * ici et n'entreront jamais dans les tokens : ce ne sont pas des couleurs
+ * d'interface mais des DONNEES du domaine, relevees sur quinze ans de vignettes,
+ * et elles doivent rester identiques en theme clair comme en theme sombre. Elles
+ * vivent dans `src/dessin-position.ts`, et nulle part ailleurs.
+ *
+ * Tout le reste — le chrome de l'atelier — suit la regle habituelle.
+ */
+
+.atelier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── Le canevas ──────────────────────────────────────────────────────────── */
+
+.atelier__canevas {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+  overflow: hidden;
+  /*
+   * SANS CECI, RIEN NE BOUGE AU DOIGT. Le navigateur interprete un glissement
+   * tactile comme un defilement de page et ne transmet plus les `pointermove`.
+   * C'est le defaut numero un de ce genre d'editeur.
+   */
+  touch-action: none;
+}
+
+.atelier__canevas .scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.scene__piece {
+  cursor: grab;
+}
+
+.scene__piece:active {
+  cursor: grabbing;
+}
+
+.scene__halo {
+  fill: none;
+  stroke: var(--accent);
+  stroke-opacity: 0.55;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+/* ── La mire ─────────────────────────────────────────────────────────────── */
+
+.atelier__mire-hors-champ {
+  /* Les coins SERONT bien exportes en vert : ce voile dit seulement que
+     personne ne les verra, puisque le site arrondit toute vignette. */
+  fill: rgb(0 0 0 / 0.22);
+}
+
+.atelier__mire-bord {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-dasharray: 14 10;
+  opacity: 0.9;
+}
+
+.atelier__mire-sure {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 12;
+  opacity: 0.5;
+}
+
+.atelier__mire-centre {
+  stroke: var(--accent);
+  stroke-width: 3;
+  opacity: 0.8;
+}
+
+.atelier__aide,
+.atelier__note {
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  font-size: var(--data-size);
+  line-height: var(--data-line);
+}
+
+.atelier__aide {
+  max-width: 60ch;
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* ── Les blocs de commandes ──────────────────────────────────────────────── */
+
+.atelier__commandes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.atelier__bloc {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+  padding: var(--space-4);
+}
+
+.atelier__titre {
+  margin: 0 0 var(--space-3);
+  font-size: var(--headline-size);
+  font-weight: var(--headline-weight);
+  line-height: var(--headline-line);
+}
+
+.atelier__legende {
+  padding: 0;
+  color: var(--muted);
+  font-size: var(--label-caps-size);
+  font-weight: var(--label-caps-weight);
+  letter-spacing: var(--label-caps-tracking);
+  text-transform: uppercase;
+}
+
+.atelier__vide {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* ── La palette d'ajout ──────────────────────────────────────────────────── */
+
+.atelier__palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+}
+
+.atelier__ajout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  /* Cible tactile confortable (UX-DR17). */
+  min-height: 44px;
+  padding: var(--space-3);
+  background: var(--surface-container);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--data-size);
+  cursor: pointer;
+}
+
+.atelier__ajout:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.atelier__ajout:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* L'apercu est rendu par le MEME module que le canevas : la palette ne peut
+   donc pas mentir sur ce qu'elle ajoute. */
+.atelier__apercu {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--rounded-sm);
+}
+
+.atelier__tailles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.atelier__taille,
+.atelier__ligne button,
+.atelier__outils button {
+  min-height: 32px;
+  min-width: 32px;
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-sm);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--data-size);
+  cursor: pointer;
+}
+
+.atelier__taille[aria-pressed='true'],
+.atelier__ligne button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  /* La couleur n'est jamais SEULE a porter l'information. */
+  font-weight: 700;
+}
+
+.atelier__taille:disabled,
+.atelier__ligne button:disabled,
+.atelier__outils button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── La pile des pieces ──────────────────────────────────────────────────── */
+
+.atelier__pile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.atelier__rang {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--surface-container);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded);
+}
+
+.atelier__rang--choisi {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.atelier__choisir {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  /* La ligne de la pile, elle, respecte les 44 px : c'est le chemin de
+     selection fiable, au doigt comme au clavier. */
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: 0;
+  border-radius: var(--rounded);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--data-size);
+  text-align: left;
+  cursor: pointer;
+}
+
+.atelier__vignette {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-sm);
+}
+
+.atelier__outils {
+  display: flex;
+  gap: var(--space-1);
+  padding-right: var(--space-2);
+}
+
+.atelier__retirer {
+  color: var(--danger);
+}
+
+/* ── Reglages de la piece choisie ────────────────────────────────────────── */
+
+.atelier__ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.atelier__ligne .atelier__note {
+  margin: 0;
+}
+
+.atelier__valeur {
+  font-family: var(--font-mono);
+  font-size: var(--data-size);
+  color: var(--muted);
+}
+
+.atelier__reglage {
+  margin-bottom: var(--space-4);
+}
+
+.atelier__reglage label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--data-size);
+}
+
+.atelier__reglage input[type='range'] {
+  width: 100%;
+  min-height: 32px;
+  accent-color: var(--accent);
+}
+
+.atelier__graduation {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--data-size);
+}
+
+/* ── Formulaire ──────────────────────────────────────────────────────────── */
+
+.atelier__formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.atelier__champ label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--data-size);
+  font-weight: 600;
+}
+
+.atelier__champ input,
+.atelier__champ textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-sm);
+  color: var(--ink);
+  font: inherit;
+}
+
+.atelier__champ textarea {
+  resize: vertical;
+}
+
+.atelier__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.atelier__enregistrer {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-5);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--rounded-sm);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.atelier__enregistrer:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.atelier__annuler {
+  color: var(--muted);
+  font-size: var(--data-size);
+}
+
+.atelier__erreur {
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--surface-container);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--rounded-sm);
+  color: var(--danger);
+}
+
+/* Annonce des lecteurs d'ecran : presente dans l'arbre, invisible a l'oeil. */
+.atelier__annonce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── Deux colonnes des que la place le permet ────────────────────────────── */
+
+@media (min-width: 900px) {
+  .atelier {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .atelier__plan {
+    position: sticky;
+    top: var(--space-4);
+  }
+
+  .atelier__canevas {
+    max-width: none;
+  }
+}
