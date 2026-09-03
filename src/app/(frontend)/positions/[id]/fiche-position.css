@@ -54,3 +54,10 @@
   line-height: var(--body-line);
   max-width: 68ch;
 }
+
+/* Lien vers l'atelier, visible des seuls administrateurs (Story atelier).
+   Discret : la fiche reste une page de lecture, l'edition n'est pas son sujet. */
+.fiche-modifier {
+  margin: 0;
+  font-size: var(--data-size);
+}

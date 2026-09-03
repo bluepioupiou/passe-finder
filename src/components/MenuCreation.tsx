@@ -67,6 +67,14 @@ export function MenuCreation() {
           >
             Créer un enchaînement
           </Link>
+          <Link
+            className="menu-creation__item"
+            role="menuitem"
+            href="/positions/nouvelle"
+            onClick={() => setOuvert(false)}
+          >
+            Composer une position
+          </Link>
         </div>
       ) : null}
     </div>

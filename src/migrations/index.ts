@@ -11,6 +11,7 @@ import * as migration_20260901_042354_titre_normalise from './20260901_042354_ti
 import * as migration_20260901_075115_transition from './20260901_075115_transition';
 import * as migration_20260901_155620_pseudo from './20260901_155620_pseudo';
 import * as migration_20260901_200844_identifiant_public_et_visibilites from './20260901_200844_identifiant_public_et_visibilites';
+import * as migration_20260902_211457_schema_position from './20260902_211457_schema_position';
 
 export const migrations = [
   {
@@ -76,6 +77,11 @@ export const migrations = [
   {
     up: migration_20260901_200844_identifiant_public_et_visibilites.up,
     down: migration_20260901_200844_identifiant_public_et_visibilites.down,
-    name: '20260901_200844_identifiant_public_et_visibilites'
+    name: '20260901_200844_identifiant_public_et_visibilites',
+  },
+  {
+    up: migration_20260902_211457_schema_position.up,
+    down: migration_20260902_211457_schema_position.down,
+    name: '20260902_211457_schema_position'
   },
 ];

@@ -3,9 +3,11 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { estAdmin } from '@/collections/acces'
 import { ImagePosition } from '@/components/ImagePosition'
 import { ListePasses, Transitions } from '@/components/Voisinage'
 import config from '@/payload.config'
+import { sessionCourante } from '@/porte'
 import './fiche-position.css'
 
 export const dynamic = 'force-dynamic'
@@ -40,6 +42,12 @@ export default async function FichePosition({ params }: { params: Promise<{ id: 
     .catch(() => null)
 
   if (!position) notFound()
+
+  // La fiche reste PUBLIQUE : on ne lit la session que pour decider d'afficher
+  // ou non le lien vers l'atelier. `sessionCourante` ne redirige jamais, donc un
+  // visiteur anonyme ne voit qu'une fiche sans ce lien. La page est deja
+  // `force-dynamic` : rien a changer cote cache.
+  const utilisateur = await sessionCourante()
 
   const [sortantes, entrantes, prisesDepuis, prisesVers] = await Promise.all([
     payload.find({
@@ -87,6 +95,11 @@ export default async function FichePosition({ params }: { params: Promise<{ id: 
           <h1>{position.nom}</h1>
           {position.description ? (
             <p className="fiche-description texte-attenue">{position.description}</p>
+          ) : null}
+          {estAdmin(utilisateur) ? (
+            <p className="fiche-modifier">
+              <Link href={`/positions/${position.id}/modifier`}>Modifier le schéma</Link>
+            </p>
           ) : null}
         </div>
       </header>
