@@ -99,9 +99,9 @@ function compositionEtalon(taille: number): SchemaPosition {
   const ecart = taille * 0.21
   const pieces: Piece[] = [
     // Le bras gris passe DERRIERE : il est pose en premier, donc dessine dessous.
-    { id: 'g1', type: 'bras', longueur: 300, courbure: 0.5, aplatissement: 1, couleur: 'gris', x: -ecart, y: 0, rotation: 40 },
-    { id: 'n1', type: 'bras', longueur: 270, courbure: 0.5, aplatissement: 1, couleur: 'noir', x: -ecart, y: 0, rotation: 300 },
-    { id: 'n2', type: 'bras', longueur: 270, courbure: 0.5, aplatissement: 1, couleur: 'noir', x: ecart, y: 0, rotation: 120 },
+    { id: 'g1', type: 'bras', longueur: 300, courbure: 0.5, aplatissement: 1, tete: null, cote: null, couleur: 'gris', x: -ecart, y: 0, rotation: 40 },
+    { id: 'n1', type: 'bras', longueur: 270, courbure: 0.5, aplatissement: 1, tete: null, cote: null, couleur: 'noir', x: -ecart, y: 0, rotation: 300 },
+    { id: 'n2', type: 'bras', longueur: 270, courbure: 0.5, aplatissement: 1, tete: null, cote: null, couleur: 'noir', x: ecart, y: 0, rotation: 120 },
     // Les tetes en dernier : elles masquent le depart des bras.
     { id: 't1', type: 'tete', genre: 'cavalier', x: -ecart, y: 0, rotation: 180 },
     { id: 't2', type: 'tete', genre: 'cavaliere', x: ecart, y: 0, rotation: 20 },
@@ -119,6 +119,8 @@ function eventailBras(longueur: number, courbure: number, aplatissement = 1): st
     longueur,
     courbure,
     aplatissement,
+    tete: null,
+    cote: null,
     couleur: 'noir',
     x: 0,
     y: 0,

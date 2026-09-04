@@ -83,19 +83,24 @@ test.describe('Atelier de schéma de position', () => {
     await page.goto('/positions/nouvelle')
     await expect(page.getByRole('heading', { name: 'Composer une position' })).toBeVisible()
 
-    // ── Poser les pieces ───────────────────────────────────────────────────
-    await page.getByRole('button', { name: 'Cavalier', exact: true }).click()
-    await page.getByRole('button', { name: 'Cavalière', exact: true }).click()
-    await page.getByRole('button', { name: 'Bras noir' }).click()
-    await page.getByRole('button', { name: 'Bras gris' }).click()
-
+    // ── La scene de depart : un couple complet, quatre bras compris ────────
     const pile = page.locator('.atelier__pile > li')
-    await expect(pile).toHaveCount(4)
+    await expect(pile).toHaveCount(6)
+    await expect(pile.filter({ hasText: 'Bras gauche du cavalier' })).toHaveCount(1)
+    await expect(pile.filter({ hasText: 'Bras droit de la cavalière' })).toHaveCount(1)
 
-    // ── Tourner, et verifier l'annonce destinee aux lecteurs d'ecran ───────
+    // ── Tourner une tete : ses bras doivent suivre ─────────────────────────
+    await pile.filter({ hasText: 'Cavalier ·' }).getByRole('button').first().click()
     await page.getByRole('button', { name: 'Tourner vers la droite' }).click()
-    await page.getByRole('button', { name: 'Tourner vers la droite' }).click()
-    await expect(page.locator('.atelier__annonce')).toContainText('60 degrés')
+    await expect(page.locator('.atelier__annonce')).toContainText('210 degrés')
+
+    // Les bras du cavalier ont pris les memes 30 degres : leur libelle le dit.
+    await expect(pile.filter({ hasText: 'Bras gauche du cavalier · 300°' })).toHaveCount(1)
+    await expect(pile.filter({ hasText: 'Bras droit du cavalier · 120°' })).toHaveCount(1)
+
+    // ── Un bras ajoute se rattache a la tete choisie ───────────────────────
+    await page.getByRole('button', { name: 'Bras droit', exact: true }).click()
+    await expect(pile).toHaveCount(7)
 
     // ── Reordonner : le geste « qui passe par-dessus qui » ─────────────────
     await page.locator('.atelier__outils button[title="Monter d’un rang"]').last().click()
@@ -138,7 +143,7 @@ test.describe('Atelier de schéma de position', () => {
     // sur `schemaCompose` : un champ absent des reponses ouvrirait un atelier
     // vierge, et cet enregistrement-ci ecraserait le travail.
     await page.getByRole('link', { name: 'Modifier le schéma' }).click()
-    await expect(page.locator('.atelier__pile > li')).toHaveCount(4)
+    await expect(page.locator('.atelier__pile > li')).toHaveCount(7)
 
     // Deplacer au clavier, puis reenregistrer.
     await page.locator('.atelier__pile > li').first().getByRole('button').first().click()
@@ -147,7 +152,7 @@ test.describe('Atelier de schéma de position', () => {
 
     await page.waitForURL(/\/positions\/\d+$/)
     await page.getByRole('link', { name: 'Modifier le schéma' }).click()
-    await expect(page.locator('.atelier__pile > li')).toHaveCount(4)
+    await expect(page.locator('.atelier__pile > li')).toHaveCount(7)
 
     // Une nouvelle image a bien ete produite : la position ne pointe plus sur
     // le meme fichier qu'au premier enregistrement.
@@ -182,8 +187,9 @@ test.describe('Atelier de schéma de position', () => {
 
     await page.goto(`/positions/${historique.id}/modifier`)
 
-    // Atelier vierge…
-    await expect(page.getByText(/Aucune pièce/)).toBeVisible()
+    // Atelier vierge — le couple par defaut ne doit PAS s'y inviter : il
+    // ajouterait des pieces a un schema qu'on vient de relire.
+    await expect(page.locator('.atelier__pile > li')).toHaveCount(0)
     // …mais l'ancienne image est bien posee sous le canevas, et son curseur
     // d'opacite est la pour la reculer une fois le decalque commence.
     await expect(page.locator('.atelier__canevas image')).toHaveCount(1)

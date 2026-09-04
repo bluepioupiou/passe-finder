@@ -1,4 +1,4 @@
-import type { Piece, PieceBras, SchemaPosition } from './schema-position'
+import { teteDuBras, type Piece, type PieceBras, type PieceTete, type SchemaPosition } from './schema-position'
 
 /**
  * La GEOMETRIE des schemas de position : ce qui dessine, par opposition a
@@ -272,19 +272,64 @@ const mainEn = (cx: number, cy: number): Primitive => ({
   epaisseur: TRAIT_MAIN,
 })
 
-/** Les traits d'une piece, dans son repere local (origine = centre de tete). */
-export function primitivesDePiece(piece: Piece): Primitive[] {
+/**
+ * La teinte d'un bras : celle de sa tete s'il en a une, sa couleur propre sinon.
+ *
+ * C'est ce qui rend l'appartenance lisible sans suivre le trait jusqu'a
+ * l'epaule — et c'est aussi ce qui a permis de retirer le couple noir/gris :
+ * l'ordre de superposition dit deja qui passe au-dessus de qui, la couleur n'a
+ * plus a le redire.
+ */
+export function teinteDuBras(bras: PieceBras, tete: PieceTete | null): string {
+  if (!tete) return COULEUR[bras.couleur]
+  return tete.genre === 'cavalier' || tete.genre === 'bleue-nue' ? COULEUR.bleu : COULEUR.rose
+}
+
+/**
+ * Les traits d'une piece, dans son repere local (origine = centre de tete).
+ *
+ * `teinte` n'a de sens que pour un bras rattache : elle vient de sa tete, que
+ * cette fonction ne peut pas atteindre seule. Absente, le bras retombe sur sa
+ * couleur propre — c'est le cas des bras libres et des apercus isoles.
+ */
+export function primitivesDePiece(piece: Piece, teinte?: string): Primitive[] {
   if (piece.type === 'bras') {
     const { d, fin } = traceBras(piece)
+    const bande = teinte ?? COULEUR[piece.couleur]
+
+    /*
+     * UN BRAS TEINTE SE DESSINE COMME UNE TETE : une bande pleine, cernee de
+     * noir. Sans ce cerne, le bleu pale sur le fond vert n'a pas assez de
+     * contraste pour un trait de 13 unites — a la taille ou le site affiche
+     * ses vignettes, le bras bleu disparaissait. Le noir porte le contraste,
+     * la teinte porte l'appartenance.
+     *
+     * Un bras NOIR OU GRIS, lui, n'a rien a cerner : il se suffit, et le cerner
+     * changerait le dessin des schemas faits avant les teintes.
+     */
+    const cerne = bande !== COULEUR.noir && bande !== COULEUR.gris
+
+    const trait: Primitive = {
+      forme: 'chemin',
+      d,
+      remplissage: 'none',
+      contour: bande,
+      epaisseur: EP_BRAS,
+      arrondi: true,
+    }
+
+    if (!cerne) return [trait, mainEn(fin.x, fin.y)]
+
     return [
       {
         forme: 'chemin',
         d,
         remplissage: 'none',
-        contour: COULEUR[piece.couleur],
-        epaisseur: EP_BRAS,
+        contour: COULEUR.noir,
+        epaisseur: EP_BRAS + TRAIT,
         arrondi: true,
       },
+      trait,
       mainEn(fin.x, fin.y),
     ]
   }
@@ -333,7 +378,11 @@ export function piecesDessinees(schema: SchemaPosition): PieceDessinee[] {
   return schema.pieces.map((piece) => ({
     id: piece.id,
     transform: `translate(${n(piece.x)} ${n(piece.y)}) rotate(${n(piece.rotation)})`,
-    primitives: primitivesDePiece(piece),
+    primitives: primitivesDePiece(
+      piece,
+      // Le schema est le seul endroit d'ou l'on peut remonter du bras a sa tete.
+      piece.type === 'bras' ? teinteDuBras(piece, teteDuBras(schema, piece)) : undefined,
+    ),
   }))
 }
 

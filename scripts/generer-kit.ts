@@ -66,6 +66,10 @@ const bras = (longueur: number, sens: keyof typeof SENS, couleur: CouleurBras): 
   type: 'bras',
   longueur,
   courbure: SENS[sens] * COURBURE_KIT,
+  // Le kit ne connait que des bras LIBRES : il exporte des pieces isolees, sans
+  // tete a qui les rattacher. Ils gardent donc le couple noir/gris.
+  tete: null,
+  cote: null,
   // Le kit historique ne connaissait que l'arc de CERCLE : le repli est arrive
   // apres, avec l'atelier. `APLATISSEMENT_ROND` le redonne a l'identique.
   aplatissement: APLATISSEMENT_ROND,

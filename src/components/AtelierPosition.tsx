@@ -7,6 +7,10 @@ import {
   aimanter,
   ajouterAuBonRang,
   ajusterBras,
+  angleDEpaule,
+  brasPour,
+  scenePardefaut,
+  teteDuBras,
   APLATISSEMENT_MAX,
   APLATISSEMENT_MIN,
   APLATISSEMENT_ROND,
@@ -23,11 +27,12 @@ import {
   pointVersToile,
   reordonner,
   retirer,
-  schemaVide,
   TAILLES,
   tourner,
-  type CouleurBras,
+  type Cote,
   type GenreTete,
+  type PieceBras,
+  type PieceTete,
   type Piece,
   type ResultatPosition,
   type SaisiePosition,
@@ -65,8 +70,6 @@ import './atelier-position.css'
 
 type Informations = { nom: string; description: string }
 
-const NOUVEAU_BRAS = { longueur: 260, courbure: 0.5, aplatissement: APLATISSEMENT_ROND } as const
-
 // ── Libelles ───────────────────────────────────────────────────────────────
 
 const GENRES: { valeur: GenreTete; libelle: string }[] = [
@@ -76,7 +79,28 @@ const GENRES: { valeur: GenreTete; libelle: string }[] = [
   { valeur: 'rose-nue', libelle: 'Tête rose nue' },
 ]
 
-function nomDePiece(piece: Piece): string {
+/** « du cavalier », « de la cavaliere »… — la forme qui se colle a « Bras gauche ». */
+const COTE_ADJECTIF: Record<Cote, string> = { gauche: 'gauche', droite: 'droit' }
+
+const APPARTENANCE: Record<GenreTete, string> = {
+  cavalier: 'du cavalier',
+  cavaliere: 'de la cavalière',
+  'bleue-nue': 'de la tête bleue',
+  'rose-nue': 'de la tête rose',
+}
+
+/**
+ * Le nom d'une piece dans la pile.
+ *
+ * UN BRAS SE NOMME PAR SON EPAULE ET SON DANSEUR — « Bras gauche du cavalier ».
+ * C'est ce qu'on cherche quand on parcourt la liste : a qui appartient ce
+ * trait. La forme du bras, elle, se lit sur la vignette a cote du libelle ;
+ * l'ecrire en plus allongeait la ligne sans rien apprendre.
+ *
+ * Le schema est necessaire parce qu'un bras ne connait que l'IDENTIFIANT de sa
+ * tete : c'est lui qui permet de remonter jusqu'a son genre.
+ */
+function nomDePiece(piece: Piece, schema: SchemaPosition): string {
   if (piece.type === 'tete') {
     return GENRES.find((genre) => genre.valeur === piece.genre)?.libelle ?? 'Tête'
   }
@@ -85,18 +109,16 @@ function nomDePiece(piece: Piece): string {
     if (piece.motif === 'queue-de-cheval') return 'Queue de cheval'
     return 'Main'
   }
-  const taille = piece.longueur < 190 ? 'court' : piece.longueur < 320 ? 'moyen' : 'long'
-  const forme = piece.courbure === 0 ? 'droit' : piece.courbure > 0 ? 'horaire' : 'antihoraire'
-  // L'ellipse ne se dit que lorsqu'elle s'ecarte du rond : sinon chaque libelle
-  // porterait un mot qui n'apprend rien.
-  const ellipse =
-    piece.aplatissement < 0.75 ? ' · épingle' : piece.aplatissement > 1.3 ? ' · étiré' : ''
-  return `Bras ${piece.couleur} · ${taille} · ${forme}${ellipse}`
+
+  const tete = teteDuBras(schema, piece)
+  if (!tete || !piece.cote) return `Bras libre ${piece.couleur}`
+  // « droite » nomme l'epaule, mais l'adjectif s'accorde avec « bras » : droit.
+  return `Bras ${COTE_ADJECTIF[piece.cote]} ${APPARTENANCE[tete.genre]}`
 }
 
 /** Le libelle complet d'une ligne de pile, aussi utilise pour les annonces. */
-const descriptionDePiece = (piece: Piece) =>
-  `${nomDePiece(piece)} · ${Math.round(piece.rotation)}°`
+const descriptionDePiece = (piece: Piece, schema: SchemaPosition) =>
+  `${nomDePiece(piece, schema)} · ${Math.round(piece.rotation)}°`
 
 // ── La mire ────────────────────────────────────────────────────────────────
 
@@ -143,7 +165,7 @@ export function AtelierPosition({
    *  ferait rendre tout l'atelier des dizaines de fois par seconde. */
   const glisser = useRef<{ id: string; dx: number; dy: number } | null>(null)
 
-  const [schema, setSchema] = useState<SchemaPosition>(initial?.schema ?? schemaVide())
+  const [schema, setSchema] = useState<SchemaPosition>(initial?.schema ?? scenePardefaut())
   const [informations, setInformations] = useState<Informations>(
     initial?.informations ?? { nom: '', description: '' },
   )
@@ -184,32 +206,57 @@ export function AtelierPosition({
       rotation: genre === 'cavalier' ? 180 : 0,
     }
     setSelection(piece.id)
-    appliquer(ajouterAuBonRang(schema, piece), `${nomDePiece(piece)} ajouté.`)
+    appliquer(ajouterAuBonRang(schema, piece), `${nomDePiece(piece, schema)} ajouté.`)
   }
 
-  const ajouterBras = (couleur: CouleurBras) => {
-    // Un bras appartient a une tete : on le pose sur celle qui est selectionnee,
-    // sinon sur la derniere ajoutee. Il est ainsi deja emboite, et il ne reste
-    // qu'a l'orienter.
-    const hote =
-      (pieceSelectionnee?.type === 'tete' ? pieceSelectionnee : null) ??
-      [...schema.pieces].reverse().find((piece) => piece.type === 'tete') ??
-      null
-
-    const piece: Piece = {
-      id: identifiant(),
-      type: 'bras',
-      ...NOUVEAU_BRAS,
-      couleur,
-      x: hote?.x ?? 0,
-      y: hote?.y ?? 0,
-      rotation: 0,
+  /** La tete a qui rattacher un nouveau bras : celle qui est choisie, celle du
+   *  bras choisi, ou la derniere posee. */
+  const teteHote = (): PieceTete | null => {
+    if (pieceSelectionnee?.type === 'tete') return pieceSelectionnee
+    if (pieceSelectionnee?.type === 'bras') {
+      const tete = teteDuBras(schema, pieceSelectionnee)
+      if (tete) return tete
     }
-    setSelection(piece.id)
-    appliquer(
-      ajouterAuBonRang(schema, piece),
-      `Bras ${couleur} ajouté${hote ? ' sur la tête' : ''}.`,
+    return (
+      [...schema.pieces].reverse().find((piece): piece is PieceTete => piece.type === 'tete') ?? null
     )
+  }
+
+  const ajouterBras = (cote: Cote) => {
+    const hote = teteHote()
+
+    // Sans tete a qui l'attacher, le bras nait LIBRE et noir : c'est le cas
+    // marginal (canevas vide), pas la norme, mais il ne doit pas etre interdit.
+    const piece: PieceBras = hote
+      ? brasPour(hote, cote, identifiant())
+      : {
+          id: identifiant(),
+          type: 'bras',
+          longueur: 200,
+          courbure: cote === 'gauche' ? 0.8 : -0.8,
+          aplatissement: 0.45,
+          tete: null,
+          cote: null,
+          couleur: 'noir',
+          x: 0,
+          y: 0,
+          rotation: 0,
+        }
+
+    setSelection(piece.id)
+    appliquer(ajouterAuBonRang(schema, piece), `${nomDePiece(piece, schema)} ajouté.`)
+  }
+
+  /** Remet un bras a l'angle de son epaule, apres l'avoir fait tourner a la main. */
+  const replacerSurLEpaule = (bras: PieceBras) => {
+    const tete = teteDuBras(schema, bras)
+    if (!tete || !bras.cote) return
+    const suivant = tourner(
+      schema,
+      bras.id,
+      angleDEpaule(tete.rotation, bras.cote) - bras.rotation,
+    )
+    appliquer(suivant, `${nomDePiece(bras, schema)} remis sur l’épaule.`)
   }
 
   // ── Gestes sur une piece ─────────────────────────────────────────────────
@@ -218,13 +265,13 @@ export function AtelierPosition({
     const pas = (fin ? PAS_ROTATION_FIN : PAS_ROTATION) * sens
     const suivant = tourner(schema, id, pas)
     const piece = suivant.pieces.find((autre) => autre.id === id)!
-    appliquer(suivant, `${nomDePiece(piece)} tourné à ${Math.round(piece.rotation)} degrés.`)
+    appliquer(suivant, `${nomDePiece(piece, suivant)} tourné à ${Math.round(piece.rotation)} degrés.`)
   }
 
   const bouger = (id: string, dx: number, dy: number) => {
     const suivant = deplacer(schema, id, dx, dy)
     const piece = suivant.pieces.find((autre) => autre.id === id)!
-    appliquer(suivant, `${nomDePiece(piece)} déplacé, x ${Math.round(piece.x)}, y ${Math.round(piece.y)}.`)
+    appliquer(suivant, `${nomDePiece(piece, suivant)} déplacé, x ${Math.round(piece.x)}, y ${Math.round(piece.y)}.`)
   }
 
   const deplacerDansLaPile = (id: string, vers: 1 | -1) => {
@@ -232,7 +279,7 @@ export function AtelierPosition({
     if (!piece) return
     appliquer(
       reordonner(schema, id, vers),
-      `${nomDePiece(piece)} ${vers === 1 ? 'monté' : 'descendu'} d’un rang.`,
+      `${nomDePiece(piece, schema)} ${vers === 1 ? 'monté' : 'descendu'} d’un rang.`,
     )
   }
 
@@ -240,7 +287,7 @@ export function AtelierPosition({
     const piece = schema.pieces.find((autre) => autre.id === id)
     if (!piece) return
     if (selection === id) setSelection(null)
-    appliquer(retirer(schema, id), `${nomDePiece(piece)} supprimé.`)
+    appliquer(retirer(schema, id), `${nomDePiece(piece, schema)} supprimé.`)
   }
 
   const copier = (id: string) => {
@@ -292,7 +339,7 @@ export function AtelierPosition({
       setSchema((actuel) => {
         const suivant = aimanter(actuel, id)
         const piece = suivant.pieces.find((autre) => autre.id === id)
-        if (piece) setAnnonce(`${nomDePiece(piece)} posé, x ${Math.round(piece.x)}, y ${Math.round(piece.y)}.`)
+        if (piece) setAnnonce(`${nomDePiece(piece, schema)} posé, x ${Math.round(piece.x)}, y ${Math.round(piece.y)}.`)
         return suivant
       })
     },
@@ -423,33 +470,52 @@ export function AtelierPosition({
               </button>
             ))}
 
-            {(['noir', 'gris'] as CouleurBras[]).map((couleur) => (
+            {(['gauche', 'droite'] as Cote[]).map((cote) => (
               <button
-                key={couleur}
+                key={cote}
                 type="button"
                 className="atelier__ajout"
-                onClick={() => ajouterBras(couleur)}
+                onClick={() => ajouterBras(cote)}
                 disabled={plein}
               >
                 <ScenePosition
                   className="atelier__apercu"
                   schema={{
                     version: 1,
-                    taille: 760,
+                    taille: 820,
                     calque: null,
                     pieces: [
-                      { id: 'apercu', type: 'bras', ...NOUVEAU_BRAS, couleur, x: 0, y: 0, rotation: 0 },
+                      {
+                        id: 'apercu',
+                        type: 'bras',
+                        longueur: 260,
+                        courbure: cote === 'gauche' ? -0.55 : 0.55,
+                        aplatissement: 0.55,
+                        tete: null,
+                        cote: null,
+                        couleur: 'noir',
+                        x: 0,
+                        y: 0,
+                        rotation: cote === 'gauche' ? 270 : 90,
+                      },
                     ],
                   }}
                 />
-                Bras {couleur}
+                Bras {COTE_ADJECTIF[cote]}
               </button>
             ))}
           </div>
 
           <p className="atelier__note">
-            Un bras <strong>gris</strong> passe en dessous, un bras <strong>noir</strong> au-dessus.
-            Le bras ajouté se pose sur la tête sélectionnée.
+            Le bras se rattache à la tête sélectionnée : il en prend la couleur, et la suit quand
+            elle bouge ou pivote. C’est l’ordre de la liste ci-dessous qui dit qui passe au-dessus
+            de qui.
+          </p>
+
+          <p className="atelier__ligne">
+            <button type="button" onClick={() => appliquer(scenePardefaut(schema.taille), 'Couple par défaut posé.')}>
+              Repartir du couple par défaut
+            </button>
           </p>
 
           <fieldset className="atelier__tailles">
@@ -494,7 +560,7 @@ export function AtelierPosition({
                         className="atelier__vignette"
                         schema={{ version: 1, taille: 900, calque: null, pieces: [{ ...piece, x: 0, y: 0 }] }}
                       />
-                      <span>{descriptionDePiece(piece)}</span>
+                      <span>{descriptionDePiece(piece, schema)}</span>
                     </button>
 
                     <span className="atelier__outils">
@@ -502,7 +568,7 @@ export function AtelierPosition({
                         type="button"
                         onClick={() => deplacerDansLaPile(piece.id, 1)}
                         disabled={dessus}
-                        aria-label={`Monter ${nomDePiece(piece)} d’un rang`}
+                        aria-label={`Monter ${nomDePiece(piece, schema)} d’un rang`}
                         title="Monter d’un rang"
                       >
                         ▲
@@ -511,7 +577,7 @@ export function AtelierPosition({
                         type="button"
                         onClick={() => deplacerDansLaPile(piece.id, -1)}
                         disabled={dessous}
-                        aria-label={`Descendre ${nomDePiece(piece)} d’un rang`}
+                        aria-label={`Descendre ${nomDePiece(piece, schema)} d’un rang`}
                         title="Descendre d’un rang"
                       >
                         ▼
@@ -520,7 +586,7 @@ export function AtelierPosition({
                         type="button"
                         onClick={() => copier(piece.id)}
                         disabled={plein}
-                        aria-label={`Dupliquer ${nomDePiece(piece)}`}
+                        aria-label={`Dupliquer ${nomDePiece(piece, schema)}`}
                         title="Dupliquer"
                       >
                         ⧉
@@ -529,7 +595,7 @@ export function AtelierPosition({
                         type="button"
                         className="atelier__retirer"
                         onClick={() => supprimer(piece.id)}
-                        aria-label={`Supprimer ${nomDePiece(piece)}`}
+                        aria-label={`Supprimer ${nomDePiece(piece, schema)}`}
                         title="Supprimer"
                       >
                         ✕
@@ -545,7 +611,7 @@ export function AtelierPosition({
         {/* ── 3. Régler la pièce choisie ─────────────────────────────── */}
         {pieceSelectionnee ? (
           <section className="atelier__bloc">
-            <h2 className="atelier__titre">3. Régler « {nomDePiece(pieceSelectionnee)} »</h2>
+            <h2 className="atelier__titre">3. Régler « {nomDePiece(pieceSelectionnee, schema)} »</h2>
 
             <div className="atelier__ligne">
               <button
@@ -668,23 +734,36 @@ export function AtelierPosition({
                   </p>
                 </div>
 
-                <div className="atelier__ligne">
-                  {(['noir', 'gris'] as CouleurBras[]).map((couleur) => (
-                    <button
-                      key={couleur}
-                      type="button"
-                      aria-pressed={pieceSelectionnee.couleur === couleur}
-                      onClick={() =>
-                        appliquer(
-                          ajusterBras(schema, pieceSelectionnee.id, { couleur }),
-                          `Bras ${couleur}.`,
-                        )
-                      }
-                    >
-                      {couleur === 'noir' ? 'Noir (au-dessus)' : 'Gris (en dessous)'}
+                {teteDuBras(schema, pieceSelectionnee) ? (
+                  <p className="atelier__ligne">
+                    <button type="button" onClick={() => replacerSurLEpaule(pieceSelectionnee)}>
+                      Remettre sur l’épaule
                     </button>
-                  ))}
-                </div>
+                    <span className="atelier__note">
+                      la couleur vient du danseur ; l’ordre de la liste dit qui passe au-dessus
+                    </span>
+                  </p>
+                ) : (
+                  <div className="atelier__ligne">
+                    {/* Un bras LIBRE n'a pas de danseur d'ou tirer sa teinte : il
+                        garde le couple noir/gris des schemas d'avant. */}
+                    {(['noir', 'gris'] as const).map((couleur) => (
+                      <button
+                        key={couleur}
+                        type="button"
+                        aria-pressed={pieceSelectionnee.couleur === couleur}
+                        onClick={() =>
+                          appliquer(
+                            ajusterBras(schema, pieceSelectionnee.id, { couleur }),
+                            `Bras libre ${couleur}.`,
+                          )
+                        }
+                      >
+                        {couleur === 'noir' ? 'Noir (au-dessus)' : 'Gris (en dessous)'}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </>
             ) : null}
 
