@@ -61,3 +61,16 @@ next-env.d.ts
 .DS_Store
 *.pem
 npm-debug.log*
+
+# --- Kit de pieces PNG (images/kit/) ---
+# Ces fichiers sont ENTIEREMENT DERIVES de `src/dessin-position.ts`, d'ou
+# l'atelier du site tire deja ses formes. Le produit ne les lit jamais : il
+# dessine en SVG a la volee. Ils ne servent qu'a decouper un schema hors du
+# site (PowerPoint, un document), et `npm run generer:kit` les reconstruit a
+# l'identique — la non-regression du dessin est verrouillee par les tests
+# unitaires, plus par ces binaires.
+# Versionner 2,5 Mo de PNG dont la source de verite est du code n'apporte rien
+# et alourdit chaque `git clone`. Seuls le mode d'emploi et le generateur
+# restent suivis.
+images/kit/*
+!images/kit/LISEZ-MOI.md
