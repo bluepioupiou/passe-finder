@@ -3,7 +3,7 @@ import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AtelierPosition } from '@/components/AtelierPosition'
-import type { ResultatPosition, SaisiePosition } from '@/schema-position'
+import type { PieceBras, ResultatPosition, SaisiePosition } from '@/schema-position'
 
 /**
  * L'atelier — le CABLAGE, vu depuis les clics.
@@ -47,145 +47,209 @@ const pile = () => screen.getByRole('list')
 const rangs = () => within(pile()).getAllByRole('listitem')
 const annonce = () => screen.getByRole('status')
 
-const ajouter = (nom: string) => fireEvent.click(screen.getByRole('button', { name: nom }))
+/** Une ligne de la pile, choisie par son libelle. */
+const rang = (motif: RegExp) =>
+  rangs().find((ligne) => motif.test(ligne.textContent ?? ''))!
+
+/** Le bouton de SELECTION d'une ligne — pas ses fleches, qui portent le meme
+ *  nom de piece dans leur `aria-label`. */
+const choisir = (motif: RegExp) =>
+  fireEvent.click(within(rang(motif)).getByRole('button', { name: new RegExp(`^${motif.source}`) }))
 
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
 })
 
-describe('ajouter des pièces', () => {
-  it('pose une tête et la fait apparaître dans la pile', () => {
+describe('la scène de départ', () => {
+  it('pose d’emblée un couple complet, quatre bras compris', () => {
+    // Le geste economise : toutes les positions du catalogue ont cette
+    // distribution, la reconstruire a la main serait cinq clics a chaque fois.
     monter()
-    expect(screen.getByText(/Aucune pièce/)).toBeTruthy()
-
-    ajouter('Cavalier')
-
-    expect(rangs()).toHaveLength(1)
-    expect(within(pile()).getByText(/Cavalier/)).toBeTruthy()
-    expect(annonce().textContent).toContain('ajouté')
+    expect(rangs()).toHaveLength(6)
   })
 
-  it('range les bras SOUS les têtes, sans qu on ait a les redescendre', () => {
-    // Sans cette regle, le depart du bras — volontairement trace sous la tete —
-    // deviendrait visible, et le premier geste serait toujours le meme.
+  it('nomme chaque bras par son épaule et son danseur', () => {
     monter()
-    ajouter('Cavalier')
-    ajouter('Bras noir')
+    const libelles = rangs().map((ligne) => ligne.textContent ?? '')
 
-    // La pile se lit du DESSUS vers le dessous : la tete est donc en premier.
-    const [premier, second] = rangs()
-    expect(premier.textContent).toContain('Cavalier')
-    expect(second.textContent).toContain('Bras noir')
+    expect(libelles.some((l) => /Bras gauche du cavalier/.test(l))).toBe(true)
+    expect(libelles.some((l) => /Bras droit du cavalier/.test(l))).toBe(true)
+    expect(libelles.some((l) => /Bras gauche de la cavalière/.test(l))).toBe(true)
+    expect(libelles.some((l) => /Bras droit de la cavalière/.test(l))).toBe(true)
+  })
+
+  it('range les bras SOUS les têtes, du dessus vers le dessous', () => {
+    // La pile se lit du dessus vers le dessous : les tetes viennent donc en
+    // premier, sans quoi le depart des bras — trace sous la tete — serait visible.
+    monter()
+    const libelles = rangs().map((ligne) => ligne.textContent ?? '')
+    expect(libelles[0]).toMatch(/Cavalière/)
+    expect(libelles[1]).toMatch(/Cavalier/)
+    expect(libelles.slice(2).every((l) => /Bras/.test(l))).toBe(true)
   })
 })
 
-describe('la pièce choisie', () => {
-  it('ouvre les réglages quand on clique une ligne de la pile', () => {
-    monter()
-    ajouter('Cavalière')
-    ajouter('Bras noir')
+describe('les bras suivent leur tête', () => {
+  it('emporte les bras quand la tête pivote', () => {
+    // Le coeur de la demande. Chaque bras garde son ecart a l'epaule, donc un
+    // reglage manuel n'est pas perdu — c'est l'ECART qui est reporte.
+    const enregistrer = monter()
+    choisir(/Cavalier ·/)
+    fireEvent.click(screen.getByRole('button', { name: 'Tourner vers la droite' }))
 
-    // Le bras vient d'etre ajoute, donc selectionne : on choisit l'autre.
-    // Le bouton de SELECTION, et non les fleches du rang : elles portent le
-    // meme nom de piece dans leur `aria-label`.
-    fireEvent.click(within(rangs()[0]).getByRole('button', { name: /^Cavalière ·/ }))
+    fireEvent.change(screen.getByLabelText('Nom de la position'), { target: { value: 'X' } })
+    fireEvent.submit(screen.getByRole('button', { name: /Créer la position/ }).closest('form')!)
 
-    expect(screen.getByRole('heading', { name: /Régler .*Cavalière/ })).toBeTruthy()
-    // Une tete n'a ni longueur ni courbure : les curseurs ne doivent pas etre la.
-    expect(screen.queryByLabelText(/Longueur/)).toBeNull()
+    const schema = enregistrer.mock.calls[0][0].schema
+    const cavalier = schema.pieces.find((p) => p.type === 'tete' && p.genre === 'cavalier')!
+    const sesBras = schema.pieces.filter(
+      (p): p is PieceBras => p.type === 'bras' && p.tete === cavalier.id,
+    )
+
+    // La tete nait a 180 et prend 30 : ses deux bras ont pris les memes 30.
+    expect(cavalier.rotation).toBe(210)
+    expect(sesBras.map((b) => b.rotation).sort()).toEqual([120, 300])
   })
 
-  it('tourne par pas de 30 degrés et l’annonce', () => {
+  it('emporte les bras quand la tête se déplace au clavier', () => {
+    const enregistrer = monter()
+    choisir(/Cavalière ·/)
+
+    const { container } = render(<div />)
+    void container
+    fireEvent.keyDown(document.querySelector('.atelier')!, { key: 'ArrowUp' })
+
+    fireEvent.change(screen.getByLabelText('Nom de la position'), { target: { value: 'X' } })
+    fireEvent.submit(screen.getByRole('button', { name: /Créer la position/ }).closest('form')!)
+
+    const schema = enregistrer.mock.calls[0][0].schema
+    const cavaliere = schema.pieces.find((p) => p.type === 'tete' && p.genre === 'cavaliere')!
+    const sesBras = schema.pieces.filter(
+      (p): p is PieceBras => p.type === 'bras' && p.tete === cavaliere.id,
+    )
+
+    // Le bras reste EXACTEMENT sur le centre de sa tete : c'est ce qui fait
+    // qu'il s'y emboite sans reglage.
+    expect(sesBras.every((b) => b.x === cavaliere.x && b.y === cavaliere.y)).toBe(true)
+    expect(cavaliere.y).toBe(-10)
+  })
+
+  it('retire les bras avec le danseur qu’on supprime', () => {
     monter()
-    ajouter('Cavalier')
+    fireEvent.click(within(rang(/Cavalier ·/)).getByRole('button', { name: /Supprimer/ }))
+
+    // Il ne reste que la cavaliere et ses deux bras.
+    expect(rangs()).toHaveLength(3)
+    expect(rangs().every((l) => !/du cavalier/.test(l.textContent ?? ''))).toBe(true)
+  })
+})
+
+describe('régler une pièce', () => {
+  it('ouvre les réglages quand on clique une ligne de la pile', () => {
+    monter()
+    choisir(/Bras gauche du cavalier/)
+
+    expect(screen.getByRole('heading', { name: /Régler .*Bras gauche du cavalier/ })).toBeTruthy()
+    expect(screen.getByLabelText(/Longueur/)).toBeTruthy()
+    expect(screen.getByLabelText(/Ellipse/)).toBeTruthy()
+  })
+
+  it('ne propose plus le noir et le gris sur un bras rattaché', () => {
+    // La couleur vient du danseur : la proposer serait proposer de mentir.
+    monter()
+    choisir(/Bras droit de la cavalière/)
+
+    expect(screen.queryByRole('button', { name: /Gris \(en dessous\)/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /Remettre sur l’épaule/ })).toBeTruthy()
+  })
+
+  it('remet un bras à l’angle de son épaule', () => {
+    const enregistrer = monter()
+    choisir(/Bras gauche du cavalier/)
 
     const droite = screen.getByRole('button', { name: 'Tourner vers la droite' })
     fireEvent.click(droite)
     fireEvent.click(droite)
+    fireEvent.click(screen.getByRole('button', { name: /Remettre sur l’épaule/ }))
 
-    // Le cavalier nait a 180 : deux pas de 30 le mettent a 240.
-    expect(annonce().textContent).toContain('240 degrés')
-  })
+    fireEvent.change(screen.getByLabelText('Nom de la position'), { target: { value: 'X' } })
+    fireEvent.submit(screen.getByRole('button', { name: /Créer la position/ }).closest('form')!)
 
-  it('déplace la pièce AU CLAVIER, sans souris', () => {
-    const { container } = render(
-      <AtelierPosition enregistrer={vi.fn(succes)} retour="/positions" />,
-    )
-    ajouter('Cavalier')
+    const schema = enregistrer.mock.calls[0][0].schema
+    const cavalier = schema.pieces.find((p) => p.type === 'tete' && p.genre === 'cavalier')!
+    const gauche = schema.pieces.find(
+      (p): p is PieceBras => p.type === 'bras' && p.tete === cavalier.id && p.cote === 'gauche',
+    )!
 
-    fireEvent.keyDown(container.querySelector('.atelier')!, { key: 'ArrowRight' })
-
-    expect(annonce().textContent).toMatch(/déplacé, x -\d+/)
-  })
-
-  it('bascule un bras du noir au gris', () => {
-    monter()
-    ajouter('Bras noir')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Gris (en dessous)' }))
-
-    expect(within(pile()).getByText(/Bras gris/)).toBeTruthy()
-    expect(annonce().textContent).toContain('Bras gris')
+    // Epaule gauche = rotation de la tete + 90.
+    expect(gauche.rotation).toBe((cavalier.rotation + 90) % 360)
   })
 
   it('allonge un bras avec le curseur', () => {
-    monter()
-    ajouter('Bras noir')
-
+    const enregistrer = monter()
+    choisir(/Bras gauche du cavalier/)
     fireEvent.change(screen.getByLabelText(/Longueur/), { target: { value: '400' } })
 
-    expect(within(pile()).getByText(/long/)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Nom de la position'), { target: { value: 'X' } })
+    fireEvent.submit(screen.getByRole('button', { name: /Créer la position/ }).closest('form')!)
+
+    const bras = enregistrer.mock.calls[0][0].schema.pieces.filter(
+      (p): p is PieceBras => p.type === 'bras',
+    )
+    expect(bras.some((b) => b.longueur === 400)).toBe(true)
   })
 })
 
-describe('l’ordre de superposition', () => {
+describe('ajouter et réordonner', () => {
+  it('rattache un bras ajouté à la tête choisie', () => {
+    const enregistrer = monter()
+    choisir(/Cavalière ·/)
+    fireEvent.click(screen.getByRole('button', { name: 'Bras gauche' }))
+
+    expect(rangs()).toHaveLength(7)
+    expect(annonce().textContent).toContain('Bras gauche de la cavalière')
+
+    fireEvent.change(screen.getByLabelText('Nom de la position'), { target: { value: 'X' } })
+    fireEvent.submit(screen.getByRole('button', { name: /Créer la position/ }).closest('form')!)
+
+    const schema = enregistrer.mock.calls[0][0].schema
+    const cavaliere = schema.pieces.find((p) => p.type === 'tete' && p.genre === 'cavaliere')!
+    const sesBras = schema.pieces.filter((p) => p.type === 'bras' && p.tete === cavaliere.id)
+    expect(sesBras).toHaveLength(3)
+  })
+
+  it('repart du couple par défaut', () => {
+    monter()
+    fireEvent.click(within(rang(/Cavalier ·/)).getByRole('button', { name: /Supprimer/ }))
+    expect(rangs()).toHaveLength(3)
+
+    fireEvent.click(screen.getByRole('button', { name: /Repartir du couple par défaut/ }))
+    expect(rangs()).toHaveLength(6)
+  })
+
   it('monte et descend une pièce d’un rang', () => {
     monter()
-    ajouter('Cavalier')
-    ajouter('Cavalière')
-
-    // La cavaliere est en haut de la pile ; on la descend.
     fireEvent.click(within(rangs()[0]).getByRole('button', { name: /Descendre/ }))
-
-    expect(rangs()[0].textContent).toContain('Cavalier ')
     expect(annonce().textContent).toContain('descendu')
   })
 
   it('grise les flèches aux extrémités, au lieu de perdre la pièce', () => {
     monter()
-    ajouter('Cavalier')
-    ajouter('Cavalière')
-
-    expect(within(rangs()[0]).getByRole('button', { name: /Monter/ })).toHaveProperty('disabled', true)
-    expect(within(rangs()[1]).getByRole('button', { name: /Descendre/ })).toHaveProperty(
+    expect(within(rangs()[0]).getByRole('button', { name: /Monter/ })).toHaveProperty(
       'disabled',
       true,
     )
-  })
-
-  it('supprime une pièce', () => {
-    monter()
-    ajouter('Cavalier')
-    fireEvent.click(within(rangs()[0]).getByRole('button', { name: /Supprimer/ }))
-
-    expect(screen.getByText(/Aucune pièce/)).toBeTruthy()
+    expect(within(rangs()[5]).getByRole('button', { name: /Descendre/ })).toHaveProperty(
+      'disabled',
+      true,
+    )
   })
 })
 
 describe('enregistrement', () => {
-  it('refuse d’enregistrer un schéma vide', () => {
-    monter()
-    expect(screen.getByRole('button', { name: /Créer la position/ })).toHaveProperty(
-      'disabled',
-      true,
-    )
-  })
-
   it('envoie EXACTEMENT le schéma affiché', async () => {
     const enregistrer = monter()
-    ajouter('Cavalier')
-    ajouter('Bras gris')
     fireEvent.change(screen.getByLabelText('Nom de la position'), {
       target: { value: '  Bras dessus bras dessous  ' },
     })
@@ -198,9 +262,7 @@ describe('enregistrement', () => {
     // Le nom part tel quel : c'est l'action serveur qui taille les espaces, une
     // seule fois, la ou la regle compte.
     expect(saisie.nom).toBe('  Bras dessus bras dessous  ')
-    expect(saisie.schema.pieces).toHaveLength(2)
-    expect(saisie.schema.pieces[0].type).toBe('bras')
-    expect(saisie.schema.pieces[1].type).toBe('tete')
+    expect(saisie.schema.pieces).toHaveLength(6)
 
     await vi.waitFor(() => expect(pousser).toHaveBeenCalledWith('/positions/42'))
   })
@@ -208,7 +270,6 @@ describe('enregistrement', () => {
   it('affiche l’échec SANS vider le canevas', async () => {
     const enregistrer = vi.fn<Action>(async () => ({ ok: false, message: 'Session expirée.' }))
     monter(enregistrer)
-    ajouter('Cavalier')
     fireEvent.change(screen.getByLabelText('Nom de la position'), { target: { value: 'Fermée' } })
 
     fireEvent.submit(screen.getByRole('button', { name: /Créer la position/ }).closest('form')!)
@@ -216,12 +277,14 @@ describe('enregistrement', () => {
     // Tout le travail est encore la : c'est la seule chose qui compte quand
     // l'enregistrement echoue.
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Session expirée.')
-    expect(rangs()).toHaveLength(1)
+    expect(rangs()).toHaveLength(6)
     expect(screen.getByLabelText('Nom de la position')).toHaveProperty('value', 'Fermée')
     expect(pousser).not.toHaveBeenCalled()
   })
 
-  it('rouvre une composition existante et propose de l’enregistrer', () => {
+  it('rouvre une composition existante SANS y injecter le couple par défaut', () => {
+    // Le scenario destructeur a eviter : un schema relu ne doit surtout pas se
+    // voir ajouter des pieces qu'il n'avait pas.
     const enregistrer = vi.fn<Action>(succes)
     render(
       <AtelierPosition
@@ -243,7 +306,6 @@ describe('enregistrement', () => {
     expect(rangs()).toHaveLength(1)
     expect(screen.getByLabelText('Nom de la position')).toHaveProperty('value', 'Berceau')
     expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeTruthy()
-    // Le calque n'apparait que lorsqu'il y en a un : son curseur en est la preuve.
     expect(screen.getByLabelText(/Ancienne image en calque/)).toBeTruthy()
   })
 })

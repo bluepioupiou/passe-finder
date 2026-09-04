@@ -4,6 +4,11 @@ import {
   aimanter,
   ajouter,
   ajusterBras,
+  angleDEpaule,
+  brasDeLaTete,
+  brasPour,
+  scenePardefaut,
+  teteDuBras,
   deplacer,
   dupliquer,
   PIECES_MAX,
@@ -38,6 +43,8 @@ const bras = (id: string, x = 0, y = 0): Piece => ({
   longueur: 200,
   courbure: 0.5,
   aplatissement: 1,
+  tete: null,
+  cote: null,
   couleur: 'noir',
   x,
   y,
@@ -229,5 +236,105 @@ describe('pointVersToile', () => {
   it('rend le centre plutot qu un infini quand l element n est pas mesure', () => {
     // Le cas de jsdom, ou `getBoundingClientRect()` renvoie des zeros.
     expect(pointVersToile({ left: 0, top: 0, width: 0, height: 0 }, 10, 10, 640)).toEqual({ x: 0, y: 0 })
+  })
+})
+
+describe('le rattachement des bras', () => {
+  it('pose les epaules a 90 degres de part et d autre du regard', () => {
+    // Vue de dessus : une tete `rotation` regarde vers `rotation + 180`, donc
+    // son epaule gauche est a `rotation + 90` et sa droite a `rotation + 270`.
+    expect(angleDEpaule(0, 'gauche')).toBe(90)
+    expect(angleDEpaule(0, 'droite')).toBe(270)
+    expect(angleDEpaule(180, 'gauche')).toBe(270)
+    // Et l'angle reste dans [0, 360[, meme quand la somme deborde.
+    expect(angleDEpaule(300, 'droite')).toBe(210)
+  })
+
+  it('pose un couple complet, bras sous les tetes', () => {
+    let n = 0
+    const schema = scenePardefaut(640, () => `p${n++}`)
+
+    expect(schema.pieces).toHaveLength(6)
+    // Les quatre premieres sont des bras : les tetes doivent passer par-dessus.
+    expect(schema.pieces.slice(0, 4).every((p) => p.type === 'bras')).toBe(true)
+    expect(schema.pieces.slice(4).every((p) => p.type === 'tete')).toBe(true)
+
+    const tetes = schema.pieces.filter((p) => p.type === 'tete')
+    for (const t of tetes) expect(brasDeLaTete(schema, t.id)).toHaveLength(2)
+  })
+
+  it('emboite le bras sur le centre de sa tete', () => {
+    const t = { id: 't', type: 'tete', genre: 'cavaliere', x: 40, y: -20, rotation: 60 } as const
+    const b = brasPour(t, 'droite', 'b')
+
+    // Meme centre : c'est ce qui fait que le bras s'emboite sans reglage.
+    expect(b).toMatchObject({ x: 40, y: -20, tete: 't', cote: 'droite' })
+    expect(b.rotation).toBe(angleDEpaule(60, 'droite'))
+  })
+
+  it('emporte les bras quand la tete pivote ou se deplace', () => {
+    let n = 0
+    const schema = scenePardefaut(640, () => `p${n++}`)
+    const t = schema.pieces.find((p) => p.type === 'tete')!
+    const avant = brasDeLaTete(schema, t.id).map((b) => b.rotation)
+
+    const pivote = tourner(schema, t.id, 30)
+    const apres = brasDeLaTete(pivote, t.id).map((b) => b.rotation)
+    // L'ECART est reporte, pas une valeur imposee : un reglage manuel survit.
+    expect(apres).toEqual(avant.map((r) => (r + 30) % 360))
+
+    const bouge = deplacer(pivote, t.id, 25, -10)
+    const teteBougee = bouge.pieces.find((p) => p.id === t.id)!
+    for (const b of brasDeLaTete(bouge, t.id)) {
+      expect(b.x).toBe(teteBougee.x)
+      expect(b.y).toBe(teteBougee.y)
+    }
+  })
+
+  it('ne touche pas aux bras des AUTRES tetes', () => {
+    let n = 0
+    const schema = scenePardefaut(640, () => `p${n++}`)
+    const [premiere, seconde] = schema.pieces.filter((p) => p.type === 'tete')
+    const intacts = brasDeLaTete(schema, seconde.id)
+
+    const apres = tourner(schema, premiere.id, 90)
+    expect(brasDeLaTete(apres, seconde.id)).toEqual(intacts)
+  })
+
+  it('retire les bras avec leur tete', () => {
+    let n = 0
+    const schema = scenePardefaut(640, () => `p${n++}`)
+    const t = schema.pieces.find((p) => p.type === 'tete')!
+
+    const apres = retirer(schema, t.id)
+    expect(apres.pieces).toHaveLength(3)
+    expect(brasDeLaTete(apres, t.id)).toHaveLength(0)
+  })
+
+  it('relit un bras d avant le rattachement comme un bras LIBRE', () => {
+    // Les deux seuls schemas deja enregistres en sont faits : ils doivent se
+    // rouvrir exactement comme ils ont ete dessines, gris compris.
+    const ancien = {
+      version: 1,
+      taille: 640,
+      calque: null,
+      pieces: [
+        { id: 'b', type: 'bras', longueur: 200, courbure: 0.5, couleur: 'gris', x: 10, y: 20, rotation: 40 },
+      ],
+    }
+
+    const lu = schemaSur(ancien)!
+    expect(lu.pieces[0]).toMatchObject({ tete: null, cote: null, couleur: 'gris' })
+    expect(teteDuBras(lu, lu.pieces[0] as never)).toBeNull()
+  })
+
+  it('refuse une epaule sans tete, qui promettrait un proprietaire inexistant', () => {
+    const lu = schemaSur({
+      version: 1,
+      taille: 640,
+      calque: null,
+      pieces: [{ ...bras('b'), cote: 'droite', tete: null }],
+    })!
+    expect(lu.pieces[0]).toMatchObject({ tete: null, cote: null })
   })
 })

@@ -34,6 +34,8 @@ const bras = (champs: Partial<PieceBras> = {}): PieceBras => ({
   longueur: 200,
   courbure: 0.5,
   aplatissement: 1,
+  tete: null,
+  cote: null,
   couleur: 'noir',
   x: 0,
   y: 0,

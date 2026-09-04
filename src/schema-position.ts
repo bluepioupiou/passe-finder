@@ -33,9 +33,26 @@ type Pose = {
   rotation: number
 }
 
+export type Cote = 'gauche' | 'droite'
+
 export type PieceTete = Pose & { type: 'tete'; genre: GenreTete }
 export type PieceBras = Pose & {
   type: 'bras'
+  /**
+   * La tete a qui ce bras appartient, ou `null` pour un bras libre.
+   *
+   * Un bras rattache SUIT sa tete : la deplacer ou la faire pivoter emporte ses
+   * bras. Il en prend aussi la teinte, ce qui rend l'appartenance lisible d'un
+   * coup d'oeil sans avoir a suivre le trait jusqu'a l'epaule.
+   *
+   * Les bras LIBRES existent pour deux raisons : les schemas dessines avant ce
+   * rattachement en sont faits, et rien ne doit interdire un cas hors norme.
+   */
+  tete: string | null
+  /** Epaule d'attache. Nomme le bras et fixe son angle de depart. `null` si libre. */
+  cote: Cote | null
+  /** Couleur d'un bras LIBRE. Un bras rattache prend la teinte de sa tete. */
+  couleur: CouleurBras
   /** Mesuree le long de l'arc, en unites de dessin. */
   longueur: number
   /** Signee : 0 = droit, > 0 = s'enroule dans le sens horaire. */
@@ -47,7 +64,6 @@ export type PieceBras = Pose & {
    * s'etire et le bras s'ecarte davantage.
    */
   aplatissement: number
-  couleur: CouleurBras
 }
 export type PieceAccessoire = Pose & { type: 'accessoire'; motif: MotifAccessoire }
 
@@ -134,6 +150,118 @@ export function schemaVide(taille: number = TAILLE_PAR_DEFAUT): SchemaPosition {
 }
 
 /**
+ * L'angle auquel un bras quitte la tete, selon l'epaule.
+ *
+ * VUE DE DESSUS. Une tete `rotation` regarde vers `rotation + 180` — l'eclair
+ * du cavalier pointe vers l'arriere du repere. Vu d'en haut, avec l'axe des y
+ * vers le bas, l'epaule GAUCHE du danseur est a 90 degres avant sa direction de
+ * regard, la DROITE a 90 degres apres. D'ou :
+ *
+ *   gauche = rotation + 180 - 90 = rotation + 90
+ *   droite = rotation + 180 + 90 = rotation + 270
+ *
+ * Ce n'est qu'un angle de DEPART : le bras garde ensuite sa propre rotation,
+ * que l'atelier laisse regler librement. Faire pivoter la tete lui ajoute le
+ * meme ecart, donc un reglage manuel n'est jamais perdu.
+ */
+export function angleDEpaule(rotationTete: number, cote: Cote): number {
+  return angleNormalise(rotationTete + (cote === 'gauche' ? 90 : 270))
+}
+
+/** La tete a qui appartient un bras, si elle existe encore. */
+export function teteDuBras(schema: SchemaPosition, bras: PieceBras): PieceTete | null {
+  if (!bras.tete) return null
+  const tete = schema.pieces.find((piece) => piece.id === bras.tete)
+  return tete && tete.type === 'tete' ? tete : null
+}
+
+/** Les bras rattaches a une tete donnee. */
+export function brasDeLaTete(schema: SchemaPosition, idTete: string): PieceBras[] {
+  return schema.pieces.filter(
+    (piece): piece is PieceBras => piece.type === 'bras' && piece.tete === idTete,
+  )
+}
+
+/**
+ * La pose standard d'un bras.
+ *
+ * Choisie a l'oeil, sur une planche d'essais : c'est celle ou les mains des
+ * deux danseurs se REJOIGNENT en haut et en bas, comme dans une vraie prise, et
+ * ou tout tient dans le disque que le site affiche. Les valeurs n'ont rien de
+ * sacre — le premier reglage de curseur les remplace.
+ */
+const POSE_STANDARD = { longueur: 200, courbure: 0.8, aplatissement: 0.45 } as const
+
+/** Un bras rattache a une tete, pose sur l'epaule demandee. */
+export function brasPour(tete: PieceTete, cote: Cote, id: string): PieceBras {
+  return {
+    id,
+    type: 'bras',
+    longueur: POSE_STANDARD.longueur,
+    // LES DEUX BRAS D'UN DANSEUR SE REFLETENT : ils s'enroulent en sens
+    // inverse, ce qui les envoie tous deux vers le partenaire au lieu de faire
+    // tourner la silhouette dans le meme sens.
+    courbure: cote === 'gauche' ? POSE_STANDARD.courbure : -POSE_STANDARD.courbure,
+    aplatissement: POSE_STANDARD.aplatissement,
+    tete: tete.id,
+    cote,
+    // Sans interet tant que le bras est rattache : il prend la teinte de sa
+    // tete. La valeur sert de repli s'il est un jour detache.
+    couleur: 'noir',
+    x: tete.x,
+    y: tete.y,
+    rotation: angleDEpaule(tete.rotation, cote),
+  }
+}
+
+/**
+ * La scene de depart : un cavalier et une cavaliere face a face, chacun ses
+ * deux bras.
+ *
+ * POURQUOI UN DEFAUT ET NON UNE CONTRAINTE. Toutes les positions du catalogue
+ * ont cette distribution, et la reconstruire a la main a chaque schema est
+ * cinq gestes perdus. Mais rien n'empeche d'enlever un bras, d'en ajouter un
+ * troisieme, ou de supprimer une tete : ce sont des pieces comme les autres.
+ *
+ * Les bras sont poses AVANT les tetes, pour que celles-ci masquent leur depart.
+ */
+export function scenePardefaut(
+  taille: number = TAILLE_PAR_DEFAUT,
+  identifiants: () => string = identifiant,
+): SchemaPosition {
+  const ecart = taille * 0.17
+
+  const cavalier: PieceTete = {
+    id: identifiants(),
+    type: 'tete',
+    genre: 'cavalier',
+    x: -ecart,
+    y: 0,
+    // Il regarde vers sa cavaliere, a sa droite sur la toile.
+    rotation: 180,
+  }
+  const cavaliere: PieceTete = {
+    id: identifiants(),
+    type: 'tete',
+    genre: 'cavaliere',
+    x: ecart,
+    y: 0,
+    rotation: 0,
+  }
+
+  const pieces: Piece[] = [
+    brasPour(cavalier, 'gauche', identifiants()),
+    brasPour(cavalier, 'droite', identifiants()),
+    brasPour(cavaliere, 'gauche', identifiants()),
+    brasPour(cavaliere, 'droite', identifiants()),
+    cavalier,
+    cavaliere,
+  ]
+
+  return { version: 1, taille, pieces, calque: null }
+}
+
+/**
  * Un identifiant de piece. Court, sans dependance, et unique en pratique : il
  * ne sert qu'a distinguer des pieces au sein d'un meme schema, jamais a
  * identifier quoi que ce soit en base.
@@ -181,9 +309,21 @@ function pieceSure(brut: unknown): Piece | null {
   if (brut.type === 'bras') {
     const couleur = brut.couleur as CouleurBras
     if (couleur !== 'noir' && couleur !== 'gris') return null
+
+    // Un bras sans `tete` est un bras LIBRE — c'est le cas de tous ceux
+    // dessines avant le rattachement. On ne devine rien : il garde sa couleur
+    // et son trace, donc les schemas d'avant se rouvrent a l'identique.
+    const cote = brut.cote === 'gauche' || brut.cote === 'droite' ? brut.cote : null
+    const tete = typeof brut.tete === 'string' && brut.tete !== '' ? brut.tete : null
+
     return {
       ...pose,
       type: 'bras',
+      tete,
+      // Un bras ne peut pas avoir une epaule sans avoir de tete : la paire est
+      // solidaire, sinon le libelle promettrait un proprietaire inexistant.
+      cote: tete ? (cote ?? 'gauche') : null,
+      couleur,
       longueur: nombreSur(brut.longueur, LONGUEUR_MIN, LONGUEUR_MIN, LONGUEUR_MAX),
       courbure: nombreSur(brut.courbure, 0, -COURBURE_MAX, COURBURE_MAX),
       // Le repli est arrive APRES les premiers schemas : son absence vaut
@@ -196,7 +336,6 @@ function pieceSure(brut: unknown): Piece | null {
         APLATISSEMENT_MIN,
         APLATISSEMENT_MAX,
       ),
-      couleur,
     }
   }
 
@@ -301,33 +440,79 @@ export function ajouterAuBonRang(schema: SchemaPosition, piece: Piece): SchemaPo
   return { ...schema, pieces }
 }
 
+/**
+ * Retire une piece — et les bras d'une tete avec elle.
+ *
+ * Sans cela, supprimer un danseur laisserait ses deux bras flotter, rattaches a
+ * une tete qui n'existe plus : ni teinte, ni nom, ni rien qui les emporte. Un
+ * danseur se retire entier.
+ */
 export function retirer(schema: SchemaPosition, id: string): SchemaPosition {
-  return { ...schema, pieces: schema.pieces.filter((piece) => piece.id !== id) }
+  const cible = schema.pieces.find((piece) => piece.id === id)
+  const estUneTete = cible?.type === 'tete'
+
+  return {
+    ...schema,
+    pieces: schema.pieces.filter(
+      (piece) => piece.id !== id && !(estUneTete && piece.type === 'bras' && piece.tete === id),
+    ),
+  }
+}
+
+/**
+ * Applique un changement a une piece ET A SES BRAS si c'est une tete.
+ *
+ * C'EST ICI QUE LES BRAS SUIVENT LEUR TETE, ET C'EST PRESQUE GRATUIT. Le repere
+ * local d'un bras EST le centre de sa tete : un bras rattache partage donc ses
+ * coordonnees et vit dans son referentiel. Emporter les bras se reduit alors a
+ * leur appliquer le meme ecart — le meme (dx, dy), le meme angle. Il n'y a
+ * aucune trigonometrie a ecrire : la rotation autour du centre de la tete est
+ * deja celle du bras.
+ *
+ * On ajoute un ECART plutot que d'imposer une valeur : un bras dont l'angle
+ * d'epaule a ete regle a la main garde son reglage quand la tete pivote.
+ */
+function emporterLesBras(
+  schema: SchemaPosition,
+  id: string,
+  ecart: (piece: Piece) => Partial<Pose>,
+): SchemaPosition {
+  const cible = schema.pieces.find((piece) => piece.id === id)
+  if (!cible) return schema
+
+  const delta = ecart(cible)
+  const suit = (piece: Piece) =>
+    piece.id === id || (cible.type === 'tete' && piece.type === 'bras' && piece.tete === id)
+
+  return {
+    ...schema,
+    pieces: schema.pieces.map((piece) => {
+      if (!suit(piece)) return piece
+      return {
+        ...piece,
+        x: borner(piece.x + (delta.x ?? 0), -COORDONNEE_MAX, COORDONNEE_MAX),
+        y: borner(piece.y + (delta.y ?? 0), -COORDONNEE_MAX, COORDONNEE_MAX),
+        rotation: angleNormalise(piece.rotation + (delta.rotation ?? 0)),
+      }
+    }),
+  }
 }
 
 /** Deplacement RELATIF — le geste du clavier (fleches) et du glisser. */
 export function deplacer(schema: SchemaPosition, id: string, dx: number, dy: number) {
-  return remplacer(schema, id, (piece) => ({
-    ...piece,
-    x: borner(piece.x + dx, -COORDONNEE_MAX, COORDONNEE_MAX),
-    y: borner(piece.y + dy, -COORDONNEE_MAX, COORDONNEE_MAX),
-  }))
+  return emporterLesBras(schema, id, () => ({ x: dx, y: dy }))
 }
 
 /** Placement ABSOLU — ce que produit un glisser au pointeur. */
 export function placer(schema: SchemaPosition, id: string, x: number, y: number) {
-  return remplacer(schema, id, (piece) => ({
-    ...piece,
-    x: borner(x, -COORDONNEE_MAX, COORDONNEE_MAX),
-    y: borner(y, -COORDONNEE_MAX, COORDONNEE_MAX),
+  return emporterLesBras(schema, id, (piece) => ({
+    x: borner(x, -COORDONNEE_MAX, COORDONNEE_MAX) - piece.x,
+    y: borner(y, -COORDONNEE_MAX, COORDONNEE_MAX) - piece.y,
   }))
 }
 
 export function tourner(schema: SchemaPosition, id: string, pas: number) {
-  return remplacer(schema, id, (piece) => ({
-    ...piece,
-    rotation: angleNormalise(piece.rotation + pas),
-  }))
+  return emporterLesBras(schema, id, () => ({ rotation: pas }))
 }
 
 /** Retouche les caracteristiques propres a une piece (longueur, couleur, genre…)
