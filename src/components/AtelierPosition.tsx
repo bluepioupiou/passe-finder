@@ -7,6 +7,9 @@ import {
   aimanter,
   ajouterAuBonRang,
   ajusterBras,
+  APLATISSEMENT_MAX,
+  APLATISSEMENT_MIN,
+  APLATISSEMENT_ROND,
   COURBURE_MAX,
   deplacer,
   dupliquer,
@@ -62,7 +65,7 @@ import './atelier-position.css'
 
 type Informations = { nom: string; description: string }
 
-const NOUVEAU_BRAS = { longueur: 260, courbure: 0.5 } as const
+const NOUVEAU_BRAS = { longueur: 260, courbure: 0.5, aplatissement: APLATISSEMENT_ROND } as const
 
 // ── Libelles ───────────────────────────────────────────────────────────────
 
@@ -84,7 +87,11 @@ function nomDePiece(piece: Piece): string {
   }
   const taille = piece.longueur < 190 ? 'court' : piece.longueur < 320 ? 'moyen' : 'long'
   const forme = piece.courbure === 0 ? 'droit' : piece.courbure > 0 ? 'horaire' : 'antihoraire'
-  return `Bras ${piece.couleur} · ${taille} · ${forme}`
+  // L'ellipse ne se dit que lorsqu'elle s'ecarte du rond : sinon chaque libelle
+  // porterait un mot qui n'apprend rien.
+  const ellipse =
+    piece.aplatissement < 0.75 ? ' · épingle' : piece.aplatissement > 1.3 ? ' · étiré' : ''
+  return `Bras ${piece.couleur} · ${taille} · ${forme}${ellipse}`
 }
 
 /** Le libelle complet d'une ligne de pile, aussi utilise pour les annonces. */
@@ -617,6 +624,47 @@ export function AtelierPosition({
                     <span>↺</span>
                     <span>droit</span>
                     <span>↻</span>
+                  </p>
+                </div>
+
+                <div className="atelier__reglage">
+                  <label htmlFor={`${champ}-ellipse`}>
+                    Ellipse{' '}
+                    <span className="atelier__valeur">
+                      {pieceSelectionnee.aplatissement === APLATISSEMENT_ROND
+                        ? 'rond'
+                        : pieceSelectionnee.aplatissement.toFixed(2).replace('.', ',')}
+                    </span>
+                  </label>
+                  <input
+                    id={`${champ}-ellipse`}
+                    type="range"
+                    min={APLATISSEMENT_MIN}
+                    max={APLATISSEMENT_MAX}
+                    step={0.05}
+                    // Sans effet sur un bras droit : il n'y a pas d'ellipse a
+                    // pincer, et un curseur qui ne fait rien vaut mieux desactive
+                    // qu'inexplicablement inerte.
+                    disabled={pieceSelectionnee.courbure === 0}
+                    value={pieceSelectionnee.aplatissement}
+                    onChange={(evenement) =>
+                      appliquer(
+                        ajusterBras(schema, pieceSelectionnee.id, {
+                          aplatissement: Number(evenement.target.value),
+                        }),
+                        `Ellipse ${evenement.target.value}.`,
+                      )
+                    }
+                  />
+                  <p className="atelier__graduation" aria-hidden="true">
+                    <span>épingle</span>
+                    <span>rond</span>
+                    <span>étiré</span>
+                  </p>
+                  <p className="atelier__note">
+                    Le bras court sur une ellipse au lieu d’un cercle, et il part du milieu d’un
+                    flanc : à mi-longueur, il a contourné la pointe et la main revient juste à côté
+                    de l’épaule.
                   </p>
                 </div>
 

@@ -99,9 +99,9 @@ function compositionEtalon(taille: number): SchemaPosition {
   const ecart = taille * 0.21
   const pieces: Piece[] = [
     // Le bras gris passe DERRIERE : il est pose en premier, donc dessine dessous.
-    { id: 'g1', type: 'bras', longueur: 300, courbure: 0.5, couleur: 'gris', x: -ecart, y: 0, rotation: 40 },
-    { id: 'n1', type: 'bras', longueur: 270, courbure: 0.5, couleur: 'noir', x: -ecart, y: 0, rotation: 300 },
-    { id: 'n2', type: 'bras', longueur: 270, courbure: 0.5, couleur: 'noir', x: ecart, y: 0, rotation: 120 },
+    { id: 'g1', type: 'bras', longueur: 300, courbure: 0.5, aplatissement: 1, couleur: 'gris', x: -ecart, y: 0, rotation: 40 },
+    { id: 'n1', type: 'bras', longueur: 270, courbure: 0.5, aplatissement: 1, couleur: 'noir', x: -ecart, y: 0, rotation: 300 },
+    { id: 'n2', type: 'bras', longueur: 270, courbure: 0.5, aplatissement: 1, couleur: 'noir', x: ecart, y: 0, rotation: 120 },
     // Les tetes en dernier : elles masquent le depart des bras.
     { id: 't1', type: 'tete', genre: 'cavalier', x: -ecart, y: 0, rotation: 180 },
     { id: 't2', type: 'tete', genre: 'cavaliere', x: ecart, y: 0, rotation: 20 },
@@ -112,12 +112,13 @@ function compositionEtalon(taille: number): SchemaPosition {
 const COTE_BRAS = 780
 
 /** Un bras seul pour l'eventail, sur sa tuile verte. */
-function eventailBras(longueur: number, courbure: number): string {
+function eventailBras(longueur: number, courbure: number, aplatissement = 1): string {
   const schema = ajouter(schemaVide(COTE_BRAS), {
     id: 'b',
     type: 'bras',
     longueur,
     courbure,
+    aplatissement,
     couleur: 'noir',
     x: 0,
     y: 0,
@@ -157,9 +158,13 @@ async function principal() {
   const yLigneDisques = yLigneFichiers + DISQUE + 58
   const yTitre2 = yLigneDisques + DISQUE + 76
   const yLigneTailles = yTitre2 + 62
+  const REPLIS = [0.2, 0.35, 0.5, 0.7, 1, 1.6]
+
   const yTitre3 = yLigneTailles + DISQUE + 76
   const yEventail = yTitre3 + 54
-  const hauteur = yEventail + LONGUEURS.length * CELLULE_BRAS + MARGE
+  const yTitre4 = yEventail + LONGUEURS.length * CELLULE_BRAS + 60
+  const yRepli = yTitre4 + 54
+  const hauteur = yRepli + CELLULE_BRAS + MARGE
 
   const calques: sharp.OverlayOptions[] = []
 
@@ -218,6 +223,21 @@ async function principal() {
     }
   }
 
+  // L'ellipse : meme bras, meme longueur, meme courbure — seul l'aplatissement
+  // change. Le bras part du milieu d'un flanc, donc plus l'ellipse est pincee,
+  // plus la main revient pres de l'epaule.
+  for (const [colonne, repli] of REPLIS.entries()) {
+    const rendu = await sharp(Buffer.from(eventailBras(380, 0.55, repli)))
+      .resize(tuile)
+      .png()
+      .toBuffer()
+    calques.push({
+      input: await sharp(rendu).composite([{ input: reperDeTete(tuile) }]).png().toBuffer(),
+      left: MARGE_BRAS + colonne * CELLULE_BRAS,
+      top: yRepli,
+    })
+  }
+
   // ── Le texte, en une seule couche SVG par-dessus ─────────────────────────
   let legendes =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${largeur}" height="${hauteur}">` +
@@ -260,6 +280,26 @@ async function principal() {
     legendes += texte(MARGE, yEventail + ligne * CELLULE_BRAS + CELLULE_BRAS / 2, `longueur`, 16)
     legendes += texte(MARGE, yEventail + ligne * CELLULE_BRAS + CELLULE_BRAS / 2 + 22, `${longueur}`, 16)
   }
+
+  legendes += texte(
+    MARGE,
+    yTitre4,
+    '4 · L’ellipse : même longueur, même courbure — la main revient plus ou moins près de l’épaule',
+    26,
+    true,
+  )
+  for (const [colonne, repli] of REPLIS.entries()) {
+    const libelle =
+      repli === 1
+        ? 'rond'
+        : repli < 1
+          ? `épingle ${String(repli).replace('.', ',')}`
+          : `étiré ${String(repli).replace('.', ',')}`
+    legendes += texte(MARGE_BRAS + colonne * CELLULE_BRAS + 6, yRepli - 12, libelle, 16)
+  }
+  legendes += texte(MARGE, yRepli + CELLULE_BRAS / 2, 'forme de', 16)
+  legendes += texte(MARGE, yRepli + CELLULE_BRAS / 2 + 22, 'l’ellipse', 16)
+
   legendes += `</svg>`
 
   calques.push({ input: Buffer.from(legendes), left: 0, top: 0 })

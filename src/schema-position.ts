@@ -40,6 +40,13 @@ export type PieceBras = Pose & {
   longueur: number
   /** Signee : 0 = droit, > 0 = s'enroule dans le sens horaire. */
   courbure: number
+  /**
+   * Aplatissement de l'ellipse sur laquelle court le bras. 1 = arc de CERCLE
+   * (le cas historique) ; en dessous, l'ellipse se pince et le bras fait une
+   * epingle a cheveux qui ramene la main pres de l'epaule ; au-dessus, elle
+   * s'etire et le bras s'ecarte davantage.
+   */
+  aplatissement: number
   couleur: CouleurBras
 }
 export type PieceAccessoire = Pose & { type: 'accessoire'; motif: MotifAccessoire }
@@ -99,6 +106,18 @@ export const PAS_ROTATION_FIN = 5
 export const LONGUEUR_MIN = 40
 export const LONGUEUR_MAX = 420
 export const COURBURE_MAX = 1
+
+/**
+ * Bornes de l'ellipse. 1 est le cercle — donc la valeur par defaut, et celle
+ * qui redonne exactement tous les bras dessines avant l'arrivee de ce reglage.
+ *
+ * Le bras part du MILIEU D'UN FLANC de l'ellipse : a mi-parcours, la main
+ * revient donc juste a cote de l'epaule, decalee de `2 x ry`. En dessous de 1,
+ * ce decalage se resserre — c'est l'epingle a cheveux. Au-dessus, il s'ecarte.
+ */
+export const APLATISSEMENT_MIN = 0.2
+export const APLATISSEMENT_MAX = 2
+export const APLATISSEMENT_ROND = 1
 
 /** Au-dela, ce n'est plus un schema de position mais un accident. La borne
  *  protege le rendu serveur autant que la lisibilite. */
@@ -167,6 +186,16 @@ function pieceSure(brut: unknown): Piece | null {
       type: 'bras',
       longueur: nombreSur(brut.longueur, LONGUEUR_MIN, LONGUEUR_MIN, LONGUEUR_MAX),
       courbure: nombreSur(brut.courbure, 0, -COURBURE_MAX, COURBURE_MAX),
+      // Le repli est arrive APRES les premiers schemas : son absence vaut
+      // « rond », ce qui redonne exactement le dessin d'origine. C'est ce qui
+      // permet de l'ajouter sans changer la version du format ni toucher aux
+      // compositions deja enregistrees.
+      aplatissement: nombreSur(
+        brut.aplatissement,
+        APLATISSEMENT_ROND,
+        APLATISSEMENT_MIN,
+        APLATISSEMENT_MAX,
+      ),
       couleur,
     }
   }
@@ -307,7 +336,7 @@ export function tourner(schema: SchemaPosition, id: string, pas: number) {
 export function ajusterBras(
   schema: SchemaPosition,
   id: string,
-  champs: Partial<Pick<PieceBras, 'longueur' | 'courbure' | 'couleur'>>,
+  champs: Partial<Pick<PieceBras, 'longueur' | 'courbure' | 'aplatissement' | 'couleur'>>,
 ): SchemaPosition {
   return remplacer(schema, id, (piece) => {
     if (piece.type !== 'bras') return piece
@@ -315,6 +344,12 @@ export function ajusterBras(
       ...piece,
       longueur: nombreSur(champs.longueur ?? piece.longueur, piece.longueur, LONGUEUR_MIN, LONGUEUR_MAX),
       courbure: nombreSur(champs.courbure ?? piece.courbure, piece.courbure, -COURBURE_MAX, COURBURE_MAX),
+      aplatissement: nombreSur(
+        champs.aplatissement ?? piece.aplatissement,
+        piece.aplatissement,
+        APLATISSEMENT_MIN,
+        APLATISSEMENT_MAX,
+      ),
       couleur: champs.couleur ?? piece.couleur,
     }
   })

@@ -33,6 +33,7 @@ const bras = (champs: Partial<PieceBras> = {}): PieceBras => ({
   type: 'bras',
   longueur: 200,
   courbure: 0.5,
+  aplatissement: 1,
   couleur: 'noir',
   x: 0,
   y: 0,
@@ -109,6 +110,108 @@ describe('traceBras — le nouveau modele', () => {
 
   it('part de sous la tete pour que le bras semble sortir de derriere le corps', () => {
     expect(traceBras({ longueur: 200, courbure: 0.5 }).d.startsWith('M 75,0 L 100,0')).toBe(true)
+  })
+})
+
+describe('traceBras — l ellipse', () => {
+  /** La longueur qu'il faut pour parcourir exactement un demi-tour. */
+  const demiTour = (courbure: number, aplatissement: number) => {
+    const rayon = R_TETE / courbure
+    return (Math.PI * (rayon + rayon * aplatissement)) / 2
+  }
+
+  it('est sans effet quand elle vaut 1, ce qui rend tous les bras d avant identiques', () => {
+    // La garantie qui permet d'ajouter ce reglage sans changer la version du
+    // format ni retoucher une seule composition deja enregistree.
+    const sans = traceBras({ longueur: 260, courbure: 0.6 })
+    const avecUn = traceBras({ longueur: 260, courbure: 0.6, aplatissement: 1 })
+    expect(avecUn).toEqual(sans)
+  })
+
+  it('a mi-longueur, la main revient JUSTE A COTE de l epaule', () => {
+    // La demande, mot pour mot : « le bras part dans une direction, fait une
+    // epingle et revient juste a cote ». C'est ce que garantit le depart au
+    // milieu d'un FLANC de l'ellipse : un demi-tour ramene a `2 x ry`.
+    const courbure = 0.7
+    const aplatissement = 0.25
+    const rayon = R_TETE / courbure
+
+    const { fin } = traceBras({
+      longueur: demiTour(courbure, aplatissement),
+      courbure,
+      aplatissement,
+    })
+
+    // Retour exactement sur l'axe du depart…
+    expect(fin.x).toBeCloseTo(R_TETE, 3)
+    // …decale de deux fois le petit rayon, soit bien moins qu'une tete.
+    expect(fin.y).toBeCloseTo(2 * rayon * aplatissement, 3)
+    expect(Math.abs(fin.y)).toBeLessThan(R_TETE)
+  })
+
+  it('sur un cercle, le meme demi-tour emmene la main tres loin', () => {
+    // Le contraste qui justifie le reglage : a aplatissement 1, un demi-tour
+    // vaut deux rayons entiers.
+    const { fin } = traceBras({ longueur: demiTour(0.7, 1), courbure: 0.7, aplatissement: 1 })
+    expect(Math.abs(fin.y)).toBeCloseTo(2 * (R_TETE / 0.7), 3)
+    expect(Math.abs(fin.y)).toBeGreaterThan(R_TETE * 2)
+  })
+
+  it('eloigne le bras autant qu un cercle avant de le faire tourner', () => {
+    // L'epingle doit PARTIR loin : c'est le grand axe qui porte l'aller.
+    const quartDeTour = (courbure: number, aplatissement: number) =>
+      demiTour(courbure, aplatissement) / 2
+
+    const { fin } = traceBras({
+      longueur: quartDeTour(0.5, 0.3),
+      courbure: 0.5,
+      aplatissement: 0.3,
+    })
+    // Au sommet de l'aller, le bras est a un rayon entier de son attache.
+    expect(fin.x - R_TETE).toBeCloseTo(R_TETE / 0.5, 3)
+  })
+
+  it('met le GRAND rayon en premier dans l arc, et le petit en second', () => {
+    const { d } = traceBras({ longueur: 260, courbure: 0.5, aplatissement: 0.4 })
+    const [, rx, ry] = d.match(/A ([\d.]+) ([\d.]+) /)!
+    expect(Number(rx)).toBeCloseTo(200, 6)
+    expect(Number(ry)).toBeCloseTo(200 * 0.4, 6)
+  })
+
+  it('se dessine progressivement, comme le rond se dessine', () => {
+    // Ce qu'Alain demandait explicitement : allonger le curseur doit PARCOURIR
+    // l'ellipse, pas la deformer.
+    //
+    // Ce qui croit, c'est l'angle balaye — surtout pas la distance a l'epaule :
+    // sur une epingle, la main s'eloigne puis SE RAPPROCHE en revenant, et
+    // c'est justement l'effet recherche. Mesurer la distance ferait echouer un
+    // test sur un comportement correct.
+    const courbure = 0.6
+    const aplatissement = 0.35
+    const rayon = R_TETE / courbure
+
+    /** L'angle parcouru, relu depuis le point d'arrivee. */
+    const angleParcouru = (longueur: number) => {
+      const { fin } = traceBras({ longueur, courbure, aplatissement })
+      const sinus = (fin.x - R_TETE) / rayon
+      const cosinus = 1 - fin.y / (rayon * aplatissement)
+      const angle = Math.atan2(sinus, cosinus)
+      return angle < 0 ? angle + 2 * Math.PI : angle
+    }
+
+    const etapes = [80, 160, 260, 380].map(angleParcouru)
+    for (let i = 1; i < etapes.length; i++) {
+      expect(etapes[i]).toBeGreaterThan(etapes[i - 1])
+    }
+    // Et au bout du curseur on a bien depasse le demi-tour : la main est sur le
+    // retour, l'epingle est fermee.
+    expect(etapes[3]).toBeGreaterThan(Math.PI)
+  })
+
+  it('ne touche pas a un bras droit, qui n a pas d ellipse a pincer', () => {
+    const droit = traceBras({ longueur: 200, courbure: 0, aplatissement: 0.2 })
+    expect(droit.fin).toEqual({ x: 300, y: 0 })
+    expect(droit.d).not.toContain('A ')
   })
 })
 
