@@ -3,7 +3,13 @@ import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AtelierPosition } from '@/components/AtelierPosition'
-import type { PieceBras, ResultatPosition, SaisiePosition } from '@/schema-position'
+import {
+  angleDEpaule,
+  type PieceBras,
+  type PieceTete,
+  type ResultatPosition,
+  type SaisiePosition,
+} from '@/schema-position'
 
 /**
  * L'atelier — le CABLAGE, vu depuis les clics.
@@ -107,8 +113,8 @@ describe('les bras suivent leur tête', () => {
       (p): p is PieceBras => p.type === 'bras' && p.tete === cavalier.id,
     )
 
-    // La tete nait a 180 et prend 30 : ses deux bras ont pris les memes 30.
-    expect(cavalier.rotation).toBe(210)
+    // La tete nait a 0 et prend 30 : ses deux bras ont pris les memes 30.
+    expect(cavalier.rotation).toBe(30)
     expect(sesBras.map((b) => b.rotation).sort()).toEqual([120, 300])
   })
 
@@ -177,13 +183,16 @@ describe('régler une pièce', () => {
     fireEvent.submit(screen.getByRole('button', { name: /Créer la position/ }).closest('form')!)
 
     const schema = enregistrer.mock.calls[0][0].schema
-    const cavalier = schema.pieces.find((p) => p.type === 'tete' && p.genre === 'cavalier')!
+    const cavalier = schema.pieces.find(
+      (p): p is PieceTete => p.type === 'tete' && p.genre === 'cavalier',
+    )!
     const gauche = schema.pieces.find(
       (p): p is PieceBras => p.type === 'bras' && p.tete === cavalier.id && p.cote === 'gauche',
     )!
 
-    // Epaule gauche = rotation de la tete + 90.
-    expect(gauche.rotation).toBe((cavalier.rotation + 90) % 360)
+    // On relit la regle plutot que de la recopier : le test verifie le
+    // CABLAGE du bouton, pas la trigonometrie, deja couverte a part.
+    expect(gauche.rotation).toBe(angleDEpaule(cavalier, 'gauche'))
   })
 
   it('allonge un bras avec le curseur', () => {

@@ -92,7 +92,7 @@ test.describe('Atelier de schéma de position', () => {
     // ── Tourner une tete : ses bras doivent suivre ─────────────────────────
     await pile.filter({ hasText: 'Cavalier ·' }).getByRole('button').first().click()
     await page.getByRole('button', { name: 'Tourner vers la droite' }).click()
-    await expect(page.locator('.atelier__annonce')).toContainText('210 degrés')
+    await expect(page.locator('.atelier__annonce')).toContainText('30 degrés')
 
     // Les bras du cavalier ont pris les memes 30 degres : leur libelle le dit.
     await expect(pile.filter({ hasText: 'Bras gauche du cavalier · 300°' })).toHaveCount(1)

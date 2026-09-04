@@ -6,6 +6,7 @@ import {
   ajusterBras,
   angleDEpaule,
   brasDeLaTete,
+  directionDuRegard,
   brasPour,
   scenePardefaut,
   teteDuBras,
@@ -21,6 +22,7 @@ import {
   TAILLE_PAR_DEFAUT,
   tourner,
   type Piece,
+  type PieceTete,
   type SchemaPosition,
 } from '@/schema-position'
 
@@ -240,14 +242,32 @@ describe('pointVersToile', () => {
 })
 
 describe('le rattachement des bras', () => {
+  const teteDe = (genre: 'cavalier' | 'cavaliere', rotation: number): PieceTete => ({
+    id: 't',
+    type: 'tete',
+    genre,
+    x: 0,
+    y: 0,
+    rotation,
+  })
+
+  it('fait regarder les deux danseurs en sens OPPOSES a angle egal', () => {
+    // L'eclair du cavalier est son nez, la queue de cheval de la cavaliere est
+    // derriere sa tete : le meme angle de piece ne veut pas dire le meme regard.
+    // C'est ce qui donnait un cavalier tournant le dos a sa partenaire.
+    expect(directionDuRegard(teteDe('cavalier', 0))).toBe(0)
+    expect(directionDuRegard(teteDe('cavaliere', 0))).toBe(180)
+  })
+
   it('pose les epaules a 90 degres de part et d autre du regard', () => {
-    // Vue de dessus : une tete `rotation` regarde vers `rotation + 180`, donc
-    // son epaule gauche est a `rotation + 90` et sa droite a `rotation + 270`.
-    expect(angleDEpaule(0, 'gauche')).toBe(90)
-    expect(angleDEpaule(0, 'droite')).toBe(270)
-    expect(angleDEpaule(180, 'gauche')).toBe(270)
+    expect(angleDEpaule(teteDe('cavalier', 0), 'gauche')).toBe(270)
+    expect(angleDEpaule(teteDe('cavalier', 0), 'droite')).toBe(90)
+    // La cavaliere regarde a l'oppose : ses epaules sont donc inversees, ce qui
+    // est exactement ce qu'on veut de deux personnes face a face.
+    expect(angleDEpaule(teteDe('cavaliere', 0), 'gauche')).toBe(90)
+    expect(angleDEpaule(teteDe('cavaliere', 0), 'droite')).toBe(270)
     // Et l'angle reste dans [0, 360[, meme quand la somme deborde.
-    expect(angleDEpaule(300, 'droite')).toBe(210)
+    expect(angleDEpaule(teteDe('cavalier', 300), 'droite')).toBe(30)
   })
 
   it('pose un couple complet, bras sous les tetes', () => {
@@ -269,7 +289,7 @@ describe('le rattachement des bras', () => {
 
     // Meme centre : c'est ce qui fait que le bras s'emboite sans reglage.
     expect(b).toMatchObject({ x: 40, y: -20, tete: 't', cote: 'droite' })
-    expect(b.rotation).toBe(angleDEpaule(60, 'droite'))
+    expect(b.rotation).toBe(angleDEpaule(t, 'droite'))
   })
 
   it('emporte les bras quand la tete pivote ou se deplace', () => {

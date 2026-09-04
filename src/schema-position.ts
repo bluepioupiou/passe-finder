@@ -150,22 +150,33 @@ export function schemaVide(taille: number = TAILLE_PAR_DEFAUT): SchemaPosition {
 }
 
 /**
+ * Vers ou regarde une tete.
+ *
+ * LES DEUX REPERES NE DISENT PAS LA MEME CHOSE, et c'est la subtilite du
+ * dessin d'Alain : l'eclair du cavalier est son NEZ — la partie qui depasse du
+ * cercle est devant lui — tandis que la queue de cheval de la cavaliere est
+ * DERRIERE sa tete. A angle de piece egal, les deux danseurs regardent donc en
+ * sens opposes.
+ *
+ * Le confondre donnait un cavalier qui tournait le dos a sa partenaire.
+ */
+export function directionDuRegard(tete: PieceTete): number {
+  const repereDerriere = tete.genre === 'cavaliere' || tete.genre === 'rose-nue'
+  return angleNormalise(tete.rotation + (repereDerriere ? 180 : 0))
+}
+
+/**
  * L'angle auquel un bras quitte la tete, selon l'epaule.
  *
- * VUE DE DESSUS. Une tete `rotation` regarde vers `rotation + 180` — l'eclair
- * du cavalier pointe vers l'arriere du repere. Vu d'en haut, avec l'axe des y
- * vers le bas, l'epaule GAUCHE du danseur est a 90 degres avant sa direction de
- * regard, la DROITE a 90 degres apres. D'ou :
- *
- *   gauche = rotation + 180 - 90 = rotation + 90
- *   droite = rotation + 180 + 90 = rotation + 270
+ * VUE DE DESSUS, l'axe des y vers le bas : l'epaule GAUCHE du danseur est a 90
+ * degres AVANT sa direction de regard, la DROITE a 90 degres apres.
  *
  * Ce n'est qu'un angle de DEPART : le bras garde ensuite sa propre rotation,
  * que l'atelier laisse regler librement. Faire pivoter la tete lui ajoute le
  * meme ecart, donc un reglage manuel n'est jamais perdu.
  */
-export function angleDEpaule(rotationTete: number, cote: Cote): number {
-  return angleNormalise(rotationTete + (cote === 'gauche' ? 90 : 270))
+export function angleDEpaule(tete: PieceTete, cote: Cote): number {
+  return angleNormalise(directionDuRegard(tete) + (cote === 'gauche' ? 270 : 90))
 }
 
 /** La tete a qui appartient un bras, si elle existe encore. */
@@ -210,7 +221,7 @@ export function brasPour(tete: PieceTete, cote: Cote, id: string): PieceBras {
     couleur: 'noir',
     x: tete.x,
     y: tete.y,
-    rotation: angleDEpaule(tete.rotation, cote),
+    rotation: angleDEpaule(tete, cote),
   }
 }
 
@@ -237,8 +248,9 @@ export function scenePardefaut(
     genre: 'cavalier',
     x: -ecart,
     y: 0,
-    // Il regarde vers sa cavaliere, a sa droite sur la toile.
-    rotation: 180,
+    // A 0, son eclair depasse vers la droite de la toile : il regarde donc sa
+    // cavaliere, qui s'y trouve.
+    rotation: 0,
   }
   const cavaliere: PieceTete = {
     id: identifiants(),
