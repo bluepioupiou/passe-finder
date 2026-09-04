@@ -26,7 +26,7 @@ import {
   R_BRAS_KIT,
   R_TETE,
 } from '../src/dessin-position'
-import type { CouleurBras, Piece } from '../src/schema-position'
+import { APLATISSEMENT_ROND, type CouleurBras, type Piece } from '../src/schema-position'
 
 const TOILE = 800 // cote de chaque PNG, en unites de dessin
 const RACINE = 'images/kit'
@@ -66,6 +66,9 @@ const bras = (longueur: number, sens: keyof typeof SENS, couleur: CouleurBras): 
   type: 'bras',
   longueur,
   courbure: SENS[sens] * COURBURE_KIT,
+  // Le kit historique ne connaissait que l'arc de CERCLE : le repli est arrive
+  // apres, avec l'atelier. `APLATISSEMENT_ROND` le redonne a l'identique.
+  aplatissement: APLATISSEMENT_ROND,
   couleur,
 })
 

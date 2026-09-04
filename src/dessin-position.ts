@@ -74,10 +74,21 @@ const ECLAIR =
   'M -70,-28 L 18,-57 L 24,-41 L 64,-53 L 70,-45 L 144,-57 L 144,19 ' +
   'L 70,1 L 64,-4 L 24,0 L 18,-19 Z'
 
-/** La queue de cheval de la cavaliere : un croissant qui balaie vers l'exterieur. */
+/** Le chouchou : l'etoile ou la meche est attachee. */
+const ETOILE_CX = 30
+const ETOILE_CY = -6
+
+/**
+ * La meche de la cavaliere : un croissant qui balaie vers l'exterieur.
+ *
+ * SA POINTE EST EXACTEMENT AU CENTRE DE L'ETOILE (`ETOILE_CX`, `ETOILE_CY`) :
+ * c'est le point d'attache de la queue de cheval, et le croissant en part comme
+ * les cheveux partent du chouchou. Le trace est donc ecrit dans le repere de
+ * l'etoile, et non dans celui de la tete.
+ */
 const CROISSANT =
-  'M 20,-30 C 84,-78 172,-68 208,-6 C 221,20 219,48 210,72 ' +
-  'C 202,40 172,27 120,19 C 76,12 41,-6 20,-30 Z'
+  `M ${ETOILE_CX},${ETOILE_CY} C 94,-54 182,-44 218,18 C 231,44 229,72 220,96 ` +
+  `C 212,64 182,51 130,43 C 86,36 51,18 ${ETOILE_CX},${ETOILE_CY} Z`
 
 function etoile(cx: number, cy: number, rExt: number, rInt: number, branches = 8): string {
   const points: string[] = []
@@ -127,32 +138,68 @@ function octogone(cx: number, cy: number, r: number): string {
  * c'est ce qui donne l'impression que le bras sort de derriere le corps, a
  * condition de dessiner la tete par-dessus (cf. l'ordre de la pile).
  */
-export function traceBras({ longueur, courbure }: Pick<PieceBras, 'longueur' | 'courbure'>): {
+export function traceBras({
+  longueur,
+  courbure,
+  aplatissement = 1,
+}: Pick<PieceBras, 'longueur' | 'courbure'> & { aplatissement?: number }): {
   d: string
   fin: { x: number; y: number }
 } {
   const depart = `M ${R_TETE - 25},0 L ${R_TETE},0`
 
   if (courbure === 0) {
+    // Un bras droit n'a pas d'ellipse : `aplatissement` n'a rien a y pincer.
     const fin = { x: R_TETE + longueur, y: 0 }
     return { d: `${depart} L ${n(fin.x)},${n(fin.y)}`, fin }
   }
 
   const signe = Math.sign(courbure)
   const rayon = R_TETE / Math.abs(courbure)
-  const angle = Math.min(longueur / rayon, ANGLE_MAX)
+
+  /*
+   * L'ELLIPSE, ET SUR QUEL AXE LE BRAS DEMARRE.
+   *
+   * Le depart est au MILIEU D'UN FLANC de l'ellipse, jamais a une de ses
+   * pointes. C'est ce qui donne l'epingle a cheveux : le bras part dans une
+   * direction, contourne la pointe, et revient le long de l'autre flanc — a
+   * mi-parcours la main se retrouve JUSTE A COTE de l'epaule, a `2 x ry`.
+   *
+   * Concretement, le point de depart est a l'extremite du demi-axe `ry`, celui
+   * qu'`aplatissement` pince. Pincer l'AUTRE axe donnerait un long U etire dont
+   * la main finit loin derriere — le contraire de ce qu'on cherche.
+   *
+   * `rx` : jusqu'ou le bras s'eloigne de la tete avant de tourner.
+   * `ry` : de combien la main est decalee quand elle revient.
+   *
+   * L'arc SVG prend deja deux rayons : cela ne coute pas une ligne de plus.
+   */
+  const rx = rayon
+  const ry = rayon * aplatissement
+
+  /*
+   * L'angle se mesure sur le rayon MOYEN, et non sur `rayon`.
+   *
+   * C'est ce qui fait que l'ellipse SE DESSINE COMME LE ROND se dessine : en
+   * allongeant le curseur de longueur, on parcourt l'ellipse progressivement,
+   * et a longueur egale on avance d'a peu pres autant qu'on aurait avance sur
+   * un cercle. Sans cette moyenne, aplatir raccourcirait le bras a l'oeil et il
+   * faudrait rattraper au curseur de longueur a chaque fois.
+   *
+   * Pour `aplatissement = 1`, la moyenne VAUT `rayon` : tous les bras dessines
+   * avant ce reglage sont donc rendus a l'identique.
+   */
+  const angle = Math.min(longueur / ((rx + ry) / 2), ANGLE_MAX)
 
   const fin = {
-    x: R_TETE + rayon * Math.sin(angle),
-    y: signe * rayon * (1 - Math.cos(angle)),
+    x: R_TETE + rx * Math.sin(angle),
+    y: signe * ry * (1 - Math.cos(angle)),
   }
   const grandArc = angle > Math.PI ? 1 : 0
   const balayage = signe > 0 ? 1 : 0
 
   return {
-    d:
-      `${depart} A ${n(rayon)} ${n(rayon)} 0 ${grandArc} ${balayage} ` +
-      `${n(fin.x)},${n(fin.y)}`,
+    d: `${depart} A ${n(rx)} ${n(ry)} 0 ${grandArc} ${balayage} ${n(fin.x)},${n(fin.y)}`,
     fin,
   }
 }
@@ -192,20 +239,28 @@ const cercleTete = (remplissage: string): Primitive => ({
 
 const eclair = (): Primitive => ({ forme: 'chemin', d: ECLAIR, remplissage: COULEUR.noir })
 
+/**
+ * La queue de cheval : le CHOUCHOU D'ABORD, LA MECHE PAR-DESSUS.
+ *
+ * L'ordre compte, et il a change. Le croissant etait dessine en premier, donc
+ * l'etoile lui passait dessus et le coupait en deux. Or ce qu'on veut montrer,
+ * c'est une meche ATTACHEE au chouchou : elle en sort, donc elle le recouvre en
+ * son centre, et les branches de l'etoile rayonnent autour d'elle.
+ */
 const queueDeCheval = (): Primitive[] => [
+  {
+    forme: 'chemin',
+    d: etoile(ETOILE_CX, ETOILE_CY, 40, 14),
+    remplissage: COULEUR.jaune,
+    contour: COULEUR.noir,
+    epaisseur: 3,
+  },
   {
     forme: 'chemin',
     d: CROISSANT,
     remplissage: COULEUR.jaune,
     contour: COULEUR.noir,
     epaisseur: TRAIT,
-  },
-  {
-    forme: 'chemin',
-    d: etoile(30, -6, 40, 14),
-    remplissage: COULEUR.jaune,
-    contour: COULEUR.noir,
-    epaisseur: 3,
   },
 ]
 

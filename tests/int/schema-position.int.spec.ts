@@ -177,6 +177,7 @@ describe('Atelier de schema de position — le schema en base', () => {
     type: 'bras',
     longueur: 260,
     courbure: -0.45,
+    aplatissement: 0.6,
     couleur: 'gris',
     x: 12,
     y: -8,

@@ -37,6 +37,7 @@ const bras = (id: string, x = 0, y = 0): Piece => ({
   type: 'bras',
   longueur: 200,
   courbure: 0.5,
+  aplatissement: 1,
   couleur: 'noir',
   x,
   y,
@@ -93,6 +94,37 @@ describe('schemaSur — lecture defensive', () => {
     expect(lu!.pieces[0].x).toBe(0)
     expect(Number.isFinite(lu!.pieces[0].y)).toBe(true)
     expect(lu!.pieces[0].rotation).toBe(30)
+  })
+
+  it('donne un repli « rond » aux bras enregistres avant ce reglage', () => {
+    // LA GARANTIE DE COMPATIBILITE. Le repli est arrive apres les premieres
+    // compositions : un bras qui n'en porte pas doit revenir exactement comme
+    // il a ete dessine, c'est-a-dire en arc de cercle. C'est ce qui permet
+    // d'avoir ajoute le reglage sans changer la version du format.
+    const ancien = {
+      version: 1,
+      taille: 640,
+      calque: null,
+      pieces: [{ id: 'b', type: 'bras', longueur: 200, courbure: 0.5, couleur: 'noir', x: 0, y: 0, rotation: 0 }],
+    }
+
+    const lu = schemaSur(ancien)
+    expect(lu).not.toBeNull()
+    expect(lu!.pieces[0]).toMatchObject({ aplatissement: 1 })
+  })
+
+  it('borne un repli aberrant au lieu de perdre le schema', () => {
+    const avec = (aplatissement: unknown) =>
+      schemaSur({
+        version: 1,
+        taille: 640,
+        calque: null,
+        pieces: [{ ...bras('b'), aplatissement }],
+      })
+
+    expect(avec(99)!.pieces[0]).toMatchObject({ aplatissement: 2 })
+    expect(avec(-3)!.pieces[0]).toMatchObject({ aplatissement: 0.2 })
+    expect(avec('rond')!.pieces[0]).toMatchObject({ aplatissement: 1 })
   })
 
   it('ignore un calque malforme sans faire echouer la lecture', () => {
@@ -158,6 +190,8 @@ describe('mutations', () => {
     expect(ajusterBras(base, 'b', { longueur: 99999 }).pieces[1]).toMatchObject({ longueur: 420 })
     expect(ajusterBras(base, 'b', { courbure: -5 }).pieces[1]).toMatchObject({ courbure: -1 })
     expect(ajusterBras(base, 'b', { couleur: 'gris' }).pieces[1]).toMatchObject({ couleur: 'gris' })
+    expect(ajusterBras(base, 'b', { aplatissement: 9 }).pieces[1]).toMatchObject({ aplatissement: 2 })
+    expect(ajusterBras(base, 'b', { aplatissement: 0 }).pieces[1]).toMatchObject({ aplatissement: 0.2 })
     expect(ajusterBras(base, 'a', { couleur: 'gris' }).pieces[0]).toEqual(base.pieces[0])
   })
 })
