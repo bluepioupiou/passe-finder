@@ -201,9 +201,9 @@ export function AtelierPosition({
       genre,
       x,
       y: 0,
-      // Le cavalier regarde vers la droite, ou l'attend generalement sa
-      // cavaliere ; elle, vers la gauche.
-      rotation: genre === 'cavalier' ? 180 : 0,
+      // A 0, le cavalier regarde vers la droite de la toile et la cavaliere
+      // vers la gauche : ils se font face sans qu'on ait a les tourner.
+      rotation: 0,
     }
     setSelection(piece.id)
     appliquer(ajouterAuBonRang(schema, piece), `${nomDePiece(piece, schema)} ajouté.`)
@@ -254,7 +254,7 @@ export function AtelierPosition({
     const suivant = tourner(
       schema,
       bras.id,
-      angleDEpaule(tete.rotation, bras.cote) - bras.rotation,
+      angleDEpaule(tete, bras.cote) - bras.rotation,
     )
     appliquer(suivant, `${nomDePiece(bras, schema)} remis sur l’épaule.`)
   }
