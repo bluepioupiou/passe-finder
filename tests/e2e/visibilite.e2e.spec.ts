@@ -21,9 +21,6 @@ import { cleanupTestUser, seedTestUser, type Identifiants } from '../helpers/see
 const auteur: Identifiants = {
   email: 'visibilite-auteur@passe-finder.test',
   password: 'test-visibilite-auteur',
-  // La creation d'enchainement reste gelee aux administrateurs (2026-08-31) ;
-  // la fixture passe par l'API, mais le drapeau ne gene pas le scenario.
-  admin: true,
 }
 
 const TITRE_CACHE = `Test non répertorié — ${Date.now()}`

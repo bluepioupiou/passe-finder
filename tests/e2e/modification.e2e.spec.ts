@@ -22,11 +22,6 @@ import { cleanupTestUser, seedTestUser, type Identifiants } from '../helpers/see
 const auteur: Identifiants = {
   email: 'modification-auteur@passe-finder.test',
   password: 'test-modification-auteur',
-  // La creation reste gelee aux administrateurs (2026-08-31) ; l'enchainement
-  // d'essai est cree par l'API, mais le compte doit pouvoir composer si le gel
-  // est leve. Le drapeau ne change rien au scenario : `peutModifier` accepte
-  // l'auteur, admin ou non.
-  admin: true,
 }
 
 const autre: Identifiants = {

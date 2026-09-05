@@ -181,11 +181,11 @@ export const Enchainement: CollectionConfig = {
       }
       return { visibilite: { equals: 'public' } }
     },
-    // GEL TEMPORAIRE (2026-08-31) : la création est refermée aux seuls
-    // administrateurs, le temps de trancher le modèle de visibilité. Le geste
-    // central du produit n'est pas censé être réservé à l'admin — voir
-    // `peutCreerEnchainement`, qui porte la raison et la ligne à changer pour
-    // rouvrir.
+    // Tout compte connecté compose (FR-9). C'est ICI que la porte se ferme
+    // réellement : cacher le « + » de la barre ou renvoyer depuis la page du
+    // compositeur ne sont que des conforts d'affichage, et un compte qui
+    // connaîtrait l'URL ou appellerait l'API passerait à côté des deux (ADD-5).
+    // La règle elle-même est dans `peutCreerEnchainement`.
     create: peutCreerEnchainement,
     // Seul l'auteur modifie et supprime (FR-18 / ADD-5). Prérequis de la
     // Story 3.1 : sans cette règle, l'ouverture de l'inscription laisserait le

@@ -116,6 +116,38 @@ img {
   overflow: hidden;
 }
 
+/*
+ * Geste de SECOND RANG, sous une carte ou a cote d'un contenu : « Modifier »,
+ * « Copier le lien ». Il se lit comme un lien et non comme un bouton plein —
+ * dans une grille, l'action principale reste d'ouvrir la carte, et deux boutons
+ * pleins par item feraient de la grille un tableau de commandes.
+ *
+ * UTILITAIRE PARTAGE plutot que recopie : le meme geste porte tantot un `a`
+ * (Modifier, qui navigue) tantot un `button` (Copier, qui agit). Deux
+ * declarations jumelles auraient derive des la premiere retouche, et la ligne
+ * d'actions aurait perdu son alignement.
+ */
+.action-discrete {
+  display: inline-flex;
+  align-items: center;
+  /* Cible tactile confortable (UX-DR17), sans encadrer le texte. */
+  min-height: 44px;
+  padding: 0;
+  font: inherit;
+  font-size: var(--label-caps-size);
+  color: var(--muted);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.action-discrete:hover {
+  color: var(--accent);
+}
+
 .donnee {
   font-family: var(--font-mono);
   font-size: var(--data-size);

@@ -30,10 +30,6 @@ const LIEN_MUSIQUE = 'https://open.spotify.com/track/test'
 const compositeur: Identifiants = {
   email: 'compositeur@passe-finder.test',
   password: 'test-compositeur',
-  // GEL TEMPORAIRE (2026-08-31) : la creation est reservee aux administrateurs
-  // le temps de trancher le modele de visibilite. Ce scenario compose, il lui
-  // faut donc le drapeau. A retirer le jour ou la creation est rouverte.
-  admin: true,
 }
 
 /** Le catalogue de la cible porte-t-il de quoi composer ? */

@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-02 (accueil : fil des nouveautes livre ; fiche passe : voisines livrees, troncage en pause)
+# last_updated: 2026-09-05 (creation d enchainement rouverte a tous ; /mes-enchainements livre)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-24
-last_updated: 2026-08-31
+last_updated: 2026-09-05
 project: passe-finder
 project_key: NOKEY
 tracking_system: file-system
@@ -584,6 +584,82 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 #
 # 42 unitaires (5 ajoutes), 29 integration (7 ajoutes), 31 e2e (6 ajoutes),
 # migration 20260831_165326_favoris, build de prod OK.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# TRANCHE « JE COMPOSE, ET JE RETROUVE CE QUE J AI COMPOSE » (2026-09-05)
+# ---------------------------------------------------------------------------
+# Demande d Alain : « un utilisateur voit le bouton ajouter un enchainement, et
+# la fiche d un utilisateur avec les enchainements qu il a crees ». Deux
+# morceaux qui ne valent que l un par l autre : ouvrir la composition sans
+# donner ou retrouver son travail produirait des enchainements qu on perd.
+#
+# LEVEE DU GEL DE LA CREATION (pose le 2026-08-31, leve le 2026-09-05).
+# Le gel attendait le modele de visibilite ; celui-ci existe depuis le
+# 2026-09-01 (prive / non repertorie / public, identifiant opaque). La raison
+# de fermer a disparu, la fermeture avec.
+# UN SEUL CORPS A CHANGE, comme annonce : `peutCreerEnchainement` passe de
+# `estAdmin(req.user)` a `Boolean(req.user)`. Les trois surfaces qui le lisent
+# — la collection, la page du compositeur, le « + » de la barre — ont suivi
+# sans qu aucune regle soit reecrite. C est la demonstration que le predicat
+# nomme valait mieux qu un `estAdmin` recopie trois fois.
+# LES TRACES DE TEST ONT ETE RETIREES, y compris DEUX QUE LA NOTE DU GEL AVAIT
+# OUBLIEES : `modification.e2e.spec.ts` et `visibilite.e2e.spec.ts` portaient
+# elles aussi un `admin: true` pose pour le gel. A retenir pour le prochain
+# etat provisoire : une liste de traces ecrite a la main se perime plus vite
+# qu on ne croit — `grep "admin: true"` l aurait dit tout de suite.
+# CE QUI A REMPLACE LE TEST DU REFUS : en integration, un compte ordinaire CREE
+# desormais, et un ANONYME est refuse — l autre moitie de la regle, qui elle ne
+# bouge pas. En e2e, le compte ordinaire de compte.e2e.spec.ts ouvre le « + »
+# et arrive au compositeur, et la porte d acces (3.5) est repassee sur ce meme
+# compte : la destination rejouee lui est desormais atteignable, ce qui rend au
+# test son sens d origine.
+#
+# STORY 5-2 : LA SECONDE LISTE DU PROFIL (/mes-enchainements).
+# /favoris en etait la premiere moitie depuis le 2026-08-31 ; l entree « Mes
+# enchainements : bientot » du menu de compte mene desormais quelque part.
+# DEUX PAGES ET NON UNE LISTE FILTREE, parce que le modele l impose : on ne met
+# en favori que le partage d AUTRUI (ADD-9), donc les deux listes ne peuvent
+# jamais se recouvrir. Un filtre sur une liste unique suggererait un
+# chevauchement qui n existe pas.
+# ELLE MONTRE LE PRIVE ET LE NON REPERTORIE, et c est sa raison d etre : depuis
+# le modele de visibilite, ces deux-la n apparaissent NI dans la liste, NI dans
+# la recherche, NI dans l API. Sans cette page, un auteur qui perd le lien de
+# son propre brouillon ne le retrouve plus. Rien n est reecrit pour autant —
+# c est `access.read` qui rend a un compte connecte les siens quelle que soit
+# leur visibilite ; la page ne fait que filtrer sur l auteur.
+# PAGINEE DES LE PREMIER JOUR, et pas par principe : Alain porte a lui seul les
+# 119 enchainements migres. Sa propre page aurait ete la plus lourde du site.
+# LE BADGE DE VISIBILITE arrive sur la carte (`montrerVisibilite`, faux partout
+# ailleurs). C est la seule page ou les trois visibilites cohabitent ; dans la
+# liste publique, tout est public ou a soi, et le badge y serait du bruit sur
+# toutes les cartes sauf une.
+#
+# DEUX AC DE 5-2 SONT ECARTES SCIEMMENT (a arbitrer par Alain ; ils restent
+# dans epics.md, comme l AC ecarte de 5-1) :
+#   - SUPPRIMER depuis la liste. La suppression vit au bas de l ecran de
+#     modification (4.5), a dessein : un geste irreversible n a pas sa place a
+#     portee de pouce dans une grille, ou le doigt vise deja une carte voisine.
+#   - BASCULER LA VISIBILITE depuis la liste. L AC a ete ecrit du temps ou la
+#     visibilite etait BINAIRE (prive / partage). Elle a trois valeurs depuis :
+#     une « bascule » n a plus de destination evidente, et chaque valeur porte
+#     une promesse qui doit se lire AVANT le clic — ce que le menu du
+#     compositeur fait, et qu un interrupteur de grille ne peut pas faire. Le
+#     badge dit l etat, « Modifier » mene la ou on en change.
+# CE QUI EST LA A LA PLACE : « Modifier » et « Copier le lien », hors de la
+# carte (un bouton imbrique dans un `a` n est ni du HTML valide ni cliquable de
+# facon previsible). « Copier le lien » n est pas un confort : le lien d un non
+# repertorie EST sa seule adresse, et sans ce geste le transmettre demanderait
+# d ouvrir la fiche et de recopier la barre d adresse. L adresse se fabrique
+# DANS LE NAVIGATEUR (`location.origin`) — construite cote serveur, elle serait
+# partie en `http://localhost:3000` dans les messages.
+# EXTRAIT EN PASSANT : `.action-discrete` (styles.css), l apparence commune du
+# lien « Modifier » et du bouton « Copier » — meme geste, deux balises
+# differentes, une seule declaration.
+#
+# RESTE OUVERT : la PAGE PUBLIQUE d un auteur (action item
+# `pseudo-et-page-auteur`), qui est une AUTRE page — celle-ci est privee et
+# montre tout, celle-la sera publique et ne montrera que les publics.
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
@@ -1513,9 +1589,12 @@ development_status:
   # collection Favori (ADD-9 tenue), bouton sur la fiche, page /favoris,
   # filtre « mes favoris » dans la liste
   5-1-mettre-en-favori-un-enchainement-partage-d-autrui: review
-  # la liste « mes favoris » est livree (/favoris) ; « mes enchainements » reste
-  # a faire, et le menu de compte l annonce comme a venir
-  5-2-profil-a-deux-listes-mes-enchainements-mes-favoris: in-progress
+  # les DEUX listes sont livrees : /favoris (5-1) et /mes-enchainements, qui
+  # montre le prive et le non repertorie — les seules surfaces du site a le
+  # faire. Paginee, badge de visibilite, « Modifier » et « Copier le lien ».
+  # Reste : deux AC ecartes sciemment (supprimer et basculer la visibilite
+  # DEPUIS LA LISTE), voir la tranche du 2026-09-05.
+  5-2-profil-a-deux-listes-mes-enchainements-mes-favoris: review
   # fil des 10 derniers ajouts, trois types melanges, une icone par type
   # (position = deux danseurs, passe = A -> B, enchainement = le serpentin de
   # la chaine) ; enchainements PUBLICS seulement ; etat vide. Le « Bienvenue,

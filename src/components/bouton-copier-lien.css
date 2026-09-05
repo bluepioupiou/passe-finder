@@ -1,0 +1,35 @@
+/*
+ * « Copier le lien » (Story 5.2).
+ *
+ * L'APPARENCE VIENT DE `.action-discrete` (styles.css), partagée avec le lien
+ * « Modifier » qui le voisine : sur la grille de « mes enchaînements »,
+ * l'action principale reste d'ouvrir une carte, et ces deux gestes doivent se
+ * lire comme des liens plutôt que comme des boutons pleins. Ne restent ici que
+ * les deux morceaux propres à la copie : l'annonce et le repli.
+ */
+
+.copier-lien {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* L'annonce n'occupe aucune place : le libellé du bouton porte déjà le retour
+   visuel (« Lien copié »). Elle existe pour qui écoute la page. */
+.copier-lien__annonce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Le repli quand le presse-papiers est refusé : l'adresse, à recopier à la
+   main. Elle peut être longue — on la laisse revenir à la ligne plutôt que de
+   déborder de la carte. */
+.copier-lien__repli {
+  margin-left: var(--space-2);
+  font-size: var(--data-size);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}

@@ -23,7 +23,7 @@ const compte = {
   motDePasse: 'motdepasse-de-test',
 }
 
-/** Compte administrateur, necessaire tant que la creation est gelee. */
+/** Compte administrateur : seul le back-office, en fin de fichier, en a besoin. */
 const administrateur: Identifiants = {
   email: 'compte-admin@passe-finder.test',
   password: 'test-compte-admin',
@@ -174,11 +174,9 @@ test.describe('Compte', () => {
     // Story 3.5 : le contrat complet, sur une route protegee. On repart d un
     // contexte neuf pour etre reellement anonyme.
     //
-    // On se reconnecte en ADMINISTRATEUR et non avec le compte ordinaire du
-    // fichier, a cause du gel temporaire de la creation (2026-08-31) : un
-    // compte ordinaire serait renvoye vers la liste et on ne verrait pas que la
-    // porte a bien rejoue la destination demandee. A remettre sur le compte
-    // ordinaire le jour ou la creation est rouverte.
+    // AVEC LE COMPTE ORDINAIRE du fichier, et c'est ce qui donne sa valeur au
+    // scenario : la destination rejouee est le compositeur, que tout compte
+    // connecte peut ouvrir depuis la levee du gel (2026-09-05).
     const contexte = await page.context().browser()!.newContext()
     const visiteur = await contexte.newPage()
 
@@ -188,8 +186,8 @@ test.describe('Compte', () => {
     // La page dit POURQUOI elle demande un compte, sinon elle se lit comme un refus.
     await expect(visiteur.getByText('Cette page demande un compte.')).toBeVisible()
 
-    await visiteur.fill('#email', administrateur.email)
-    await visiteur.fill('#motDePasse', administrateur.password)
+    await visiteur.fill('#email', compte.email)
+    await visiteur.fill('#motDePasse', compte.motDePasse)
     await visiteur.getByRole('button', { name: 'Se connecter' }).click()
 
     // Ramene a ce qu il voulait faire, et le compositeur est bien la.
@@ -199,16 +197,32 @@ test.describe('Compte', () => {
     await contexte.close()
   })
 
-  test("un compte ordinaire ne voit pas le « + » et ne peut pas composer", async () => {
-    // GEL TEMPORAIRE (2026-08-31) : la creation est reservee aux administrateurs.
-    // CE TEST EST A SUPPRIMER le jour ou elle est rouverte — il decrit un etat
-    // voulu mais provisoire, pas une regle du produit.
+  test('un compte ordinaire voit le « + » et atteint le compositeur', async () => {
+    // Le gel du 2026-08-31 est leve (2026-09-05) : composer est le geste
+    // central du produit, il n'est plus reserve a l'administrateur.
     await page.goto('/enchainements')
-    await expect(page.getByRole('button', { name: 'Créer' })).toHaveCount(0)
 
-    // Et la porte ne tient pas qu a l affichage : connaitre l URL ne suffit pas.
-    await page.goto('/enchainements/nouveau')
-    await expect(page).toHaveURL(/\/enchainements$/)
+    await page.getByRole('button', { name: 'Créer' }).click()
+    await page.getByRole('menuitem', { name: 'Créer un enchaînement' }).click()
+
+    await expect(page).toHaveURL(/\/enchainements\/nouveau$/)
+    await expect(page.getByLabel("D'où part l'enchaînement ?")).toBeVisible()
+  })
+
+  test('le menu de compte mène à mes enchaînements', async () => {
+    // Story 5.2 : l'entree annoncait « bientot » ; elle mene desormais a une
+    // vraie page. Le compte de ce fichier n'a rien compose, on y verifie donc
+    // aussi l'etat vide (UX-DR15) et le chemin qu'il propose.
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Mon compte' }).click()
+    await page.getByRole('menuitem', { name: 'Mes enchaînements' }).click()
+
+    await expect(page).toHaveURL(/\/mes-enchainements$/)
+    await expect(page.getByRole('heading', { name: 'Mes enchaînements' })).toBeVisible()
+    await expect(page.getByText('Tu n’as encore composé aucun enchaînement.')).toBeVisible()
+
+    await page.getByRole('link', { name: 'Compose le premier' }).click()
+    await expect(page).toHaveURL(/\/enchainements\/nouveau$/)
   })
   test("le menu ne propose pas le back-office a un compte ordinaire", async () => {
     // Demande d'Alain (2026-09-01). Le lien est un CONFORT reserve aux

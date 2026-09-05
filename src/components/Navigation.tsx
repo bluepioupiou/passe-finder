@@ -65,11 +65,11 @@ export async function Navigation() {
               groupe est pousse a droite d'un bloc, sans que la disparition du
               « + » pour un anonyme ne deplace la loupe. */}
           <div className="nav__outils">
-            {/* GEL TEMPORAIRE (2026-08-31) : le « + » n'apparait que pour un
-                administrateur, le temps de trancher le modele de visibilite.
-                Ce n'est qu'un confort d'affichage — la page et la collection
-                refusent de leur cote. Voir `peutCreerEnchainement`. */}
-            {estAdmin(user) ? <MenuCreation /> : null}
+            {/* Le « + » a tout compte connecte : composer est le geste central
+                du produit (FR-9). On ne le montre pas a un anonyme, non par
+                securite — la page et la collection refusent de leur cote — mais
+                pour ne pas proposer une porte qui se refermerait sur lui. */}
+            {user ? <MenuCreation /> : null}
 
             <form className="nav__recherche" action="/recherche" role="search">
               <label className="nav__recherche-label" htmlFor="recherche-globale">
