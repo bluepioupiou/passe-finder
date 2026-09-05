@@ -435,7 +435,15 @@ sudo docker compose exec -e MIGRATION_AUTEUR_EMAIL=ton.email@exemple.fr app npm 
 ```
 
 Les autres scripts s'appellent de la même façon : `migrate:positions`,
-`migrate:passes`, ou `migrate:all` pour les trois dans l'ordre de dépendance.
+`migrate:passes`, `migrate:transitions`, `migrate:videos`, ou `migrate:all`
+pour tous dans l'ordre de dépendance.
+
+`migrate:videos` est à part : il ne crée rien, il **complète** des enchaînements
+déjà repris en leur posant le lien vidéo que la table `video` du dump portait et
+que la reprise des enchaînements ne lisait pas. Il se lance donc APRÈS
+`migrate:enchainements`, et son rapport compte des liens posés, pas des
+créations. Un second passage doit afficher `Liens poses cette fois : 0`. Il ne
+recouvre jamais un lien déjà présent, y compris saisi à la main.
 
 > Avant un import, vérifie que Litestream réplique bien (section suivante) :
 > c'est le filet qui permet de revenir en arrière si l'import ne donne pas ce
