@@ -34,10 +34,11 @@ type Proprietes = {
  * comme auteur. Il vient EN PREMIER : c'est le reglage, les deux entrees
  * suivantes sont des listes.
  *
- * « Mes favoris » mene desormais a une vraie page (Story 5.1). « Mes
- * enchaînements » reste annonce comme A VENIR plutot que pose en lien mort :
- * sa destination arrive a la Story 5.2, et un lien qui mene a une page vide se
- * lit comme un defaut.
+ * « Mes enchaînements » et « Mes favoris » sont les DEUX LISTES du profil
+ * (Stories 5.1 / 5.2, UX-DR12), et elles sont disjointes par construction : on
+ * ne met en favori que le partage d'autrui (ADD-9). Ce que j'ai ecrit vient en
+ * PREMIER — c'est mon travail, et c'est ce qu'on revient chercher le plus
+ * souvent.
  *
  * « Back-office » n'apparait qu'aux administrateurs, en avant-dernier : c'est
  * une porte de service, elle ne doit pas se lire avant les entrees ordinaires.
@@ -94,13 +95,20 @@ export function MenuCompte({ email, admin = false, seDeconnecter }: Proprietes) 
           <Link
             className="menu-compte__item"
             role="menuitem"
+            href="/mes-enchainements"
+            onClick={() => setOuvert(false)}
+          >
+            Mes enchaînements
+          </Link>
+
+          <Link
+            className="menu-compte__item"
+            role="menuitem"
             href="/favoris"
             onClick={() => setOuvert(false)}
           >
             Mes favoris
           </Link>
-
-          <p className="menu-compte__avenir texte-attenue">Mes enchaînements : bientôt.</p>
 
           {/* LE BACK-OFFICE, pour les administrateurs seulement (demande
               d'Alain, 2026-09-01) : /admin leur etait accessible mais ne

@@ -79,23 +79,26 @@ export const soiMemeOuAdmin: Access = ({ req }) => {
 }
 
 /**
- * Qui peut CREER un enchainement — restriction TEMPORAIRE (2026-08-31).
+ * Qui peut CREER un enchainement.
  *
- * Alain a demande de refermer la creation aux seuls administrateurs, le temps
- * de trancher le modele de visibilite (cf. l'action item
- * `identifiant-opaque-et-visibilites` : public, prive, lien de partage, et
- * peut-etre plus tard l'ecole). Ouvrir la composition avant de savoir ce que
- * « partage » voudra dire ferait produire aux eleves des enchainements dont la
- * portee changerait sous leurs pieds.
+ * TOUT COMPTE CONNECTE. Composer est le geste central du produit : le reserver
+ * a l'admin faisait du site un catalogue a lire, pas un outil a utiliser.
  *
- * POUR ROUVRIR : remplacer le corps par `Boolean(req.user)`. C'est la seule
- * ligne a changer — la barre de navigation, la page du compositeur et la
- * collection lisent toutes ce meme predicat. C'est precisement pourquoi il
- * porte un nom a lui plutot que d'etre `adminSeul` recopie trois fois : le jour
- * de la reouverture, on ne veut pas avoir a se demander lesquels des trois
- * `estAdmin` du projet parlaient de creation.
+ * Un GEL l'a pourtant reserve aux administrateurs du 2026-08-31 au 2026-09-05,
+ * et la raison merite d'etre gardee ici : le modele de visibilite n'etait pas
+ * tranche. Laisser les eleves composer avant de savoir ce que « partage »
+ * voudrait dire leur aurait fait produire des enchainements dont la portee
+ * changerait sous leurs pieds. Le gel est leve parce que ce modele existe
+ * desormais — prive / non repertorie / public (voir `src/visibilite.ts`) — et
+ * qu'un enchainement nait PRIVE (FR-17, AD-6) : rien ne part au dehors sans un
+ * geste de son auteur.
  *
- * Ce n'est PAS une regle de gouvernance du catalogue (`adminSeul`), qui est
- * durable : celle-ci est un gel, et le nom doit le dire.
+ * IL GARDE SON NOM A LUI plutot que d'etre `Boolean(req.user)` recopie dans la
+ * collection : la question « qui a le droit de composer ? » se relira ici, et
+ * non parmi les autres regles d'acces. Le jour ou elle se complique (une ecole,
+ * un cours, une limite), c'est le seul corps a changer.
+ *
+ * Ce n'est PAS une regle de gouvernance du catalogue (`adminSeul`) : celle-ci
+ * dit qui produit du contenu, celle-la qui gouverne le materiau commun.
  */
-export const peutCreerEnchainement: Access = ({ req }) => estAdmin(req.user)
+export const peutCreerEnchainement: Access = ({ req }) => Boolean(req.user)

@@ -87,13 +87,6 @@
   cursor: pointer;
 }
 
-.menu-compte__avenir {
-  margin: 0;
-  padding: var(--space-3);
-  font-size: var(--data-size);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
 
 @media (min-width: 768px) {
   .menu-compte__panneau {

@@ -1,0 +1,29 @@
+/*
+ * « Mes enchaînements » (Story 5.2).
+ *
+ * La grille et la carte sont celles de la liste publique (enchainements.css) :
+ * seule s'ajoute ici la ligne d'actions sous chaque carte.
+ */
+
+/* La carte s'étire, la ligne d'actions reste collée en bas : sans cela, deux
+   cartes de hauteurs différentes poseraient leurs actions à deux hauteurs
+   différentes, et l'œil devrait les chercher item par item. */
+.mes-enchainements__item {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.mes-enchainements__item .enchainement-carte {
+  flex: 1;
+}
+
+.mes-enchainements__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  /* Décalées vers l'intérieur, comme le padding de la carte au-dessus : les
+     actions appartiennent à la carte, elles ne flottent pas sous la grille. */
+  padding: 0 var(--space-5);
+}

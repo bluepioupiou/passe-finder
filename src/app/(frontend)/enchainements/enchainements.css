@@ -99,3 +99,27 @@
 .enchainement-auteur {
   font-size: var(--label-caps-size);
 }
+
+/* Le titre, et le badge de visibilite quand la page en demande un (Story 5.2).
+   `align-items: baseline` : le titre passe souvent sur deux lignes dans une
+   carte etroite, et le badge doit rester aligne sur la PREMIERE, la ou l'oeil
+   le cherche. */
+.enchainement-ligne-titre {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* Meme pose que le badge de la fiche : neutre, pas d'accent, pas de danger.
+   C'est un etat, pas une alerte — et l'accent de la carte appartient deja a la
+   fleche du trajet (DESIGN.md). */
+.enchainement-badge {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface-container);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-sm);
+  text-transform: uppercase;
+}

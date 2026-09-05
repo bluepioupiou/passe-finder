@@ -214,24 +214,42 @@ describe('Propriété', () => {
     expect(relu.email).toBe('test-proprio-auteur@example.test')
   })
 
-  it('refuse la création d un enchaînement à un compte ordinaire (gel temporaire)', async () => {
-    // GEL TEMPORAIRE (2026-08-31) : creation reservee aux administrateurs, le
-    // temps de trancher le modele de visibilite. CE TEST EST A SUPPRIMER le jour
-    // ou elle est rouverte — il decrit un etat voulu mais provisoire.
+  it('laisse un compte ordinaire créer un enchaînement', async () => {
+    // Le gel du 2026-08-31, qui reservait la creation aux administrateurs, est
+    // leve (2026-09-05) : composer est le geste central du produit.
     //
-    // Il est ici plutot que dans l'interface parce que c'est la collection qui
-    // protege : cacher le « + » de la barre ne ferme ni la page ni l API.
+    // ICI ET PAS DANS L'INTERFACE, parce que c'est la collection qui decide :
+    // montrer le « + » de la barre n'ouvre ni la page ni l'API, et c'est ce
+    // niveau-la qui doit repondre.
+    const cree = await payload.create({
+      collection: 'enchainements',
+      data: {
+        titre: 'Propriété — composé par un élève',
+        auteur: autre.id,
+        visibilite: 'prive',
+        passes: [{ passe: idPasse }],
+      },
+      overrideAccess: false,
+      user: autre,
+    })
+
+    expect(cree.id).toBeTruthy()
+    await payload.delete({ collection: 'enchainements', id: cree.id })
+  })
+
+  it("refuse la création d'un enchaînement à un visiteur anonyme", async () => {
+    // L'autre moitie de la meme regle, et la seule qui reste fermee : sans
+    // session, aucun auteur a qui rattacher l'enchainement.
     await expect(
       payload.create({
         collection: 'enchainements',
         data: {
           titre: 'Refusé',
-          auteur: autre.id,
+          auteur: auteur.id,
           visibilite: 'prive',
           passes: [{ passe: idPasse }],
         },
         overrideAccess: false,
-        user: autre,
       }),
     ).rejects.toThrow()
   })

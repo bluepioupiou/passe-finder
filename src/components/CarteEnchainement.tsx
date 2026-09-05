@@ -5,6 +5,7 @@ import type { Catalogue } from '@/catalogue'
 import { chaineDe, extremites, formaterDate } from '@/enchainements'
 import { presenterMusique } from '@/musique'
 import { presenterVideo } from '@/video'
+import { libelleVisibilite } from '@/visibilite'
 import type { Enchainement } from '@/payload-types'
 import { IconeNote, IconeVideo } from './Icones'
 
@@ -24,6 +25,7 @@ export function CarteEnchainement({
   enchainement,
   catalogue,
   auteur,
+  montrerVisibilite = false,
 }: {
   enchainement: Enchainement
   catalogue: Catalogue
@@ -33,6 +35,16 @@ export function CarteEnchainement({
    * `null` quand on ne sait pas — la ligne disparait alors.
    */
   auteur?: string | null
+  /**
+   * Porter le badge de visibilite (Story 5.2).
+   *
+   * FAUX PARTOUT AILLEURS, ET C'EST LE POINT. Dans la liste publique, tout ce
+   * qu'on voit est public ou a soi : un badge y serait du bruit sur toutes les
+   * cartes sauf une. Sur « mes enchainements », la question « qui voit
+   * celui-ci ? » est au contraire la premiere qu'on se pose en balayant la
+   * grille — c'est la seule page ou les trois visibilites cohabitent.
+   */
+  montrerVisibilite?: boolean
 }) {
   const passes = chaineDe(enchainement.passes, catalogue.passes, catalogue.positions)
   const { depart, arrivee } = extremites(passes)
@@ -40,12 +52,24 @@ export function CarteEnchainement({
   const nombre = enchainement.passes.length
   const musique = presenterMusique(enchainement.musique)
   const video = presenterVideo(enchainement.urlVideo)
+  // Le public ne porte pas de badge : c'est le cas ordinaire, et le signaler
+  // sur chaque carte reviendrait a ne plus rien signaler. Meme regle que la
+  // fiche.
+  const visibilite =
+    montrerVisibilite && enchainement.visibilite !== 'public'
+      ? libelleVisibilite(enchainement.visibilite)
+      : null
 
   return (
     // L'IDENTIFIANT PUBLIC, jamais le numero de ligne : c'est la seule adresse
     // que le site sert (action item `identifiant-opaque-et-visibilites`).
     <Link className="enchainement-carte" href={`/enchainements/${enchainement.idPublic}`}>
-      <h2 className="enchainement-titre">{enchainement.titre}</h2>
+      <div className="enchainement-ligne-titre">
+        <h2 className="enchainement-titre">{enchainement.titre}</h2>
+        {visibilite ? (
+          <span className="enchainement-badge label-caps">{visibilite}</span>
+        ) : null}
+      </div>
 
       <p className="enchainement-meta texte-attenue">
         {date ? <span className="donnee">{date}</span> : null}
