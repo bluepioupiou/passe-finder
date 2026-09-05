@@ -35,10 +35,22 @@
 }
 
 .fiche-image {
-  /* `max-width` et non `width` : le composant porte deja `width: 100%`, et deux
-     regles `width` de meme priorite se departagent a l'ordre de chargement des
-     fichiers — l'image debordait alors sur toute la largeur disponible. */
-  max-width: 220px;
+  /*
+   * ON POSE LA VARIABLE, ON NE CONTREDIT PAS LA REGLE PARTAGEE.
+   *
+   * Le contournement precedent — `max-width: 220px` — n'avait fait que DEPLACER
+   * le piege qu'il pretendait eviter : `.image-position` porte aussi
+   * `max-width: 100%`, et deux declarations de meme priorite se departagent a
+   * l'ordre de chargement des fichiers. Un ordre que personne ne controle, et
+   * qui differe entre une navigation interne et un rechargement complet : la
+   * vignette s'affichait enorme en arrivant sur la fiche, puis normale apres
+   * un F5. Les images de l'atelier, qui font 800 px la ou les anciennes en
+   * faisaient 245, ont rendu l'ecart spectaculaire.
+   *
+   * La variable, elle, n'entre en conflit avec rien : l'appelant la POSE,
+   * `image-position.css` la LIT.
+   */
+  --image-position-taille: min(100%, 220px);
   flex-shrink: 0;
 }
 

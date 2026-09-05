@@ -237,6 +237,32 @@ describe('ajouter et réordonner', () => {
     expect(rangs()).toHaveLength(6)
   })
 
+  it('GARDE le calque en repartant du couple par défaut', () => {
+    // `scenePardefaut` rend un schema neuf, donc sans decalque. Le perdre ici
+    // etait d'autant plus penible que repartir de zero est justement le moment
+    // ou l'on a le plus besoin de revoir la vignette qu'on retrace.
+    render(
+      <AtelierPosition
+        enregistrer={vi.fn<Action>(succes)}
+        retour="/positions/7"
+        initial={{
+          id: 7,
+          schema: { version: 1, taille: 640, calque: { src: '/api/media/file/vieille.jpg' }, pieces: [] },
+          informations: { nom: 'Berceau', description: '' },
+        }}
+      />,
+    )
+
+    const filigrane = () => document.querySelector('.atelier__canevas image')
+    expect(filigrane()).not.toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /Repartir du couple par défaut/ }))
+
+    expect(rangs()).toHaveLength(6)
+    expect(filigrane()).not.toBeNull()
+    expect(filigrane()!.getAttribute('href')).toBe('/api/media/file/vieille.jpg')
+  })
+
   it('monte et descend une pièce d’un rang', () => {
     monter()
     fireEvent.click(within(rangs()[0]).getByRole('button', { name: /Descendre/ }))

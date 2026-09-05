@@ -75,7 +75,10 @@
 }
 
 .passe-image {
-  max-width: 96px;
+  /* La variable plutot qu'un `max-width` : celui-ci entrerait en conflit
+     avec le `max-width: 100%` de `.image-position`, a egalite de priorite,
+     et l'ordre de chargement des fichiers trancherait. */
+  --image-position-taille: min(100%, 96px);
 }
 
 .passe-position-nom {
