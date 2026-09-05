@@ -165,6 +165,33 @@ test.describe('Atelier de schéma de position', () => {
     await contexte.close()
   })
 
+  test('affiche la vignette de fiche ronde et a sa taille', async ({ page }) => {
+    /*
+     * CE TEST NE GARDE PAS L'ORDRE DE CHARGEMENT DU CSS, et il ne faut pas le
+     * croire capable de le faire : verification faite, il passait encore avec
+     * le defaut remis en place. Un conflit tranche par l'ordre des fichiers
+     * depend du bundler, du mode dev ou production, et de ce qui a deja ete
+     * compile — il ne se reproduit pas a la demande.
+     *
+     * C'est `tests/unit/image-position-largeur.spec.ts` qui garde la regle, en
+     * verifiant qu'aucun appelant ne declare de largeur. Ici on se contente de
+     * constater le resultat visible : la vignette est ronde et plafonnee.
+     */
+    await page.goto('/positions')
+
+    const premiere = page.locator('a[href^="/positions/"]').first()
+    if ((await premiere.count()) === 0) test.skip(true, 'Aucune position sur cette cible.')
+    await premiere.click()
+    await page.waitForURL(/\/positions\/\d+$/)
+
+    const vignette = page.locator('img.fiche-image')
+    await expect(vignette).toBeVisible()
+
+    const boite = (await vignette.boundingBox())!
+    expect(boite.width).toBeLessThanOrEqual(221)
+    expect(Math.abs(boite.width - boite.height)).toBeLessThan(2)
+  })
+
   test('ouvre une vignette historique avec l’ancienne image en calque', async ({
     browser,
     request,

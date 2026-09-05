@@ -513,7 +513,19 @@ export function AtelierPosition({
           </p>
 
           <p className="atelier__ligne">
-            <button type="button" onClick={() => appliquer(scenePardefaut(schema.taille), 'Couple par défaut posé.')}>
+            <button
+              type="button"
+              onClick={() =>
+                appliquer(
+                  // LE CALQUE SURVIT AU REDEMARRAGE. `scenePardefaut` rend un
+                  // schema neuf, donc sans decalque — et repartir de zero est
+                  // precisement le moment ou l'on a le plus besoin de revoir
+                  // l'ancienne vignette qu'on est en train de retracer.
+                  { ...scenePardefaut(schema.taille), calque: schema.calque },
+                  'Couple par défaut posé.',
+                )
+              }
+            >
               Repartir du couple par défaut
             </button>
           </p>

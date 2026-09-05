@@ -74,7 +74,10 @@
 }
 
 .fiche-maillon__image {
-  max-width: 140px;
+  /* La variable plutot qu'un `max-width` : celui-ci entrerait en conflit
+     avec le `max-width: 100%` de `.image-position`, a egalite de priorite,
+     et l'ordre de chargement des fichiers trancherait. */
+  --image-position-taille: min(100%, 140px);
 }
 
 .fiche-maillon__nom {
