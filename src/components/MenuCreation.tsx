@@ -17,8 +17,14 @@ import './menu-creation.css'
  *
  * Un MENU et non un lien direct : les creations a venir (proposer une position,
  * proposer une passe…) s'ajouteront ici sans reprendre la barre.
+ *
+ * `admin` n'est pas une regle de securite — la page `/positions/nouvelle`
+ * redirige deja un non-admin et la collection refuse l'ecriture (ADD-5). Il
+ * evite seulement d'offrir une entree qui se refermerait aussitot : composer
+ * une position gouverne le catalogue commun, ce n'est pas encore un geste
+ * d'eleve. Meme raison que le « + » absent pour un anonyme.
  */
-export function MenuCreation() {
+export function MenuCreation({ admin = false }: { admin?: boolean }) {
   const [ouvert, setOuvert] = useState(false)
   const racine = useRef<HTMLDivElement>(null)
 
@@ -67,14 +73,16 @@ export function MenuCreation() {
           >
             Créer un enchaînement
           </Link>
-          <Link
-            className="menu-creation__item"
-            role="menuitem"
-            href="/positions/nouvelle"
-            onClick={() => setOuvert(false)}
-          >
-            Composer une position
-          </Link>
+          {admin ? (
+            <Link
+              className="menu-creation__item"
+              role="menuitem"
+              href="/positions/nouvelle"
+              onClick={() => setOuvert(false)}
+            >
+              Composer une position
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </div>
