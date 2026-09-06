@@ -1,0 +1,55 @@
+/*
+ * Page « Comment ça marche ? ».
+ *
+ * ELLE EST PLUS ETROITE QUE LES AUTRES. `.contenu-page` monte a 1100px, ce qui
+ * convient a des grilles de cartes mais donne des lignes de texte trop longues
+ * pour etre lues confortablement. Ici tout est de la prose : on la ramene a une
+ * largeur de lecture, et les figures s'y inscrivent.
+ */
+
+.page-explication {
+  max-width: 68ch;
+}
+
+.explication-chapeau {
+  font-size: calc(var(--body-size) + 2px);
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0 0 var(--space-8);
+}
+
+.explication-section {
+  margin-top: var(--space-12);
+  /* Le lien depuis une fiche position atterrit sur `#schemas` : sans cette
+     marge, le titre viendrait se coller sous la barre de navigation. */
+  scroll-margin-top: var(--space-8);
+}
+
+.explication-section > h2 {
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+/* La feuille de base remet toutes les marges de `p` a zero : sans cette regle,
+   deux paragraphes se collent l'un a l'autre et forment un pave. */
+.explication-section > p {
+  margin: var(--space-4) 0 0;
+}
+
+.explication-section > h3 {
+  margin: var(--space-8) 0 0;
+}
+
+.explication-question {
+  margin-top: var(--space-6);
+}
+
+.explication-question h3 {
+  font-size: var(--body-size);
+  font-weight: 700;
+  margin: 0 0 var(--space-1);
+}
+
+.explication-question p {
+  margin: 0;
+}

@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-05 (creation d enchainement rouverte a tous ; /mes-enchainements livre)
+# last_updated: 2026-09-06 (page « Comment ça marche ? » + legende des schemas)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-24
-last_updated: 2026-09-05
+last_updated: 2026-09-06
 project: passe-finder
 project_key: NOKEY
 tracking_system: file-system
@@ -660,6 +660,46 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 # RESTE OUVERT : la PAGE PUBLIQUE d un auteur (action item
 # `pseudo-et-page-auteur`), qui est une AUTRE page — celle-ci est privee et
 # montre tout, celle-la sera publique et ne montrera que les publics.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# PAGE « COMMENT ÇA MARCHE ? » (2026-09-06)
+# ---------------------------------------------------------------------------
+# Besoin ajoute a la v1 par Alain : une page qui dit POURQUOI le site existe, et
+# une legende des schemas. Trop petit pour une story : livre en direct, trace ici.
+#
+# LA PAGE EST BATIE SUR LES QUESTIONS DES ELEVES, pas sur les fonctionnalites :
+# « a partir d ici, je peux faire quoi ? », « comment j arrive dans cette
+# position ? », « on avait fait quoi il y a trois semaines ? ». Chacune ouvre sur
+# l ecran qui y repond. Un texte qui aurait annonce « un catalogue, un
+# compositeur et des enchainements partageables » se serait lu une fois.
+#
+# TROIS PORTES, AUCUNE DANS LA BARRE DE NAVIGATION (decision d Alain : elle est
+# deja chargee) : le pied de page, une phrase dans l introduction de l accueil,
+# et un renvoi « Comment lire ce schema ? » sur chaque fiche position, qui pointe
+# l ancre `#schemas`. Cette ancre est une ADRESSE PUBLIQUE : la renommer casse
+# les renvois des fiches.
+#
+# PAS DE FEUILLE DE ROUTE (decision d Alain) : on dit que le site bouge sans
+# cesse et qu on ecoute, on ne promet pas de dates a des eleves. L invitation
+# reutilise l adresse du pied de page, pas une seconde.
+#
+# LA LEGENDE EST DESSINEE PAR LE MOTEUR DU SITE. Les disques verts sont de vrais
+# schemas (`sceneDunDanseur`, nouvelle, et `scenePardefaut`), rendus par
+# `ScenePosition` comme n importe quelle vignette : le jour ou la forme d un bras
+# change, la legende change avec. Ce sont des scenes INVENTEES et non des
+# positions du catalogue, sinon la legende deviendrait fausse a la premiere
+# retouche d Alain. Seules les silhouettes DEBOUT sont ecrites a la main : le
+# moteur ne sait produire qu une vue de dessus.
+#
+# CORRECTION DE DOMAINE, apportee par Alain a l ecran. L eclair du cavalier
+# n est PAS son nez : c est sa BANANE, la coiffure de rockeur qui deborde du
+# front. Le commentaire de `directionDuRegard` (src/schema-position.ts) disait le
+# contraire depuis le debut ; il est corrige, ainsi que celui du test. La
+# geometrie, elle, etait juste : nez ou banane, ce qui depasse est devant.
+#
+# Filet : 2 tests unitaires (`sceneDunDanseur`), 3 e2e (la page, ses trois portes,
+# l ancre). 246 unitaires, 82 integration, 68 e2e, tous verts.
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------

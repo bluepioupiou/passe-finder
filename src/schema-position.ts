@@ -153,10 +153,13 @@ export function schemaVide(taille: number = TAILLE_PAR_DEFAUT): SchemaPosition {
  * Vers ou regarde une tete.
  *
  * LES DEUX REPERES NE DISENT PAS LA MEME CHOSE, et c'est la subtilite du
- * dessin d'Alain : l'eclair du cavalier est son NEZ — la partie qui depasse du
- * cercle est devant lui — tandis que la queue de cheval de la cavaliere est
- * DERRIERE sa tete. A angle de piece egal, les deux danseurs regardent donc en
- * sens opposes.
+ * dessin d'Alain : l'eclair du cavalier est sa BANANE — la coiffure de rockeur,
+ * un rouleau de cheveux qui deborde du front, donc DEVANT lui — tandis que la
+ * queue de cheval de la cavaliere est DERRIERE sa tete. A angle de piece egal,
+ * les deux danseurs regardent donc en sens opposes.
+ *
+ * (Ce commentaire a longtemps dit « son NEZ ». C'etait faux, et seule la
+ * geometrie s'en tirait indemne : nez ou banane, ce qui depasse est devant.)
  *
  * Le confondre donnait un cavalier qui tournait le dos a sa partenaire.
  */
@@ -271,6 +274,39 @@ export function scenePardefaut(
   ]
 
   return { version: 1, taille, pieces, calque: null }
+}
+
+/**
+ * Un danseur SEUL, au centre de la toile, ses deux bras poses.
+ *
+ * Ce n'est jamais une position du catalogue : aucune n'a un seul danseur. Cette
+ * scene sert la LEGENDE de la page « Comment ça marche ? », qui montre d'abord
+ * un danseur isole avant de montrer le couple — on ne peut pas parler du devant
+ * et du derriere de quelqu'un quand deux personnes se font face, puisque chacun
+ * a les siens.
+ *
+ * Elle est ici, et non dans le composant qui l'affiche, pour la meme raison que
+ * `scenePardefaut` : les scenes s'assemblent dans ce fichier, ou elles sont
+ * testables sans monter le moindre rendu. La legende passe ainsi par la MEME
+ * mecanique que les vraies vignettes, et ne peut pas se mettre a mentir sur le
+ * dessin le jour ou celui-ci change.
+ */
+export function sceneDunDanseur(
+  genre: GenreTete,
+  rotation: number,
+  taille: number = TAILLE_PAR_DEFAUT,
+  identifiants: () => string = identifiant,
+): SchemaPosition {
+  const tete: PieceTete = { id: identifiants(), type: 'tete', genre, x: 0, y: 0, rotation }
+
+  return {
+    version: 1,
+    taille,
+    // Les bras AVANT la tete, comme dans `scenePardefaut` : elle masque leur
+    // depart au lieu de laisser voir le trait sortir du centre.
+    pieces: [brasPour(tete, 'gauche', identifiants()), brasPour(tete, 'droite', identifiants()), tete],
+    calque: null,
+  }
 }
 
 /**

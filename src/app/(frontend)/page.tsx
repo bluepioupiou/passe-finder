@@ -57,7 +57,11 @@ export default async function HomePage() {
           connecte se lit dans la barre de navigation, ou il a sa place. */}
       <h1>Passe Finder</h1>
       <p className="texte-attenue accueil-intro">
-        Le catalogue des positions et des passes de rock 6 temps, et les enchaînements du cours.
+        Le catalogue des positions et des passes de rock 6 temps, et les enchaînements du cours.{' '}
+        {/* La SECONDE porte vers la page d'explication, avec le pied de page.
+            Elle tient dans la phrase d'introduction : pas d'entree de menu en
+            plus, mais un premier visiteur la voit sans avoir a la chercher. */}
+        <Link href="/comment-ca-marche">Comment ça marche ?</Link>
       </p>
 
       <div className="accueil-portes">

@@ -73,3 +73,10 @@
   margin: 0;
   font-size: var(--data-size);
 }
+
+/* Renvoi vers la legende des schemas, sur la page d'explication. Meme discretion
+   que le lien d'edition : c'est une aide, pas le sujet de la fiche. */
+.fiche-legende {
+  margin: var(--space-2) 0 0;
+  font-size: var(--data-size);
+}

@@ -9,6 +9,7 @@ import {
   directionDuRegard,
   brasPour,
   scenePardefaut,
+  sceneDunDanseur,
   teteDuBras,
   deplacer,
   dupliquer,
@@ -252,8 +253,9 @@ describe('le rattachement des bras', () => {
   })
 
   it('fait regarder les deux danseurs en sens OPPOSES a angle egal', () => {
-    // L'eclair du cavalier est son nez, la queue de cheval de la cavaliere est
-    // derriere sa tete : le meme angle de piece ne veut pas dire le meme regard.
+    // L'eclair du cavalier est sa banane — coiffure de rockeur, donc devant lui
+    // — et la queue de cheval de la cavaliere est derriere sa tete : le meme
+    // angle de piece ne veut pas dire le meme regard.
     // C'est ce qui donnait un cavalier tournant le dos a sa partenaire.
     expect(directionDuRegard(teteDe('cavalier', 0))).toBe(0)
     expect(directionDuRegard(teteDe('cavaliere', 0))).toBe(180)
@@ -281,6 +283,31 @@ describe('le rattachement des bras', () => {
 
     const tetes = schema.pieces.filter((p) => p.type === 'tete')
     for (const t of tetes) expect(brasDeLaTete(schema, t.id)).toHaveLength(2)
+  })
+
+  it('pose un danseur seul, centre, ses deux bras sous sa tete', () => {
+    let n = 0
+    const schema = sceneDunDanseur('cavalier', 90, 520, () => `s${n++}`)
+
+    expect(schema.taille).toBe(520)
+    expect(schema.pieces).toHaveLength(3)
+    expect(schema.pieces.slice(0, 2).every((p) => p.type === 'bras')).toBe(true)
+
+    const tete = schema.pieces[2]
+    // Centre sur la toile : c'est ce qui le pose au milieu du disque de la legende.
+    expect(tete).toMatchObject({ type: 'tete', genre: 'cavalier', x: 0, y: 0, rotation: 90 })
+    expect(brasDeLaTete(schema, tete.id)).toHaveLength(2)
+  })
+
+  it('fait regarder le danseur seul dans la direction demandee', () => {
+    // La legende montre les deux danseurs tournes vers le BAS de l'image. Leur
+    // repere n'etant pas au meme endroit, il leur faut deux angles opposes —
+    // c'est exactement le piege que `directionDuRegard` desamorce.
+    const lui = sceneDunDanseur('cavalier', 90, 520, () => 'a')
+    const elle = sceneDunDanseur('cavaliere', 270, 520, () => 'b')
+
+    expect(directionDuRegard(lui.pieces[2] as PieceTete)).toBe(90)
+    expect(directionDuRegard(elle.pieces[2] as PieceTete)).toBe(90)
   })
 
   it('emboite le bras sur le centre de sa tete', () => {
