@@ -1,0 +1,127 @@
+/*
+ * La legende des schemas (page « Comment ça marche ? »).
+ *
+ * Les deux figures partagent une regle : le DESSIN s'etire, le TEXTE non. Un
+ * dessin trop petit ne s'explique plus, un texte qui suivrait la meme echelle
+ * deviendrait illisible sur telephone. C'est aussi pourquoi aucun mot n'est
+ * ecrit dans les SVG.
+ */
+
+.legende-danseurs {
+  display: grid;
+  gap: var(--space-8);
+  margin: var(--space-6) 0;
+}
+
+@media (min-width: 640px) {
+  .legende-danseurs {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-12);
+  }
+}
+
+.legende-danseur {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.legende-danseur__titre {
+  font-size: var(--headline-size);
+  font-weight: var(--headline-weight);
+  line-height: var(--headline-line);
+  margin: 0 0 var(--space-2);
+}
+
+/* Le disque, cadre comme les vignettes du catalogue (`.image-position`) : c'est
+   exactement ce que le lecteur voit sur une fiche position. */
+.legende-danseur__dessus {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--rounded-full);
+  border: 1px solid var(--line);
+}
+
+.legende-debout {
+  display: block;
+  width: 100%;
+  max-width: 130px;
+  height: auto;
+}
+
+.legende-danseur__repere,
+.legende-danseur__liaison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.legende-danseur__liaison {
+  font-style: italic;
+  font-size: var(--data-size);
+}
+
+.legende-danseur__note {
+  font-size: var(--data-size);
+  line-height: var(--data-line);
+  margin: var(--space-2) 0 0;
+  max-width: 32ch;
+}
+
+.legende-fleche {
+  width: 12px;
+  height: 20px;
+  flex: none;
+}
+
+/* ── Le couple et ses pastilles ─────────────────────────────────────────── */
+
+.legende-couple {
+  margin: var(--space-6) 0;
+  display: grid;
+  gap: var(--space-5);
+  align-items: center;
+}
+
+@media (min-width: 640px) {
+  .legende-couple {
+    grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+}
+
+.legende-couple__vignette {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--rounded-full);
+  border: 1px solid var(--line);
+}
+
+/* Le numero est le SEUL texte pose dans un SVG de cette page. Il n'a pas a etre
+   lu : c'est une etiquette de renvoi, et la liste juste a cote porte les mots. */
+.legende-couple__numero {
+  font-family: var(--font-sans);
+  font-size: 46px;
+  font-weight: 700;
+}
+
+.legende-couple__liste {
+  margin: 0;
+  padding-left: 1.4em;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.legende-couple__liste li {
+  line-height: var(--body-line);
+}

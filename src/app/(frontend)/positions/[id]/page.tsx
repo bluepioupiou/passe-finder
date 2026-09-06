@@ -96,6 +96,12 @@ export default async function FichePosition({ params }: { params: Promise<{ id: 
           {position.description ? (
             <p className="fiche-description texte-attenue">{position.description}</p>
           ) : null}
+          {/* La legende est atteignable ICI, sous le schema, parce que c'est ici
+              que la question se pose. Rangee dans la seule page d'explication,
+              elle aurait ete ecrite et jamais retrouvee. */}
+          <p className="fiche-legende texte-attenue">
+            <Link href="/comment-ca-marche#schemas">Comment lire ce schéma ?</Link>
+          </p>
           {estAdmin(utilisateur) ? (
             <p className="fiche-modifier">
               <Link href={`/positions/${position.id}/modifier`}>Modifier le schéma</Link>
