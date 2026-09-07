@@ -164,6 +164,46 @@ test.describe('Liste des enchaînements', () => {
     await expect(page.getByLabel('Contient la passe')).toHaveValue(idPasse!)
   })
 
+  test('replie la barre de filtres sur téléphone, et l ouvre si un filtre est posé', async ({
+    page,
+  }) => {
+    // LA REGLE N'EST PAS COSMETIQUE : repliee, la barre laisse la premiere carte
+    // au-dessus de la ligne de flottaison ; depliee, elle occupait l'ecran
+    // entier. Et un panneau ferme sur une liste DEJA filtree afficherait une
+    // liste amputee sans rien qui explique pourquoi — d'ou l'ouverture d'entree
+    // des qu'un critere est pose.
+    await page.setViewportSize({ width: 375, height: 812 })
+
+    await page.goto('/enchainements')
+    const bascule = page.getByRole('button', { name: /Rechercher et filtrer/ })
+    await expect(bascule).toBeVisible()
+    await expect(bascule).toHaveAttribute('aria-expanded', 'false')
+    await expect(page.getByLabel('Contient la passe')).toBeHidden()
+
+    await bascule.click()
+    await expect(bascule).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.getByLabel('Contient la passe')).toBeVisible()
+
+    // Et elle se referme.
+    await bascule.click()
+    await expect(page.getByLabel('Contient la passe')).toBeHidden()
+
+    // Arrivee avec un filtre : ouverte, et le nombre de criteres est annonce.
+    await page.goto('/enchainements?video=1')
+    await expect(page.getByRole('button', { name: /Rechercher et filtrer/ })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    await expect(page.locator('.filtres__bascule-compte')).toHaveText('1')
+
+    // AU-DESSUS DE 640px LE PLI N'EXISTE PLUS : le bouton disparait et la barre
+    // est montree quoi qu'il arrive. C'est la CSS qui le tient, pas React.
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/enchainements')
+    await expect(page.getByRole('button', { name: /Rechercher et filtrer/ })).toBeHidden()
+    await expect(page.getByLabel('Contient la passe')).toBeVisible()
+  })
+
   test('une recherche sans résultat le dit, sans page vide', async ({ page }) => {
     await page.goto('/enchainements?q=zzzintrouvable')
 
