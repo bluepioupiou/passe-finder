@@ -4,7 +4,7 @@ import { libelleDifficulte } from './collections/Passe'
 import { nomDeTransition } from './collections/Transition'
 import type { VuePasse, VuePosition, VueTransition } from './composition'
 import { cleDeTransition, identifiant } from './enchainements'
-import type { Pass, Position, Transition } from './payload-types'
+import type { Enchainement, Pass, Position, Transition, User } from './payload-types'
 import { imageDePosition } from './positions'
 
 /**
@@ -162,6 +162,69 @@ export async function voisinesDePasse(
     enchainentApres: enchainentApres?.docs ?? [],
     prisesApres: prisesApres?.docs ?? [],
   }
+}
+
+/**
+ * Combien d'EXEMPLES la fiche passe montre.
+ *
+ * 10 et pas « tout » : la passe la plus dansée du catalogue apparaît dans 74
+ * des 120 enchaînements, et ce nombre ne peut que grossir — chaque élève qui
+ * compose en ajoute. Une fiche qui les listerait tous aurait la longueur d'un
+ * annuaire pour rendre le même service.
+ *
+ * ET PAS 6 COMME /recherche, qui tronque ses groupes à `APERCU = 6` : là-bas
+ * l'aperçu est un ÉCHANTILLON avant « voir tout », ici les 10 SONT la réponse
+ * (décision d'Alain, 2026-09-07 : « le principal but est de voir des exemples
+ * d'utilisation »). Pas de « voir tout » à offrir tant que /enchainements ne
+ * sait pas filtrer par passe — voir le backlog.
+ */
+export const EXEMPLES_PAR_PASSE = 10
+
+/**
+ * Les derniers ENCHAÎNEMENTS qui utilisent cette passe (FR-24, Story 5.6).
+ *
+ * DES EXEMPLES, PAS UN INVENTAIRE, et c'est l'arbitrage du lot. Le catalogue
+ * des passes se veut exhaustif — c'est une référence, on doit pouvoir compter
+ * dessus. Les enchaînements, non : ils sont un flux qui grossit, et ce qu'un
+ * élève vient chercher sur une fiche passe c'est « à quoi ça sert, montre-moi ».
+ * Trois exemples récents y répondent aussi bien que soixante-quatorze.
+ *
+ * DU PLUS RÉCENT AU PLUS ANCIEN (`-date`), comme la liste des enchaînements :
+ * le cours de la semaine dernière est un meilleur exemple que celui de 2019,
+ * parce que c'est celui qu'on est en train de réviser.
+ *
+ * LE TOTAL EST RENDU EN PLUS DES DIX, et il compte : afficher dix lignes sans
+ * dire qu'il en existe soixante-quatorze laisserait croire à une liste
+ * complète. `totalDocs` vient de la MÊME requête, donc du même filtre d'accès —
+ * un total calculé à part dériverait de ce qui est montré.
+ *
+ * LA VISIBILITÉ EST UNE RÈGLE DE COMPTAGE, pas seulement d'affichage (AD-6) :
+ * `overrideAccess: false` fait appliquer les `access` de la collection au
+ * décompte comme à la sélection. Sans cela, un total de 12 servi à qui n'a le
+ * droit d'en voir que 3 révélerait l'existence de 9 enchaînements privés.
+ *
+ * `depth: 0` : la ligne n'affiche que le titre, la date, le rang de la passe et
+ * la présence d'une vidéo — tout est sur le document. Résoudre les passes
+ * relirait les mêmes trente positions dix fois pour ne rien montrer de plus.
+ */
+export async function enchainementsUtilisant(
+  payload: Payload,
+  passe: number,
+  utilisateur: User | null,
+): Promise<{ exemples: Enchainement[]; total: number }> {
+  const { docs, totalDocs } = await payload.find({
+    collection: 'enchainements',
+    // Le tableau ordonné se questionne par son sous-champ : même chemin que la
+    // garde de suppression d'une passe (FR-8), et le même index le sert.
+    where: { 'passes.passe': { equals: passe } },
+    limit: EXEMPLES_PAR_PASSE,
+    depth: 0,
+    sort: '-date',
+    overrideAccess: false,
+    user: utilisateur,
+  })
+
+  return { exemples: docs, total: totalDocs }
 }
 
 /**

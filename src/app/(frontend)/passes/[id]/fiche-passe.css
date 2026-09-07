@@ -94,3 +94,86 @@
 .fiche-texte--deroule {
   font-size: var(--body-size);
 }
+
+/* --- Les enchainements donnes en exemple (FR-24) ---
+ *
+ * MEME GRAMMAIRE QUE LES LISTES DE VOISINAGE juste en dessous — carte plate sur
+ * `--surface`, survol en `--accent-soft` — pour que la fiche n'ait qu'un seul
+ * rythme. Des classes a part malgre cela : `.fiche-passe-lien` (voisinage.css)
+ * nomme une PASSE, et une ligne d'enchainement qui porterait ce nom mentirait
+ * au premier qui lirait la feuille de style.
+ *
+ * `.fiche-section__precision` vient, elle, de voisinage.css : c'est une regle de
+ * SECTION de fiche, pas de voisinage, et les deux fiches la chargent deja.
+ */
+
+.fiche-exemples {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fiche-exemple {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.fiche-exemple:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.fiche-exemple__titre {
+  font-weight: 600;
+}
+
+/* OU REGARDER une fois la fiche ouverte : c'est ce qui fait de la ligne un
+   exemple plutot qu'un titre de plus. */
+.fiche-exemple__place {
+  font-size: var(--label-caps-size);
+}
+
+/* LA DATE SUIT LE RESTE SUR TELEPHONE, et n'est poussee a droite qu'a partir du
+   moment ou la ligne tient. Alignee a droite sur un ecran etroit, elle se
+   retrouvait SEULE SUR SA LIGNE, calee au bord, pendant que le titre et la
+   place occupaient la precedente — deux lignes ragees pour une information de
+   troisieme rang. Une fois la place gagnee, l'alignement redevient utile : les
+   dix dates forment une colonne, et la liste se lit comme une frise du plus
+   recent au plus ancien, ce que le tri promet. */
+.fiche-exemple__date {
+  font-size: var(--label-caps-size);
+}
+
+@media (min-width: 560px) {
+  .fiche-exemple__date {
+    margin-left: auto;
+  }
+}
+
+/* L'icone EST l'information (UX-DR17) : l'intitule reste pour les lecteurs
+   d'ecran, comme sur les cartes de la liste des enchainements. */
+.fiche-exemple__video {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+}
+
+.fiche-exemple__intitule {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

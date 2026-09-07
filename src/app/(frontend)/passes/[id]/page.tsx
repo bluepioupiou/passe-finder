@@ -3,12 +3,16 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { IconeVideo } from '@/components/Icones'
 import { ImagePosition } from '@/components/ImagePosition'
 import { ListePasses, Transitions } from '@/components/Voisinage'
-import { voisinesDePasse } from '@/catalogue'
+import { enchainementsUtilisant, EXEMPLES_PAR_PASSE, voisinesDePasse } from '@/catalogue'
 import { libelleDifficulte } from '@/collections/Passe'
+import { formaterDate, placeDansLaChaine, rangsDeLaPasse } from '@/enchainements'
 import config from '@/payload.config'
-import type { Position } from '@/payload-types'
+import type { Enchainement, Position } from '@/payload-types'
+import { sessionCourante } from '@/porte'
+import { presenterVideo } from '@/video'
 import './fiche-passe.css'
 
 export const dynamic = 'force-dynamic'
@@ -21,6 +25,53 @@ function MaillonPosition({ position, role }: { position: Position; role: string 
       <span className="fiche-maillon__role label-caps texte-attenue">{role}</span>
       <span className="fiche-maillon__nom">{position.nom}</span>
     </Link>
+  )
+}
+
+/**
+ * Un enchaînement donné en EXEMPLE de la passe (FR-24).
+ *
+ * TROIS CHOSES ET PAS UNE CARTE COMPLÈTE : le titre pour reconnaître, la place
+ * de la passe dans la chaîne pour savoir où regarder en arrivant, la date pour
+ * situer le cours. La carte de la liste (`CarteEnchainement`) montre en plus le
+ * trajet et la description — il faudrait pour cela charger tout le catalogue de
+ * référence sur une fiche qui n'en a aucun autre usage, et dix cartes pleines
+ * repousseraient les listes de voisinage encore plus bas.
+ *
+ * L'ICÔNE VIDÉO EST LA SEULE RETENUE, et pas celle de la musique : ici on
+ * cherche à VOIR la passe dansée. Le morceau ne dit rien de la passe. C'est
+ * aussi le premier pas vers FR-38, qui demande une liste de vidéos à part.
+ */
+function ExempleDEnchainement({
+  enchainement,
+  passe,
+}: {
+  enchainement: Enchainement
+  passe: number
+}) {
+  const place = placeDansLaChaine(
+    rangsDeLaPasse(enchainement.passes, passe),
+    enchainement.passes.length,
+  )
+  const date = formaterDate(enchainement.date)
+  const video = presenterVideo(enchainement.urlVideo)
+
+  return (
+    <li>
+      {/* L'IDENTIFIANT PUBLIC, jamais le numéro de ligne : c'est la seule
+          adresse que le site sert (action item `identifiant-opaque-et-visibilites`). */}
+      <Link className="fiche-exemple" href={`/enchainements/${enchainement.idPublic}`}>
+        <span className="fiche-exemple__titre">{enchainement.titre}</span>
+        {place ? <span className="fiche-exemple__place texte-attenue">{place}</span> : null}
+        {video ? (
+          <span className="fiche-exemple__video">
+            <IconeVideo taille={14} />
+            <span className="fiche-exemple__intitule">Avec vidéo</span>
+          </span>
+        ) : null}
+        {date ? <span className="fiche-exemple__date texte-attenue">{date}</span> : null}
+      </Link>
+    </li>
   )
 }
 
@@ -50,12 +101,20 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * repousseraient hors de vue sur téléphone. Le troncage à un aperçu reste au
  * backlog, mis en pause par Alain faute d'un classement clair.
  *
+ * LES EXEMPLES S'INTERCALENT ENTRE LE DEROULE ET CES TROIS LISTES (FR-24,
+ * 2026-09-07), et cette place est le seul endroit tenable. Placés après, ils
+ * seraient sous 68 lignes de voisinage — au bas d'une fiche qui mesure 24 000 px
+ * dans le pire cas, donc invisibles. Placés avant le déroulé, ils passeraient
+ * devant le contenu de cours, qui est la raison d'être de la fiche. On lit donc
+ * : voici la passe, voici comment elle se danse, voici où elle sert vraiment,
+ * et voici comment le graphe continue.
+ *
  * LA PRECISION SOUS CHAQUE TITRE NOMME LA POSITION concernée. Sur une fiche
  * position, « qui partent d'ici » se suffit ; ici les listes parlent de deux
  * positions différentes, dont aucune n'est le sujet de la page.
  *
- * Reste à faire ici (Story 5.6, FR-24 / FR-38) : les enchaînements qui utilisent
- * cette passe, et les vidéos correspondantes.
+ * Reste à faire ici (Story 5.6, FR-38) : la liste des VIDEOS, distincte de
+ * celle des enchaînements.
  */
 export default async function FichePasse({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -72,9 +131,18 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
   const fin = passe.positionFin as Position | number
   const difficulte = libelleDifficulte(passe.difficulte)
 
+  // LA SESSION EST LUE POUR LES SEULS EXEMPLES. La fiche reste publique
+  // (FR-21) : elle n'exige rien, mais un élève connecté doit y retrouver SES
+  // enchaînements, y compris privés. C'est la collection qui en décide
+  // (`enchainementsUtilisant` lui passe l'utilisateur), pas cette page.
+  const utilisateur = await sessionCourante()
+
   // La règle des trois listes vit dans `voisinesDePasse` : elle se teste, et
   // elle ne se recopiera pas le jour où une autre surface en aura besoin.
-  const { menentIci, enchainentApres, prisesApres } = await voisinesDePasse(payload, passe)
+  const [{ menentIci, enchainentApres, prisesApres }, { exemples, total }] = await Promise.all([
+    voisinesDePasse(payload, passe),
+    enchainementsUtilisant(payload, passe.id, utilisateur),
+  ])
 
   const nomDebut = typeof debut === 'object' ? debut.nom : null
   const nomFin = typeof fin === 'object' ? fin.nom : null
@@ -113,6 +181,41 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
           <p className="fiche-texte fiche-texte--deroule">{passe.deroule}</p>
         </section>
       ) : null}
+
+      {/* FR-24 — DES EXEMPLES D'UTILISATION, pas l'inventaire. Le compteur du
+          titre est le TOTAL et la précision dit ce qui est montré : dix lignes
+          sans cette phrase se liraient comme une liste complète. */}
+      <section className="fiche-section">
+        <h2 className="fiche-section__titre">
+          Enchaînements qui l&apos;utilisent <span className="texte-attenue">({total})</span>
+        </h2>
+
+        {exemples.length === 0 ? (
+          // NE MENTIONNE PAS CE QU'ON NE VOIT PAS. « Aucun enchaînement
+          // VISIBLE » laisserait entendre qu'il en existe d'autres, ce qui est
+          // exactement ce que la visibilité sert à taire (AD-6). Pour ce
+          // lecteur, il n'y en a pas — c'est tout ce que la phrase doit dire.
+          <p className="texte-attenue">Aucun enchaînement ne l&apos;utilise pour le moment.</p>
+        ) : (
+          <>
+            <p className="fiche-section__precision texte-attenue">
+              {total > EXEMPLES_PAR_PASSE
+                ? `Les ${EXEMPLES_PAR_PASSE} plus récents sur ${total} : de quoi voir la passe en situation.`
+                : 'Du plus récent au plus ancien.'}
+            </p>
+
+            <ul className="fiche-exemples">
+              {exemples.map((enchainement) => (
+                <ExempleDEnchainement
+                  key={enchainement.id}
+                  enchainement={enchainement}
+                  passe={passe.id}
+                />
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
 
       {/* CE QUI VIENT AVANT, PUIS CE QUI VIENT APRES : l'ordre de la danse, et
           celui de la flèche affichée plus haut. */}
