@@ -360,6 +360,9 @@ Dépôt GitHub → *Settings* → *Secrets and variables* → *Actions* → *New
 | `S3_BUCKET` | le nom du bucket | étape 2 |
 | `S3_REGION` | la région, ex. `eu-north-1` | étape 2 |
 | `CLOUDFLARE_ANALYTICS_TOKEN` | le jeton de mesure d'audience | **facultatif**, voir ci-dessous |
+| `SMTP_HOTE` | `smtp.gmail.com` | **facultatif**, voir ci-dessous |
+| `SMTP_UTILISATEUR` | l'adresse d'envoi, ex. `passe-finder@gmail.com` | **facultatif**, voir ci-dessous |
+| `SMTP_MOT_DE_PASSE` | le mot de passe d'application Google | **facultatif**, voir ci-dessous |
 
 Pour générer le `PAYLOAD_SECRET` :
 
@@ -386,6 +389,53 @@ secret, pas l'extrait entier.
 
 > Cette mesure ne pose **aucun cookie** et ne suit personne individuellement.
 > C'est pour cela que le site n'a pas besoin de bandeau de consentement.
+
+### Le mot de passe d'application Gmail (facultatif)
+
+Les trois secrets `SMTP_*` servent à **une seule chose** : envoyer le message de
+réinitialisation quand quelqu'un a oublié son mot de passe (story 3.3). **Tu peux
+déployer sans eux** — le site fonctionne, et la page « mot de passe oublié »
+annonce franchement que la fonction est indisponible plutôt que de laisser
+quelqu'un attendre un message qui ne partira jamais.
+
+Un compte Gmail ordinaire suffit largement : sa limite est d'environ **500
+destinataires par jour**, sans commune mesure avec le besoin.
+
+> ⚠️ Ce n'est **pas** le mot de passe de ton compte Google. Google a fermé cet
+> accès en 2022. Il faut un **mot de passe d'application**, une clé de seize
+> caractères propre à cette application, révocable sans toucher au compte.
+
+1. Connecte-toi au compte Google qui enverra les messages
+   (ex. `passe-finder@gmail.com`).
+2. Va sur [myaccount.google.com](https://myaccount.google.com) → **Sécurité**.
+3. Active la **validation en deux étapes** si ce n'est pas déjà fait. Sans elle,
+   les mots de passe d'application n'existent pas : l'écran de l'étape suivante
+   reste introuvable. C'est la cause n°1 de « je ne trouve pas la page ».
+4. Va sur [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+   Donne un nom à l'application, par exemple `Passe Finder`, et valide.
+5. Google affiche **seize caractères en quatre groupes**. Copie-les **sans les
+   espaces**. Ils ne seront **plus jamais réaffichés** : si tu les perds,
+   supprime cette entrée et refais-en une.
+6. Pose les trois secrets GitHub du tableau ci-dessus. Le mot de passe
+   d'application va dans `SMTP_MOT_DE_PASSE`, et **nulle part ailleurs** — jamais
+   dans le dépôt, jamais dans un fichier suivi par git.
+
+L'expéditeur affiché sera l'adresse du compte Google. Une autre adresse serait
+**réécrite** par Google, à moins de l'avoir déclarée comme alias vérifié dans
+Gmail (*Paramètres* → *Comptes et importation* → *Envoyer des e-mails en tant
+que*).
+
+**Pour changer de fournisseur plus tard** (Resend, Brevo, Amazon SES), il n'y a
+aucun code à toucher : ces services parlent le même SMTP. Seules les trois
+valeurs changent.
+
+**Pour vérifier que ça marche après un déploiement** : demande une
+réinitialisation depuis `https://ton-domaine.fr/mot-de-passe-oublie` avec ta
+propre adresse. Si rien n'arrive, les journaux disent pourquoi :
+
+```bash
+docker compose -f /opt/passe-finder/docker-compose.yml logs app | grep -i mail
+```
 
 ---
 

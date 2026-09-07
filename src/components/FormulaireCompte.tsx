@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import React, { useActionState } from 'react'
+import React, { useActionState, useState } from 'react'
 
 import type { EtatFormulaire } from '@/app/(frontend)/compte/actions'
 import { Bouton } from './Bouton'
@@ -15,6 +15,8 @@ type Proprietes = {
   suite?: string
   /** Aide sous le champ mot de passe (contrainte a l'inscription). */
   aideMotDePasse?: string
+  /** Affiche le renvoi vers la reinitialisation (Story 3.3) — connexion seulement. */
+  motDePasseOublie?: boolean
   /** Lien vers l'autre porte : on ne laisse jamais quelqu'un dans un cul-de-sac. */
   alternative: { texte: string; lien: string; libelleLien: string }
 }
@@ -27,18 +29,31 @@ type Proprietes = {
  * lien vers l'autre porte) est passe en proprietes.
  *
  * `useActionState` garde le message d'erreur RENVOYE PAR LE SERVEUR sans
- * recharger la page ni vider l'email deja saisi. C'est le serveur qui valide :
- * les attributs `required` du navigateur ne sont qu'un confort, ils evitent un
- * aller-retour, ils ne protegent rien.
+ * recharger la page. C'est le serveur qui valide : les attributs `required` du
+ * navigateur ne sont qu'un confort, ils evitent un aller-retour, ils ne
+ * protegent rien.
+ *
+ * CHAMP E-MAIL CONTROLE. Il ne l'etait pas, et le commentaire promettait
+ * pourtant de garder l'adresse saisie : React 19 REINITIALISE un formulaire des
+ * que son action serveur se termine, y compris sur une erreur. La promesse
+ * etait donc fausse depuis l'origine — on retapait son adresse a chaque mot de
+ * passe rate. Meme correctif que sur le formulaire de pseudo, ou le defaut
+ * avait ete constate le premier (Story 3.3).
+ *
+ * LE MOT DE PASSE, LUI, RESTE NON CONTROLE, et c'est voulu : un champ efface
+ * apres un refus est ici le bon comportement, personne ne corrige un mot de
+ * passe faux en modifiant deux lettres.
  */
 export function FormulaireCompte({
   action,
   libelle,
   suite,
   aideMotDePasse,
+  motDePasseOublie,
   alternative,
 }: Proprietes) {
   const [etat, envoyer, enCours] = useActionState(action, {})
+  const [email, setEmail] = useState('')
 
   return (
     <form className="formulaire-compte" action={envoyer}>
@@ -58,6 +73,8 @@ export function FormulaireCompte({
           id="email"
           name="email"
           type="email"
+          value={email}
+          onChange={(evenement) => setEmail(evenement.target.value)}
           autoComplete="email"
           required
           autoFocus
@@ -80,6 +97,13 @@ export function FormulaireCompte({
         {aideMotDePasse ? (
           <p id="aide-mot-de-passe" className="formulaire-compte__aide">
             {aideMotDePasse}
+          </p>
+        ) : null}
+        {/* SOUS LE CHAMP MOT DE PASSE, et pas en bas de page : c'est la, au
+            moment ou l'on bute, que la question se pose. */}
+        {motDePasseOublie ? (
+          <p className="formulaire-compte__aide">
+            <Link href="/mot-de-passe-oublie">Mot de passe oublié ?</Link>
           </p>
         ) : null}
       </div>

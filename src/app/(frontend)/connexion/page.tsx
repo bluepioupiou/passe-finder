@@ -52,6 +52,7 @@ export default async function Connexion({
         action={seConnecter}
         libelle="Se connecter"
         suite={suite}
+        motDePasseOublie
         alternative={{
           texte: 'Pas encore de compte ?',
           lien: suite ? `/inscription?suite=${encodeURIComponent(suite)}` : '/inscription',

@@ -6,7 +6,8 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
-import { DATABASE_URI, PAYLOAD_SECRET } from './env'
+import { adaptateurCourriel } from './courriel'
+import { DATABASE_URI, PAYLOAD_SECRET, SITE_URL } from './env'
 import { Danse } from './collections/Danse'
 import { Enchainement } from './collections/Enchainement'
 import { Favori } from './collections/Favori'
@@ -35,6 +36,16 @@ export default buildConfig({
   collections: [Users, Danse, Media, Position, Passe, Transition, Enchainement, Favori],
   editor: lexicalEditor(),
   secret: PAYLOAD_SECRET,
+  // ORIGINE PUBLIQUE DU SITE. Payload s'en sert pour fabriquer les adresses
+  // absolues qui partent hors du navigateur — aujourd'hui le lien du mail de
+  // reinitialisation (Story 3.3). Sans elle, il retombe sur l'en-tete `Host` de
+  // la requete et journalise un avertissement a chaque envoi.
+  serverURL: SITE_URL,
+  // Acheminement des e-mails (Story 3.3). `undefined` quand rien n'est
+  // configure : Payload ecrit alors le message dans les journaux, ce qui est
+  // exactement ce qu'on veut en developpement et en CI. Tout le raisonnement
+  // est dans `src/courriel.ts`.
+  email: adaptateurCourriel(),
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
