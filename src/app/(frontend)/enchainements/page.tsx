@@ -103,6 +103,10 @@ export default async function EnchainementsPage({
         // visiteur anonyme afficherait une case qui ne peut rien donner.
         proposerFavoris={user ? favoris.size > 0 : false}
         auteurs={auteursDuFiltre}
+        // Le catalogue est DEJA charge pour les cartes (trajet de chaque
+        // chaine) : le menu des passes ne coute rien de plus, et il arrive
+        // trie par nom.
+        passes={[...catalogue.passes.values()].map(({ id, nom }) => ({ id, nom }))}
         total={totalDocs}
       />
 

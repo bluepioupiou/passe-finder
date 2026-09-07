@@ -9,6 +9,7 @@ import { ListePasses, Transitions } from '@/components/Voisinage'
 import { enchainementsUtilisant, EXEMPLES_PAR_PASSE, voisinesDePasse } from '@/catalogue'
 import { libelleDifficulte } from '@/collections/Passe'
 import { formaterDate, placeDansLaChaine, rangsDeLaPasse } from '@/enchainements'
+import { lienListe } from '@/enchainements-liste'
 import config from '@/payload.config'
 import type { Enchainement, Position } from '@/payload-types'
 import { sessionCourante } from '@/porte'
@@ -200,7 +201,7 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
           <>
             <p className="fiche-section__precision texte-attenue">
               {total > EXEMPLES_PAR_PASSE
-                ? `Les ${EXEMPLES_PAR_PASSE} plus récents sur ${total} : de quoi voir la passe en situation.`
+                ? `Les ${EXEMPLES_PAR_PASSE} plus récents : de quoi voir la passe en situation.`
                 : 'Du plus récent au plus ancien.'}
             </p>
 
@@ -213,6 +214,19 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
                 />
               ))}
             </ul>
+
+            {/* LE COMPTE EST DIT UNE SEULE FOIS, et c'est ici : la phrase
+                au-dessus annonce ce qu'on montre, ce lien annonce ce qu'il
+                reste. Même formule que la page de recherche (« Voir les 12
+                enchaînements ») — deux libellés voisins pour le même geste
+                seraient du bruit gratuit.
+                Il ne paraît QUE s'il cache quelque chose : sous la limite, tout
+                est déjà à l'écran et le lien ne mènerait qu'à la même liste. */}
+            {total > EXEMPLES_PAR_PASSE ? (
+              <Link className="fiche-exemples__tout" href={lienListe({ passe: passe.id })}>
+                Voir les {total} enchaînements
+              </Link>
+            ) : null}
           </>
         )}
       </section>

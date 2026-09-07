@@ -43,6 +43,15 @@ export type Criteres = {
   avecVideo: boolean
   /** Ne montrer que ceux de cet auteur ; `null` = tous. */
   auteur: number | null
+  /**
+   * Ne montrer que ceux qui CONTIENNENT cette passe ; `null` = toutes.
+   *
+   * Ajouté le 2026-09-07 (demande d'Alain) pour donner une destination au
+   * « Voir les N enchaînements » de la fiche passe, qui n'en avait aucune. Il
+   * vaut aussi pour lui-même : « montre-moi tout ce qui contient la Toupie »
+   * est une question de révision, au même titre que « ceux avec une vidéo ».
+   */
+  passe: number | null
 }
 
 /** Ce que l'URL peut porter. */
@@ -66,6 +75,7 @@ function valeur(parametres: ParametresURL, nom: string): string {
 export function lireCriteres(parametres: ParametresURL): Criteres {
   const page = Number.parseInt(valeur(parametres, 'page'), 10)
   const auteur = Number.parseInt(valeur(parametres, 'auteur'), 10)
+  const passe = Number.parseInt(valeur(parametres, 'passe'), 10)
 
   return {
     requete: valeur(parametres, 'q').trim(),
@@ -74,6 +84,7 @@ export function lireCriteres(parametres: ParametresURL): Criteres {
     avecMusique: valeur(parametres, 'musique') === '1',
     avecVideo: valeur(parametres, 'video') === '1',
     auteur: Number.isFinite(auteur) && auteur > 0 ? auteur : null,
+    passe: Number.isFinite(passe) && passe > 0 ? passe : null,
   }
 }
 
@@ -94,6 +105,7 @@ export function versParametres(criteres: Partial<Criteres>): URLSearchParams {
   if (criteres.avecMusique) parametres.set('musique', '1')
   if (criteres.avecVideo) parametres.set('video', '1')
   if (criteres.auteur) parametres.set('auteur', String(criteres.auteur))
+  if (criteres.passe) parametres.set('passe', String(criteres.passe))
   if (criteres.page && criteres.page > 1) parametres.set('page', String(criteres.page))
 
   return parametres
@@ -113,7 +125,8 @@ export function auMoinsUnCritere(criteres: Criteres): boolean {
     criteres.favorisSeuls ||
     criteres.avecMusique ||
     criteres.avecVideo ||
-    criteres.auteur !== null
+    criteres.auteur !== null ||
+    criteres.passe !== null
   )
 }
 
@@ -157,6 +170,13 @@ export function conditions(criteres: Criteres, favoris: number[]): Where | undef
   if (criteres.avecVideo) et.push(renseigne('urlVideo'))
 
   if (criteres.auteur !== null) et.push({ auteur: { equals: criteres.auteur } })
+
+  if (criteres.passe !== null) {
+    // Le sous-champ du tableau ordonné, comme la fiche passe et comme la garde
+    // de suppression (FR-8) : un seul chemin pour la même question, et le même
+    // index le sert.
+    et.push({ 'passes.passe': { equals: criteres.passe } })
+  }
 
   if (criteres.favorisSeuls) {
     // Sans aucun favori, on veut une liste VIDE, pas la liste entière : un

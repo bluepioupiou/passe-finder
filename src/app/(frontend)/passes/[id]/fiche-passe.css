@@ -177,3 +177,13 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* « Voir les 74 enchainements » : le lien qui donne une SUITE a la liste
+   tronquee. Meme poids que le « voir tout » de la page de recherche (600), et
+   pas un bouton : il prolonge la lecture, il ne declenche rien. Detache de la
+   derniere ligne pour ne pas se lire comme une onzieme entree. */
+.fiche-exemples__tout {
+  display: inline-block;
+  margin-top: var(--space-4);
+  font-weight: 600;
+}

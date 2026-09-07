@@ -229,6 +229,7 @@ describe('Enchainement', () => {
       avecMusique: true,
       avecVideo: false,
       auteur: null,
+      passe: null,
     }
 
     await payload.update({

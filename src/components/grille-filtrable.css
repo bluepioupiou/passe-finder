@@ -55,6 +55,15 @@
     flex: 0 0 200px;
   }
 
+  /* PLUS LARGE, ET ELASTIQUE : les noms de passes vont jusqu'a « Changement de
+     cote changement de main ». Dans les 200px du champ court, un `select`
+     natif coupe le nom SANS point de suspension utile — on ne sait plus ce
+     qu'on a choisi. Il prend donc la place disponible, comme le champ de
+     recherche, et se rabat sur 220px quand elle manque. */
+  .filtres__champ--large {
+    flex: 1 1 220px;
+  }
+
   /* Aligne les cases sur le BAS des champs voisins, qui portent une etiquette
      au-dessus. Uniquement en ligne : en colonne (telephone), `flex-end` les
      collerait a DROITE de l'ecran — l'axe transversal n'est plus le meme. */

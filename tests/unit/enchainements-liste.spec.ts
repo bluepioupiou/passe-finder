@@ -23,7 +23,15 @@ import { numerosVisibles } from '@/components/Pagination'
 describe('lireCriteres', () => {
   it('lit ce que porte l URL', () => {
     expect(
-      lireCriteres({ q: ' chore ', page: '3', favoris: '1', musique: '1', video: '1', auteur: '7' }),
+            lireCriteres({
+        q: ' chore ',
+        page: '3',
+        favoris: '1',
+        musique: '1',
+        video: '1',
+        auteur: '7',
+        passe: '12',
+      }),
     ).toEqual({
       requete: 'chore',
       page: 3,
@@ -31,6 +39,7 @@ describe('lireCriteres', () => {
       avecMusique: true,
       avecVideo: true,
       auteur: 7,
+      passe: 12,
     })
   })
 
@@ -43,6 +52,7 @@ describe('lireCriteres', () => {
     expect(lireCriteres({ favoris: 'oui' }).favorisSeuls).toBe(false)
     expect(lireCriteres({ auteur: 'moi' }).auteur).toBeNull()
     expect(lireCriteres({ auteur: '-3' }).auteur).toBeNull()
+    expect(lireCriteres({ passe: 'toupie' }).passe).toBeNull()
   })
 
   it('prend la première valeur quand un paramètre est répété', () => {
@@ -58,6 +68,7 @@ const vide = {
   avecMusique: false,
   avecVideo: false,
   auteur: null,
+  passe: null,
 }
 
 describe('versParametres / lienListe', () => {
@@ -131,6 +142,21 @@ describe('conditions', () => {
 
   it('filtre par auteur', () => {
     expect(conditions({ ...vide, auteur: 7 }, [])).toEqual({ auteur: { equals: 7 } })
+  })
+
+  it('filtre par passe contenue, sur le sous-champ du tableau ordonné', () => {
+    // `passes.passe` et non `passes` : c'est le chemin qu'utilisent deja la
+    // fiche passe et la garde de suppression (FR-8). Un chemin voisin ne
+    // leverait pas — il rendrait une liste vide, plausible et fausse.
+    expect(conditions({ ...vide, passe: 12 }, [])).toEqual({
+      'passes.passe': { equals: 12 },
+    })
+  })
+
+  it('donne au « Voir les N enchaînements » de la fiche passe son adresse', () => {
+    // Le lien de la fiche passe ne pose QUE ce critere : arriver sur la liste
+    // avec une recherche ou des favoris herites d'ailleurs serait une surprise.
+    expect(lienListe({ passe: 12 })).toBe('/enchainements?passe=12')
   })
 
   it('combine les critères', () => {
