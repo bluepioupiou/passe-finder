@@ -1604,8 +1604,13 @@ action_items:
       « je ne suis pas sur que le but soit d etre exhaustif, contrairement aux
       passes »). La limite est 10 et non 6 comme /recherche, et c est assume :
       la-bas l apercu precede un « voir tout », ici les 10 SONT la reponse.
-      Restent les VIDEOS (FR-38) et le filtre `?passe=` sur /enchainements, qui
-      rouvrirait la question du « voir tout ».
+      Le filtre `?passe=` est livre dans la foulee, et avec lui le « Voir les N
+      enchainements » : la nuance « voir plus doit mener quelque part qui
+      existe » est donc refermee du cote enchainements, et le libelle est celui
+      de /recherche (« Voir les N enchainements ») — plus deux vocabulaires
+      voisins pour le meme geste.
+      Ne reste au titre de cette note que le TRONCAGE DES LISTES DE PASSES, en
+      pause. FR-38 (liste des videos) est abandonne, voir la Story 5-6.
 
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
@@ -1749,9 +1754,18 @@ development_status:
   # passes voisines.
   # Le total est compte SOUS LES ACCES (AD-6) : dire « 12 » a qui n en voit que
   # 2 trahirait 10 prives. Verrouille par un test d integration.
-  # Reste : les VIDEOS en liste distincte (FR-38), et le « voir tout » — qui
-  # attend un filtre `?passe=` sur /enchainements, aujourd hui inexistant.
-  5-6-fiche-passe-complete-enchainements-videos-reverse-lookup: in-progress
+  # Complete le meme jour : le filtre « Contient la passe » sur
+  # /enchainements (`?passe=<id>`), et le lien « Voir les N enchainements » au
+  # bas de la liste de la fiche, qui y mene. La question du « voir tout » posee
+  # par la note `fiche-passe-voisines-et-troncage-des-listes` est donc refermee
+  # pour les enchainements : la destination existe. Le filtre vaut aussi seul —
+  # « ou ai-je deja danse ca ? » est une question de revision.
+  # FR-38 (LISTE DES VIDEOS) ABANDONNE, decision d Alain le 2026-09-07 :
+  # « je ne suis pas sur que ca apporte de la valeur ». Les enchainements avec
+  # video portent deja leur icone dans la liste des exemples, et la liste
+  # complete se filtre par « Avec video » une fois arrive. Une seconde liste
+  # aurait redit la premiere en n en gardant qu une colonne.
+  5-6-fiche-passe-complete-enchainements-videos-reverse-lookup: review
   epic-5-retrospective: optional
 
   # --- Epic 6: Migration des données legacy ---

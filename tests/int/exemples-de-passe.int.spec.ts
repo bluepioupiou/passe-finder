@@ -2,6 +2,7 @@ import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { enchainementsUtilisant, EXEMPLES_PAR_PASSE } from '@/catalogue'
+import { conditions, lireCriteres } from '@/enchainements-liste'
 import config from '@/payload.config'
 import type { User } from '@/payload-types'
 
@@ -156,6 +157,27 @@ describe('Enchaînements qui utilisent une passe', () => {
 
     expect(sien.total).toBe(13)
     expect(sien.exemples[0].titre).toBe('Exemples — privé récent')
+  })
+
+  it('mène à la même sélection que le filtre de la liste', async () => {
+    // C'EST LA PROMESSE DU LIEN « Voir les N enchaînements » : la liste filtrée
+    // doit contenir exactement ce que la fiche compte, sinon le nombre annoncé
+    // ne correspond pas à ce qu'on trouve en arrivant. Les deux chemins passent
+    // par le même sous-champ, mais par deux fonctions différentes — c'est
+    // justement ce qui peut diverger.
+    const { total } = await enchainementsUtilisant(payload, idPasse, null)
+
+    const criteres = lireCriteres({ passe: String(idPasse) })
+    const filtree = await payload.find({
+      collection: 'enchainements',
+      where: conditions(criteres, []),
+      limit: 0,
+      depth: 0,
+      overrideAccess: false,
+    })
+
+    expect(filtree.totalDocs).toBe(total)
+    expect(filtree.docs.map((doc) => doc.titre)).not.toContain('Exemples — leurre')
   })
 
   it('rend une liste vide sur une passe que personne n utilise, sans échouer', async () => {

@@ -124,6 +124,46 @@ test.describe('Liste des enchaînements', () => {
     await expect(page.locator('.enchainement-carte')).toHaveCount(total)
   })
 
+  test('filtre par passe contenue, et le lien de la fiche passe y mène', async ({
+    page,
+    request,
+  }) => {
+    test.skip((await nombrePartages(request)) === 0, 'Aucun enchaînement partagé sur cette cible.')
+
+    // ON PART DE LA FICHE PASSE, pas de la liste : c'est le parcours reel que
+    // ce filtre existe pour servir (« montre-moi tout ce qui contient ca »), et
+    // le lien n'a de destination que depuis que le filtre existe.
+    await page.goto('/enchainements')
+    const filtre = page.getByLabel('Contient la passe')
+    await expect(filtre).toBeVisible()
+
+    // La deuxieme option : la premiere est « Toutes ».
+    const idPasse = await filtre.locator('option').nth(1).getAttribute('value')
+    await filtre.selectOption(idPasse!)
+    await expect(page).toHaveURL(new RegExp(`[?&]passe=${idPasse}`))
+
+    // Le compte annonce se retrouve sur la fiche de cette passe, et son lien
+    // ramene ici. C'est la promesse du « Voir les N enchaînements » : le nombre
+    // affiche doit etre celui qu'on trouve en arrivant.
+    const filtres = await page.locator('.enchainement-carte').count()
+
+    await page.goto(`/passes/${idPasse}`)
+    const titre = page.locator('.fiche-section__titre').filter({ hasText: "qui l'utilisent" })
+    await expect(titre).toBeVisible()
+
+    const tout = page.locator('.fiche-exemples__tout')
+    if ((await tout.count()) === 0) {
+      // Moins de dix exemples : tout est deja a l'ecran, le lien n'a rien a
+      // cacher — et son absence est elle-meme la regle qu'on verifie.
+      expect(await page.locator('.fiche-exemple').count()).toBe(filtres)
+      return
+    }
+
+    await tout.click()
+    await expect(page).toHaveURL(`/enchainements?passe=${idPasse}`)
+    await expect(page.getByLabel('Contient la passe')).toHaveValue(idPasse!)
+  })
+
   test('une recherche sans résultat le dit, sans page vide', async ({ page }) => {
     await page.goto('/enchainements?q=zzzintrouvable')
 

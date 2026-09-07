@@ -29,6 +29,7 @@ export function FiltresEnchainements({
   criteres,
   proposerFavoris,
   auteurs,
+  passes,
   total,
 }: {
   criteres: Criteres
@@ -44,6 +45,16 @@ export function FiltresEnchainements({
    * elle-même ne montre déjà (voir `auteursProposables`).
    */
   auteurs: ChoixAuteur[]
+  /**
+   * Les passes qu'on peut choisir : le CATALOGUE ENTIER, trié par nom.
+   *
+   * Contrairement aux auteurs, il n'y a rien à protéger — le catalogue est en
+   * lecture publique (FR-21), et la fiche de chaque passe est déjà ouverte à
+   * tous. Le restreindre aux passes réellement dansées coûterait une requête
+   * d'agrégation pour retirer du menu des entrées qui, choisies, donnent une
+   * réponse vraie : « aucun enchaînement n'utilise cette passe ».
+   */
+  passes: { id: number; nom: string }[]
   /** Nombre de résultats, pour l'annonce aux lecteurs d'écran. */
   total: number
 }) {
@@ -53,6 +64,7 @@ export function FiltresEnchainements({
   const idMusique = useId()
   const idVideo = useId()
   const idAuteur = useId()
+  const idPasse = useId()
 
   // La saisie est tenue localement pour rester fluide sous les doigts ; l'URL,
   // elle, ne suit qu'après la pause.
@@ -119,7 +131,8 @@ export function FiltresEnchainements({
     criteres.favorisSeuls ||
     criteres.avecMusique ||
     criteres.avecVideo ||
-    criteres.auteur !== null
+    criteres.auteur !== null ||
+    criteres.passe !== null
 
   return (
     <>
@@ -178,6 +191,37 @@ export function FiltresEnchainements({
             </select>
           </div>
         ) : null}
+
+        {/* CONTIENT LA PASSE (2026-09-07). Il porte le « Voir les N
+            enchaînements » de la fiche passe, mais il vaut aussi seul : c'est la
+            question « où ai-je déjà dansé ça ? », posée depuis la liste.
+            UN MENU DE 110 ENTREES, et c'est tenable : un `select` natif accepte
+            la frappe (taper « tou » saute à Toupie) et devient un sélecteur
+            plein écran sur téléphone. Un champ à complétion ferait mieux, mais
+            au prix du repli sans JavaScript que tout ce formulaire préserve. */}
+        <div className="filtres__champ filtres__champ--large">
+          <label className="filtres__label label-caps" htmlFor={idPasse}>
+            Contient la passe
+          </label>
+          <select
+            id={idPasse}
+            name="passe"
+            className="filtres__saisie"
+            value={criteres.passe === null ? '' : String(criteres.passe)}
+            onChange={(evenement) =>
+              naviguer({
+                passe: evenement.target.value === '' ? null : Number(evenement.target.value),
+              })
+            }
+          >
+            <option value="">Toutes</option>
+            {passes.map((passe) => (
+              <option key={passe.id} value={passe.id}>
+                {passe.nom}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="filtres__champ filtres__champ--case">
           <input
