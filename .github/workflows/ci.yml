@@ -257,6 +257,9 @@ jobs:
             S3_BUCKET="${{ secrets.S3_BUCKET }}" \
             S3_REGION="${{ secrets.S3_REGION }}" \
             CLOUDFLARE_ANALYTICS_TOKEN="${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}" \
+            SMTP_HOTE="${{ secrets.SMTP_HOTE }}" \
+            SMTP_UTILISATEUR="${{ secrets.SMTP_UTILISATEUR }}" \
+            SMTP_MOT_DE_PASSE="${{ secrets.SMTP_MOT_DE_PASSE }}" \
             "bash -s" <<'DISTANT'
           set -e
           cd /opt/passe-finder
@@ -277,6 +280,9 @@ jobs:
           S3_BUCKET=$S3_BUCKET
           S3_REGION=$S3_REGION
           CLOUDFLARE_ANALYTICS_TOKEN=$CLOUDFLARE_ANALYTICS_TOKEN
+          SMTP_HOTE=$SMTP_HOTE
+          SMTP_UTILISATEUR=$SMTP_UTILISATEUR
+          SMTP_MOT_DE_PASSE=$SMTP_MOT_DE_PASSE
           ENV
 
           # Tout le reste — page de mise à jour, arrêt des écrivains, instantané

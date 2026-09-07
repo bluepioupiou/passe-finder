@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-06 (page « Comment ça marche ? » + legende des schemas)
+# last_updated: 2026-09-07 (story 3-3 : recuperation d acces par e-mail)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-24
-last_updated: 2026-09-06
+last_updated: 2026-09-07
 project: passe-finder
 project_key: NOKEY
 tracking_system: file-system
@@ -700,6 +700,81 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 #
 # Filet : 2 tests unitaires (`sceneDunDanseur`), 3 e2e (la page, ses trois portes,
 # l ancre). 246 unitaires, 82 integration, 68 e2e, tous verts.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# STORY 3-3 : RECUPERATION D ACCES (2026-09-07)
+# ---------------------------------------------------------------------------
+# La derniere story de l Epic 3, et la seule qui demandait un EXPEDITEUR
+# d e-mail. Le choix avait ete reporte jusqu ici a dessein (voir l artefact de
+# 3-4) : il est reversible, Gmail, Resend, Brevo et SES parlent le meme SMTP.
+# Retenu : le compte Gmail d Alain, par mot de passe d application. Zero
+# inscription, zero enregistrement DNS, et un quota d environ 500 envois par
+# jour sans commune mesure avec le besoin.
+#
+# CE QUE PAYLOAD DONNAIT DEJA, et qu on n a pas ecrit : le jeton, son
+# expiration, et surtout le SILENCE sur les adresses inconnues — l operation
+# `forgotPassword` s arrete sans rien renvoyer. L AC « ne pas reveler si
+# l email existe » est donc tenu par le moteur ; notre travail etait de ne pas
+# le trahir par un ecran trop bavard. D ou le meme accuse de reception dans
+# TOUS les cas : adresse connue, inconnue, envoi refuse car trop recent, ou
+# panne du serveur d envoi. Cette derniere part dans les journaux, pas a
+# l ecran.
+#
+# LE PIEGE PRINCIPAL, ET IL AURAIT COUTE CHER : le message par defaut de
+# Payload pointe vers `/admin/reset/<jeton>`, c est-a-dire le back-office —
+# reserve aux administrateurs depuis la Story 3.2. Un eleve serait arrive
+# devant une porte fermee APRES avoir consomme son unique jeton. Le message est
+# donc reecrit (`src/courriel.ts`), et six tests unitaires verrouillent le fait
+# qu il ne repointe jamais vers /admin.
+#
+# SECOND PIEGE, trouve par le test d integration : `resetPassword` rend un
+# jeton de session mais PAS sa date d expiration, contrairement a `login`.
+# Recopier la forme de l inscription donnait un cookie jamais pose : la
+# personne changeait son mot de passe puis revenait anonyme, sans message
+# d erreur. La duree est desormais relue dans la configuration de la
+# collection.
+#
+# TROIS DECISIONS D ALAIN (2026-09-07) :
+#   - DUREE DU LIEN : une heure, le defaut de Payload. Rien a configurer.
+#   - CONFIGURATION ABSENTE : le site demarre quand meme et la page annonce
+#     l indisponibilite AVANT le formulaire. Couper tout le site pour une
+#     fonction annexe aurait puni les eleves qui consultent. Nuance a
+#     connaitre : on detecte « pas configure », PAS « mal configure » —
+#     l adaptateur verifie le transport au demarrage mais se contente de
+#     journaliser l echec. Un mot de passe d application fautif se constate
+#     donc a l envoi, dans les journaux.
+#   - CONNEXION IMMEDIATE apres le changement, comme a l inscription.
+#   - GARDE-FOU d un envoi par minute et par compte, sans table nouvelle : la
+#     date d expiration deja stockee porte l age du jeton. Il protege le quota
+#     Gmail, evite d inonder la boite d un eleve, et accessoirement preserve le
+#     PREMIER lien — Payload remplace le jeton a chaque demande, donc deux
+#     clics de suite tuaient le message deja parti.
+#
+# DEFAUT ANCIEN REFERME AU PASSAGE : `FormulaireCompte` promettait en
+# commentaire de garder l adresse saisie apres un refus, et ne le faisait pas —
+# le champ n etait pas controle, et React 19 reinitialise un formulaire des que
+# son action se termine. C etait exactement le soupcon note dans le lot
+# `pseudo-et-page-auteur`. Le champ MOT DE PASSE, lui, reste non controle a
+# dessein : personne ne corrige un mot de passe faux en changeant deux lettres.
+#
+# ENVIRONNEMENT DE TEST : le fichier d integration tourne en `node` et non en
+# `jsdom` comme ses voisins. La signature du jeton (`jose`) refuse le
+# `Uint8Array` de jsdom, qui vient d un autre contexte d execution. Il est le
+# seul a faire signer un jeton, d ou le reglage local plutot que global.
+# Et l adaptateur SMTP saute sa verification de transport en test : sans cela,
+# un `.env` local renseigne ferait appeler Gmail par chaque processus de test.
+#
+# Filet : 6 tests unitaires (le lien et le message), 7 d integration (le
+# parcours complet par l API locale, jeton a usage unique, jeton perime, garde-
+# fou), 6 e2e (les deux ecrans, le lien depuis la connexion, le refus d un
+# jeton invente, la session rouverte). 252 unitaires, 89 integration, 74 e2e,
+# tous verts. Build OK.
+#
+# RESTE A LA MAIN D ALAIN : creer le mot de passe d application Google et poser
+# les trois secrets GitHub `SMTP_*`. La procedure est ecrite dans
+# docs/mise-en-production.md (etape 8). Sans eux, la fonction s annonce
+# indisponible et le reste du site ne bouge pas.
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
@@ -1555,7 +1630,10 @@ development_status:
   3-1-inscription-creer-un-compte: review
   # /connexion, menu de compte dans la barre, /admin reserve aux admins
   3-2-connexion-deconnexion-etat-connecte-dans-la-nav: review
-  3-3-recuperation-d-acces-mot-de-passe-oublie: backlog
+  # /mot-de-passe-oublie et /reinitialiser, message en francais pointant vers la
+  # page PUBLIQUE (et non /admin), garde-fou d une minute, connexion immediate
+  # apres coup. Envoi par SMTP, facultatif : sans configuration, la page le dit.
+  3-3-recuperation-d-acces-mot-de-passe-oublie: review
   # drapeau `admin` sur users (acces de CHAMP : aucune auto-promotion), ecriture
   # du catalogue + Media reservee, amorcage par `npm run promouvoir:admin`
   3-4-role-admin-unique-gouvernance-du-catalogue: review

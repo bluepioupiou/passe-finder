@@ -21,6 +21,16 @@ services:
       # fournie ICI, a l'execution, et non a la construction de l'image : le
       # jeton n'existe pas dans GitHub Actions au moment du build.
       CLOUDFLARE_ANALYTICS_TOKEN: ${CLOUDFLARE_ANALYTICS_TOKEN:-}
+      # Le domaine sert DEUX fois : a Caddy pour le certificat, et a l'app pour
+      # fabriquer le lien absolu du mail de reinitialisation (story 3.3). Une
+      # seule variable pour les deux, sinon elles finiraient par diverger.
+      DOMAINE: ${DOMAINE}
+      # Envoi des e-mails (story 3.3). Facultatif : sans ces variables, la
+      # reinitialisation de mot de passe s'annonce indisponible et le reste du
+      # site fonctionne normalement.
+      SMTP_HOTE: ${SMTP_HOTE:-}
+      SMTP_UTILISATEUR: ${SMTP_UTILISATEUR:-}
+      SMTP_MOT_DE_PASSE: ${SMTP_MOT_DE_PASSE:-}
       # PAS de variable pour l administrateur (story 3.4) : le drapeau se pose
       # une fois, a la main, quand le compte existe :
       #   docker compose exec app npm run promouvoir:admin -- email@exemple.fr

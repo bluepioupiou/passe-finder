@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getPayload, type Payload } from 'payload'
 
 import { erreurPseudo, nettoyerPseudo, pseudoComparable } from '@/auteurs'
+import { ENVOI_INDISPONIBLE, envoiConfigure, envoiTropRecent } from '@/courriel'
 import config from '@/payload.config'
 import { sessionCourante } from '@/porte'
 
@@ -235,4 +236,118 @@ export async function enregistrerPseudo(
   }
 
   return { enregistre: true }
+}
+
+/**
+ * Etat du formulaire de demande : une erreur, ou l'accuse de reception.
+ *
+ * `envoye` ne dit PAS qu'un message est parti. Il dit que la demande a ete
+ * traitee — voir `demanderReinitialisation` pour la raison, qui est le coeur de
+ * cette fonctionnalite.
+ */
+export type EtatDemande = { erreur?: string; envoye?: boolean }
+
+/**
+ * Demander un lien de reinitialisation (Story 3.3, FR-28).
+ *
+ * LA MEME REPONSE DANS TOUS LES CAS, et c'est la regle centrale de cet ecran :
+ * adresse inconnue, adresse connue, envoi refuse parce que trop recent, panne
+ * du serveur d'envoi — le visiteur lit le meme accuse de reception. Deux
+ * messages differents feraient de ce formulaire un revelateur d'adresses : on
+ * saurait, en le sondant, qui a un compte ici.
+ *
+ * Payload tient deja sa moitie du contrat : quand l'adresse est inconnue, son
+ * operation `forgotPassword` s'arrete en silence et ne renvoie rien. Notre
+ * travail est de ne pas trahir cette discretion par un message trop bavard.
+ *
+ * SEULE EXCEPTION : l'absence totale de configuration d'envoi. Elle ne depend
+ * d'aucune adresse, elle ne revele donc rien de personne, et se taire
+ * laisserait le visiteur attendre un message qui ne partira jamais.
+ */
+export async function demanderReinitialisation(
+  _precedent: EtatDemande,
+  donnees: FormData,
+): Promise<EtatDemande> {
+  const email = texte(donnees, 'email').toLowerCase()
+
+  if (email === '') return { erreur: 'Il manque ton adresse e-mail.' }
+  if (!envoiConfigure) return { erreur: ENVOI_INDISPONIBLE }
+
+  const payload = await getPayload({ config: await config })
+
+  try {
+    if (!(await envoiTropRecent(payload, email))) {
+      await payload.forgotPassword({ collection: 'users', data: { email } })
+    }
+  } catch (erreur) {
+    // L'echec est NOTRE probleme, pas celui du visiteur : identifiants SMTP
+    // faux, serveur injoignable, adresse refusee par le fournisseur. Il part
+    // dans les journaux, la ou Alain peut le voir, et l'ecran ne change pas.
+    payload.logger.error(
+      { err: erreur },
+      "Envoi du message de reinitialisation impossible — verifier la configuration SMTP.",
+    )
+  }
+
+  return { envoye: true }
+}
+
+/**
+ * Choisir un nouveau mot de passe a partir du jeton recu par e-mail.
+ *
+ * CONNEXION IMMEDIATE (decision d'Alain, 2026-09-07) : la personne vient de
+ * prouver qu'elle a acces a la boite ET de choisir son mot de passe. Lui
+ * demander de le retaper aussitot sur un ecran de connexion ajouterait une
+ * formalite la ou elle pensait avoir fini. C'est le meme geste qu'a
+ * l'inscription, qui ouvre deja la session dans la foulee.
+ *
+ * `overrideAccess: true` est obligatoire ici, et sans danger : la personne
+ * n'est justement PAS connectee — c'est le jeton, et lui seul, qui l'autorise.
+ */
+export async function reinitialiserMotDePasse(
+  _precedent: EtatFormulaire,
+  donnees: FormData,
+): Promise<EtatFormulaire> {
+  const jeton = texte(donnees, 'jeton')
+  const motDePasse = texte(donnees, 'motDePasse')
+
+  if (jeton === '') {
+    return { erreur: 'Ce lien est incomplet. Refais une demande de réinitialisation.' }
+  }
+  if (motDePasse.length < LONGUEUR_MOT_DE_PASSE) {
+    return { erreur: `Le mot de passe fait au moins ${LONGUEUR_MOT_DE_PASSE} caractères.` }
+  }
+
+  const payload = await getPayload({ config: await config })
+
+  let jetonDeSession: string | undefined
+
+  try {
+    const resultat = await payload.resetPassword({
+      collection: 'users',
+      data: { password: motDePasse, token: jeton },
+      overrideAccess: true,
+    })
+    jetonDeSession = resultat.token
+  } catch {
+    // Jeton inconnu, deja utilise, ou perime : un seul message, parce que du
+    // point de vue de qui le lit, le remede est le meme dans les trois cas.
+    return {
+      erreur: "Ce lien n'est plus valable : il a expiré ou a déjà servi. Refais une demande.",
+    }
+  }
+
+  // PIEGE : `resetPassword` rend un jeton de session, mais PAS sa date
+  // d'expiration — contrairement a `login`, qui rend les deux. Reprendre la
+  // forme de `sInscrire` telle quelle aurait donne un `exp` toujours
+  // `undefined`, donc un cookie jamais pose : la personne aurait change son mot
+  // de passe puis serait revenue anonyme, sans le moindre message d'erreur.
+  //
+  // La duree est donc relue la ou Payload la tient, plutot que recopiee.
+  if (jetonDeSession) {
+    const duree = payload.collections.users.config.auth.tokenExpiration
+    await poserSession(payload, jetonDeSession, Math.floor(Date.now() / 1000) + duree)
+  }
+
+  redirect('/')
 }

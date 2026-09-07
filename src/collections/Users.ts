@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 
 import { erreurPseudo, nettoyerPseudo, pseudoComparable } from '../auteurs'
+import { messageDeReinitialisation, sujetDeReinitialisation } from '../courriel'
 import { champAdminSeul, estAdmin, soiMemeOuAdmin } from './acces'
 
 /**
@@ -49,7 +50,23 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
     defaultColumns: ['email', 'pseudo', 'admin', 'updatedAt'],
   },
-  auth: true,
+  auth: {
+    // LE MESSAGE DE REINITIALISATION EST LE NOTRE (Story 3.3, FR-28).
+    //
+    // Celui de Payload est en anglais et, surtout, il pointe vers
+    // `/admin/reset/<jeton>` : le back-office, reserve aux administrateurs
+    // depuis la Story 3.2. Un eleve qui suit ce lien tomberait sur une porte
+    // fermee en ayant consomme son jeton. Le texte et l'adresse vivent dans
+    // `src/courriel.ts`, avec le reste de ce qui sort par e-mail.
+    //
+    // PAS DE `forgotPassword.expiration` : le defaut de Payload est d'une
+    // heure, et c'est la duree retenue avec Alain (2026-09-07). L'ecrire ici
+    // reviendrait a recopier une valeur qu'on ne change pas.
+    forgotPassword: {
+      generateEmailHTML: (args) => messageDeReinitialisation(args?.token ?? ''),
+      generateEmailSubject: () => sujetDeReinitialisation(),
+    },
+  },
   hooks: {
     beforeChange: [rangerLePseudo],
   },
