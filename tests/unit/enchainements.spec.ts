@@ -7,6 +7,8 @@ import {
   extremites,
   formaterDate,
   peutModifier,
+  placeDansLaChaine,
+  rangsDeLaPasse,
   typologie,
 } from '@/enchainements'
 import type { Pass, Position, Transition, User } from '@/payload-types'
@@ -263,5 +265,57 @@ describe('peutModifier', () => {
     // complet : la reponse ne doit pas dependre d un detail de requete.
     expect(peutModifier({ auteur }, auteur)).toBe(true)
     expect(peutModifier({ auteur }, autre)).toBe(false)
+  })
+})
+
+/**
+ * La PLACE d'une passe dans un enchaînement (FR-24, 2026-09-07).
+ *
+ * C'est ce qui transforme la liste de la fiche passe en exemples : sans elle,
+ * dix titres n'apprennent rien sur la passe qu'on est en train de lire. Le cas
+ * qui compte est la RÉPÉTITION — une passe se danse deux fois dans la même
+ * chaîne, et ne montrer que la première occurrence donnerait une réponse
+ * incomplète que rien ne signalerait à l'écran.
+ */
+describe('Place d une passe dans une chaine', () => {
+  const chaine = (...ids: number[]) => ids.map((id) => ({ passe: id }))
+
+  it('numérote à partir de 1, dans l ordre du tableau', () => {
+    // L'index EST l'ordre de l'enchaînement (ADD-18) : aucun champ « rang » à
+    // recouper, mais un décalage de 1 à ne pas oublier.
+    expect(rangsDeLaPasse(chaine(7, 3, 9), 3)).toEqual([2])
+    expect(rangsDeLaPasse(chaine(7, 3, 9), 7)).toEqual([1])
+  })
+
+  it('rend TOUTES les occurrences quand la passe se répète', () => {
+    expect(rangsDeLaPasse(chaine(3, 7, 3, 9, 3), 3)).toEqual([1, 3, 5])
+  })
+
+  it('lit la relation résolue comme l identifiant nu', () => {
+    // Selon la profondeur de lecture, `passe` est un numéro ou l'objet : la
+    // réponse ne doit pas dépendre d'un détail de requête.
+    expect(rangsDeLaPasse([{ passe: { id: 3 } as Pass }], 3)).toEqual([1])
+  })
+
+  it('rend une liste vide quand la passe n est pas là', () => {
+    expect(rangsDeLaPasse(chaine(7, 9), 3)).toEqual([])
+  })
+
+  it('écrit la place en toutes lettres, au féminin au premier rang', () => {
+    // « 1er » parlerait d'un maillon ; c'est une passe.
+    expect(placeDansLaChaine([1], 8)).toBe('1re passe sur 8')
+    expect(placeDansLaChaine([3], 8)).toBe('3e passe sur 8')
+  })
+
+  it('énumère les répétitions et accorde le pluriel', () => {
+    expect(placeDansLaChaine([2, 5], 8)).toBe('2e et 5e passes sur 8')
+    expect(placeDansLaChaine([1, 4, 6], 8)).toBe('1re, 4e et 6e passes sur 8')
+  })
+
+  it('ne dit rien plutôt que de dire « 0e passe »', () => {
+    // Le cas ne devrait pas arriver — la liste vient d'une requête sur cette
+    // passe — mais une ligne muette vaut mieux qu'une ligne fausse.
+    expect(placeDansLaChaine([], 8)).toBeNull()
+    expect(placeDansLaChaine([1], 0)).toBeNull()
   })
 })

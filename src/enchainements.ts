@@ -226,6 +226,56 @@ export function chaineDe(
     .map((passe) => resoudrePasse(passe, positions))
 }
 
+/**
+ * A quels RANGS cette passe apparaît-elle dans la chaîne (1 = première) ?
+ *
+ * C'est ce qui fait d'un titre d'enchaînement un EXEMPLE D'UTILISATION : « 3ᵉ
+ * passe sur 8 » dit où regarder une fois la fiche ouverte. Sans cela, la liste
+ * des enchaînements de la fiche passe ne serait qu'une liste de titres — vraie,
+ * mais muette sur ce qu'on est venu y chercher.
+ *
+ * UN TABLEAU ET PAS UN NOMBRE : une même passe se répète dans une chaîne (elle
+ * se danse deux fois, ou elle revient plus loin). Ne rendre que la première
+ * occurrence cacherait les autres, et « 2ᵉ passe » sur un enchaînement où elle
+ * revient au 5ᵉ temps serait une réponse incomplète.
+ *
+ * Les rangs sont ceux du TABLEAU STOCKÉ, y compris si une passe a disparu du
+ * catalogue : `chaineDe` écarte les maillons introuvables, pas celle-ci. Les
+ * deux comptent donc sur la garde de suppression (FR-8), qui rend le cas
+ * impossible tant qu'un enchaînement utilise la passe.
+ */
+export function rangsDeLaPasse(
+  maillons: { passe: number | Pass }[],
+  passe: number,
+): number[] {
+  return maillons.flatMap((maillon, index) =>
+    identifiant(maillon.passe) === passe ? [index + 1] : [],
+  )
+}
+
+/**
+ * « 3ᵉ passe sur 8 », « 2ᵉ et 5ᵉ passes sur 8 » — la place de la passe, en
+ * toutes lettres.
+ *
+ * ORDINAL FÉMININ au premier rang (« 1re passe » et non « 1er ») : c'est une
+ * passe. Au-delà, `e` en exposant suffit pour les deux genres.
+ *
+ * Rend `null` quand la passe ne figure pas dans la chaîne — cas qui ne devrait
+ * pas arriver puisque la liste vient d'une requête sur cette passe, mais une
+ * ligne sans mention vaut mieux qu'une ligne qui affirme « 0ᵉ passe ».
+ */
+export function placeDansLaChaine(rangs: number[], total: number): string | null {
+  if (rangs.length === 0 || total === 0) return null
+
+  const ordinaux = rangs.map((rang) => (rang === 1 ? '1re' : `${rang}e`))
+  const enumeration =
+    ordinaux.length === 1
+      ? ordinaux[0]
+      : `${ordinaux.slice(0, -1).join(', ')} et ${ordinaux[ordinaux.length - 1]}`
+
+  return `${enumeration} passe${ordinaux.length > 1 ? 's' : ''} sur ${total}`
+}
+
 /** Par ou l'on entre dans une carte, ou par ou l'on en sort. */
 export type Sens = 'gauche' | 'droite' | 'haut' | 'bas'
 

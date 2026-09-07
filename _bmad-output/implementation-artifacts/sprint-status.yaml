@@ -1593,10 +1593,19 @@ action_items:
       partage `Voisinage` (+ voisinage.css), les deux fiches le rendent.
       4 tests d integration ajoutes (71 verts), 158 unitaires, 56 e2e, build OK.
     reste_a_faire: >
-      Le TRONCAGE a un apercu (avec compteur juste, alignement sur les 6 de
-      /recherche, et une destination « voir plus » qui existe) : en pause,
-      peut-etre V2. La moitie ENCHAINEMENTS (+ videos, + filtre `?passe=`) reste
-      entiere et appartient toujours a la Story 5-6, au backlog.
+      Le TRONCAGE des listes de PASSES a un apercu (avec compteur juste,
+      alignement sur les 6 de /recherche, et une destination « voir plus » qui
+      existe) : en pause, peut-etre V2.
+      La moitie ENCHAINEMENTS est faite le 2026-09-07 (Story 5-6, branche
+      `feat/fiche-passe-enchainements`) : 10 exemples, tries du plus recent au
+      plus ancien, total compte sous les acces. Elle TRANCHE au passage deux
+      nuances de cette note — le compteur reste le total et pas 10 ; et il n y a
+      PAS de « voir plus », parce qu il n aurait nulle part ou mener (Alain :
+      « je ne suis pas sur que le but soit d etre exhaustif, contrairement aux
+      passes »). La limite est 10 et non 6 comme /recherche, et c est assume :
+      la-bas l apercu precede un « voir tout », ici les 10 SONT la reponse.
+      Restent les VIDEOS (FR-38) et le filtre `?passe=` sur /enchainements, qui
+      rouvrirait la question du « voir tout ».
 
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
@@ -1728,7 +1737,21 @@ development_status:
   # page /recherche livree : les trois groupes prevus par UX-DR14 (Positions,
   # Passes, Enchainements partages), « voir tout » vers le catalogue pre-filtre.
   5-5-recherche-globale-groupee-par-categorie: review
-  5-6-fiche-passe-complete-enchainements-videos-reverse-lookup: backlog
+  # MOITIE FR-24 LIVREE le 2026-09-07 (branche
+  # `feat/fiche-passe-enchainements`) : la fiche passe montre les 10 derniers
+  # enchainements qui l utilisent, du plus recent au plus ancien, avec le TOTAL
+  # a cote du titre. Des EXEMPLES et pas un inventaire — decision d Alain :
+  # « le principal but est de voir des exemples d utilisation », et le nombre
+  # d enchainements ne peut que grossir (74 pour le pas de base aujourd hui).
+  # Chaque ligne dit OU regarder (« 4e et 14e passes sur 17 »), ce qui est la
+  # seule chose qui distingue un exemple d un titre de plus. Placee ENTRE le
+  # deroule et les listes de voisinage : apres, elle serait sous 68 lignes de
+  # passes voisines.
+  # Le total est compte SOUS LES ACCES (AD-6) : dire « 12 » a qui n en voit que
+  # 2 trahirait 10 prives. Verrouille par un test d integration.
+  # Reste : les VIDEOS en liste distincte (FR-38), et le « voir tout » — qui
+  # attend un filtre `?passe=` sur /enchainements, aujourd hui inexistant.
+  5-6-fiche-passe-complete-enchainements-videos-reverse-lookup: in-progress
   epic-5-retrospective: optional
 
   # --- Epic 6: Migration des données legacy ---

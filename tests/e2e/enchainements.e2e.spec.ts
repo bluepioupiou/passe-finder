@@ -79,6 +79,38 @@ test.describe('Enchaînements', () => {
     await expect(page).toHaveURL(/\/passes\/\d+$/)
   })
 
+  test("la fiche passe renvoie vers les enchaînements qui l'utilisent", async ({
+    page,
+    request,
+  }) => {
+    // FR-24, et le RETOUR du trajet teste juste au-dessus : on descend d'un
+    // enchaînement vers une de ses passes, la fiche de cette passe doit
+    // reproposer l'enchaînement d'où l'on vient. C'est la boucle qui fait de la
+    // fiche un point de passage plutot qu'un cul-de-sac, et elle ne se verifie
+    // qu'en la parcourant.
+    const enchainement = await premierEnchainement(request)
+    test.skip(!enchainement, 'Aucun enchaînement partagé sur cette cible.')
+
+    await page.goto(`/enchainements/${enchainement!.lien}`)
+    await page.locator('.pas__etiquette').first().click()
+    await expect(page).toHaveURL(/\/passes\/\d+$/)
+
+    // Le plus recent est en tete, et `premierEnchainement` demande justement le
+    // plus recent des enchainements partages : c'est donc la premiere ligne.
+    const exemples = page.locator('.fiche-exemple')
+    await expect(exemples.first()).toContainText(enchainement!.titre)
+    // La place de la passe dans la chaine : c'est elle qui fait de la ligne un
+    // exemple d'utilisation plutot qu'un titre de plus.
+    await expect(exemples.first()).toContainText(/passes? sur \d+/)
+
+    // Jamais plus de dix, quel que soit le nombre reel (74 pour le pas de base).
+    expect(await exemples.count()).toBeLessThanOrEqual(10)
+
+    // Et le lien ramene bien la ou l'on etait.
+    await exemples.first().click()
+    await expect(page).toHaveURL(`/enchainements/${enchainement!.lien}`)
+  })
+
   test('la création est invisible et fermée pour un visiteur anonyme', async ({ page }) => {
     // Le « + » n'est pas rendu du tout : montrer une porte fermee se lit comme
     // une panne, pas comme une fonction a venir (meme regle que la zone de
