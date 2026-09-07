@@ -45,30 +45,105 @@
   line-height: var(--label-caps-line);
 }
 
-@media (min-width: 640px) {
-  .filtres {
-    flex-direction: row;
-    align-items: flex-end;
-  }
+/* --- Les deux rangees, et le pli du telephone (2026-09-07) --- */
 
-  .filtres__champ--court {
-    flex: 0 0 200px;
-  }
+/*
+ * UNE RANGEE de la barre. Elle empile sur telephone et s'aligne des 640px,
+ * exactement comme `.filtres` le faisait seul — c'est ce comportement qui
+ * descend d'un cran quand la barre en compte deux.
+ */
+.filtres__ligne {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
 
-  /* PLUS LARGE, ET ELASTIQUE : les noms de passes vont jusqu'a « Changement de
-     cote changement de main ». Dans les 200px du champ court, un `select`
-     natif coupe le nom SANS point de suspension utile — on ne sait plus ce
-     qu'on a choisi. Il prend donc la place disponible, comme le champ de
-     recherche, et se rabat sur 220px quand elle manque. */
-  .filtres__champ--large {
-    flex: 1 1 220px;
-  }
+/*
+ * LA RANGEE DES OPTIONS reste EN LIGNE meme sur telephone, contrairement aux
+ * champs : ce sont des interrupteurs courts, et les empiler donnait trois
+ * rangees pleines pour trois mots. En ligne, ils se replient a deux par
+ * rangee et la barre y gagne la moitie de sa hauteur.
+ */
+.filtres__ligne--options {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
 
-  /* Aligne les cases sur le BAS des champs voisins, qui portent une etiquette
-     au-dessus. Uniquement en ligne : en colonne (telephone), `flex-end` les
-     collerait a DROITE de l'ecran — l'axe transversal n'est plus le meme. */
-  .filtres__champ--case {
-    align-self: flex-end;
+/*
+ * LE PANNEAU REPLIABLE : cache par defaut, donc sur telephone uniquement — la
+ * media query ci-dessus le rouvre pour de bon des 640px. C'est la CSS qui tient
+ * le pli, React ne fait que poser la classe.
+ */
+.filtres__panneau {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.filtres__panneau--ouvert {
+  display: flex;
+}
+
+/*
+ * LE BOUTON QUI DEPLIE. Habille comme un champ (meme surface, meme bordure,
+ * meme hauteur tactile) et pas comme un bouton d'action : il n'envoie rien, il
+ * ouvre la barre — et a cette place, un bouton plein se serait lu comme le
+ * geste principal de la page, qui est de lire la liste.
+ */
+.filtres__bascule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-container);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-md);
+  font-family: var(--font-sans);
+  font-size: var(--body-size);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.filtres__bascule:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.filtres__bascule-intitule {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Le nombre de criteres poses. Replie, c'est la seule chose a l'ecran qui dise
+   pourquoi la liste est plus courte que d'habitude. */
+.filtres__bascule-compte {
+  flex: 0 0 auto;
+  padding: var(--space-1) var(--space-2);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: var(--rounded-sm);
+}
+
+.filtres__bascule-chevron {
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform 150ms ease;
+}
+
+.filtres__bascule-chevron--ouvert {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filtres__bascule-chevron {
+    transition: none;
   }
 }
 
@@ -142,4 +217,67 @@
 .filtres__label-case {
   font-weight: 600;
   cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .filtres {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  /* La variante EMPILEE garde ses lignes l'une sous l'autre : c'est elle qui
+     porte les deux rangees de la liste des enchainements. Sans cette reprise,
+     la regle ci-dessus les remettrait cote a cote. */
+  .filtres.filtres--empile {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtres__ligne {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  .filtres__champ--court {
+    flex: 0 0 200px;
+  }
+
+  /* PLUS LARGE, ET ELASTIQUE : les noms de passes vont jusqu'a « Changement de
+     cote changement de main ». Dans les 200px du champ court, un `select`
+     natif coupe le nom SANS point de suspension utile — on ne sait plus ce
+     qu'on a choisi. Il prend donc la place disponible, comme le champ de
+     recherche, et se rabat sur 220px quand elle manque. */
+  .filtres__champ--large {
+    flex: 1 1 220px;
+  }
+
+  /* Aligne les cases sur le BAS des champs voisins, qui portent une etiquette
+     au-dessus. Uniquement en ligne : en colonne (telephone), `flex-end` les
+     collerait a DROITE de l'ecran — l'axe transversal n'est plus le meme. */
+  .filtres__champ--case {
+    align-self: flex-end;
+  }
+
+  /* Sur la ligne des options il n'y a plus d'etiquette a rattraper : les
+     interrupteurs se centrent entre eux, au lieu de se caler sur un bas de
+     champ qui n'existe pas ici. */
+  .filtres__ligne--options {
+    align-items: center;
+  }
+
+  /* « Tout afficher » a l'autre bout de sa ligne : d'un cote ce qui restreint,
+     de l'autre ce qui relache. */
+  .filtres__ligne--options .filtres__effacer {
+    margin-left: auto;
+  }
+
+  /* LE PLI N'EXISTE PLUS des que la place revient : le bouton disparait et le
+     panneau est montre quoi qu'il arrive, y compris si React le croit ferme. */
+  .filtres__bascule {
+    display: none;
+  }
+
+  .filtres__panneau {
+    display: flex;
+  }
 }

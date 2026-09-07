@@ -1612,6 +1612,98 @@ action_items:
       Ne reste au titre de cette note que le TRONCAGE DES LISTES DE PASSES, en
       pause. FR-38 (liste des videos) est abandonne, voir la Story 5-6.
 
+  # Note deposee par Alain le 2026-09-07, apres la livraison des exemples
+  # d utilisation sur la fiche passe (FR-24). Idee POUR LA V2, pas pour le v1 :
+  # elle prolonge la piste Vision n2 du PRD (« Comprendre une passe par la
+  # video ») et FR-39, qui exclut explicitement le lecteur integre du v1.
+  - id: video-pointer-le-moment-de-la-passe
+    status: open
+    titre: "V2 — arriver au moment ou l on voit LA passe dans la video d un enchainement"
+    concerne:
+      - 4-6-lier-une-video-youtube-a-un-enchainement
+      - 5-6-fiche-passe-complete-enchainements-videos-reverse-lookup
+    constat: >
+      Quand on regarde un enchainement et sa video, rien ne mene AU MOMENT ou la
+      passe cherchee se danse. La video est un lien vers l entierete d une
+      demonstration ; l eleve qui vient de la fiche d une passe doit la trouver a
+      l oeil. Deux formes envisagees par Alain : mettre la video EN LECTURE dans
+      la page et paginer dedans, ou stocker A QUEL MOMENT la passe a lieu et
+      construire un lien `t=xxx` a partir de la.
+      La reserve est posee en meme temps que l idee, et c est elle le vrai sujet :
+      « j ai peur que ce soit tres complexe a maintenir pour une personne qui cree
+      l enchainement ». Le besoin, lui, est cote ELEVE : un moyen SIMPLE de reperer
+      une passe dans une video. Alain note lui-meme la reponse partielle deja
+      livree — « on a deja l ordre, donc si on suit on devrait y arriver ».
+    demande:
+      - "Depuis la fiche d une passe (ou la vue lecture d un enchainement),
+         atteindre le moment de la video ou cette passe se danse."
+      - "Sans imposer a l auteur de l enchainement une saisie qui le decouragerait
+         de mettre des videos du tout."
+    nuances_a_instruire:
+      - >
+        LE COUT DE SAISIE EST LE POINT DE BASCULE, et il se chiffre. Un timestamp
+        PAR MAILLON, c est 1322 saisies sur les 119 enchainements migres, soit une
+        onzaine par enchainement — au moment ou l on cree l enchainement, c est a
+        dire au moment ou l on a le moins envie de repasser la video au ralenti.
+        Toute solution qui demande un nombre par passe est morte a la naissance :
+        c est exactement l echec de maintenance que le PRD nomme CM-1.
+      - >
+        LA DANSE EST A TEMPS FIXE, ET C EST LA PISTE LA MOINS CHERE. Le v1 est
+        mono-danse (`DANSE_V1 = 'rock 6 temps'`) : chaque passe dure six temps.
+        Avec DEUX nombres par video — l instant ou l enchainement COMMENCE, et le
+        tempo — on CALCULE le moment de la n-ieme passe au lieu de le saisir. Le
+        cout d auteur passe de onze saisies a deux, et la chaine existante fournit
+        deja l ordre. A verifier avant d y croire : le tempo est-il stable sur une
+        demo, l auteur sait-il le donner (a defaut, le deduire en pointant DEUX
+        instants : debut de la 1re passe et debut de la derniere), et la derive
+        sur trente passes reste-t-elle sous quelques secondes.
+      - >
+        LE CALCUL DERIVE, ET C EST ACCEPTABLE SI ON LE DIT. Une demo comporte des
+        pauses, des explications parlees, des reprises et parfois plusieurs
+        executions du meme enchainement. Un instant calcule tombera a cote. Viser
+        « quelques secondes avant, on reconnait la passe » et non « la frame
+        exacte » : demarrer volontairement en amont, et permettre une CORRECTION
+        MANUELLE par maillon la ou ca decroche — la saisie par passe devient alors
+        l exception, pas la regle.
+      - >
+        LE PLUS PETIT PAS UTILE EXISTE ET COUTE UN SEUL CHAMP : « ou commence
+        l enchainement dans la video ». Il supprime l intro parlee, qui est le
+        plus gros de la perte de temps, et se combine avec l ordinal DEJA AFFICHE
+        (« 4e et 14e passes sur 17 », livre le 2026-09-07) : l eleve tombe sur le
+        debut et compte. A faire AVANT le chapitrage complet, et peut-etre a la
+        place — si ca suffit, le reste ne se justifie plus.
+      - >
+        `t=xxx` N EST PAS UNIVERSEL. Le champ video accepte six fournisseurs
+        (YouTube, Vimeo, Dailymotion, Instagram, TikTok, Google Drive) reconnus
+        par l hote, avec des syntaxes de timestamp differentes voire absentes
+        (Instagram, TikTok n en ont pas). Un lien horodate marchera pour certains
+        et pas pour d autres : decider si la fonction s annonce comme YouTube
+        seulement, ou si elle se degrade sans le dire.
+      - >
+        METTRE LA VIDEO EN LECTURE DANS LA PAGE ROUVRE UN DEBAT DEJA IDENTIFIE.
+        FR-39 exclut le lecteur integre du v1 ; l addendum PRD garde ouvert
+        « YouTube vs. hebergement propre ». Un `iframe` YouTube pose en plus le
+        traceur et donc la banniere de consentement (nocookie a etudier), et du
+        poids sur telephone. Le lien horodate ne coute rien de tout cela — c est
+        l argument de le faire d abord.
+      - >
+        LA VIDEO N APPARTIENT PAS TOUJOURS A L AUTEUR. Elle pointe souvent une
+        chaine tierce : la video peut etre remontee, remplacee ou retiree, et les
+        instants stockes deviennent faux sans que personne ne le voie. Prevoir que
+        des instants perimes degradent proprement (on retombe sur la video entiere)
+        plutot que d envoyer l eleve n importe ou.
+      - >
+        NE PAS OUBLIER LES TRANSITIONS. Une chaine lue contient des changements de
+        prise sans temps musical (Story 4-7) : ils ne consomment pas de temps, donc
+        ils ne decalent pas le calcul en theorie — mais ils en prennent a l ecran.
+        A verifier sur une vraie video avant de figer la formule.
+    taille_estimee: >
+      Le champ « debut de l enchainement » seul : petite (un champ, un lien
+      horodate, la syntaxe par fournisseur). Le moment calcule par passe (debut +
+      tempo) : moyenne, et le gros du travail est la VERIFICATION sur de vraies
+      videos, pas le code. Le lecteur integre chapitre : grande, et il rouvre le
+      choix d hebergement — a ne pas melanger aux deux premiers pas.
+
 development_status:
   # --- Epic 1: Socle déployable & pipeline continu ---
   epic-1: in-progress
@@ -1760,6 +1852,16 @@ development_status:
   # par la note `fiche-passe-voisines-et-troncage-des-listes` est donc refermee
   # pour les enchainements : la destination existe. Le filtre vaut aussi seul —
   # « ou ai-je deja danse ca ? » est une question de revision.
+  # LA BARRE DE FILTRES A ETE REPRISE dans la foulee (Alain, meme jour) : le
+  # troisieme champ etiquete la rendait illisible. Deux rangees sur ecran — ce
+  # qu on SAISIT, puis ce qu on BASCULE — et un PLI sur telephone (bouton
+  # « Rechercher et filtrer », replie par defaut) qui rend la premiere carte
+  # visible sans defiler. Le panneau s ouvre d entree quand un critere est pose,
+  # sinon arriver par « Voir les N enchainements » montrerait une liste amputee
+  # sans explication ; le bouton porte alors le nombre de criteres.
+  # Contrepartie assumee : sur telephone SANS JavaScript le panneau ne s ouvre
+  # plus. Le pli est une regle de CSS (rien au-dessus de 640px), l ouverture un
+  # etat de React calcule au rendu serveur — donc pas de depliage apres coup.
   # FR-38 (LISTE DES VIDEOS) ABANDONNE, decision d Alain le 2026-09-07 :
   # « je ne suis pas sur que ca apporte de la valeur ». Les enchainements avec
   # video portent deja leur icone dans la liste des exemples, et la liste
