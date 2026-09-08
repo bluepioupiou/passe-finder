@@ -116,9 +116,11 @@ export async function positionsQuiChangentDePrise(payload: Payload): Promise<Set
  * ses propres listes. Ce n'est pas un défaut : elle se danse réellement deux
  * fois de suite, et l'écarter cacherait une option vraie.
  *
- * `limit: 200` comme la fiche position, et pour la même raison : les listes sont
- * ENTIÈRES, faute d'un classement qui dirait lesquelles montrer en premier (le
- * troncage à un aperçu reste au backlog). La plus longue atteint 44 passes.
+ * `limit: 200` comme la fiche position, et il RESTE entier depuis que les fiches
+ * n'en montrent que cinq (2026-09-07) : le reste se déplie SUR PLACE, donc il
+ * doit déjà être là. Ne charger que l'aperçu est la règle d'un « voir plus » qui
+ * NAVIGUE ; ici le clic n'appelle rien. La plus longue de ces listes atteint 44
+ * passes à `depth: 1` — le coût servi aujourd'hui, inchangé. Voir `ListePasses`.
  */
 export async function voisinesDePasse(
   payload: Payload,
@@ -167,18 +169,25 @@ export async function voisinesDePasse(
 /**
  * Combien d'EXEMPLES la fiche passe montre.
  *
- * 10 et pas « tout » : la passe la plus dansée du catalogue apparaît dans 74
- * des 120 enchaînements, et ce nombre ne peut que grossir — chaque élève qui
- * compose en ajoute. Une fiche qui les listerait tous aurait la longueur d'un
- * annuaire pour rendre le même service.
+ * PAS « TOUT » : la passe la plus dansée du catalogue apparaît dans 74 des 120
+ * enchaînements, et ce nombre ne peut que grossir — chaque élève qui compose en
+ * ajoute. Une fiche qui les listerait tous aurait la longueur d'un annuaire pour
+ * rendre le même service.
  *
- * ET PAS 6 COMME /recherche, qui tronque ses groupes à `APERCU = 6` : là-bas
- * l'aperçu est un ÉCHANTILLON avant « voir tout », ici les 10 SONT la réponse
- * (décision d'Alain, 2026-09-07 : « le principal but est de voir des exemples
- * d'utilisation »). Pas de « voir tout » à offrir tant que /enchainements ne
- * sait pas filtrer par passe — voir le backlog.
+ * CINQ COMME LES LISTES DE VOISINAGE (décision d'Alain, 2026-09-08). C'était 10
+ * la veille, quand cette liste était la seule bornée de la fiche : le nombre
+ * n'avait alors rien à s'accorder. Depuis que les passes voisines s'arrêtent à
+ * cinq, une fiche qui montre 10 exemples puis 5 passes fait deux promesses
+ * différentes sans jamais dire pourquoi — et c'est le genre d'écart qu'on ne
+ * remarque pas, qu'on ressent seulement comme du désordre. Un seul aperçu, une
+ * seule longueur.
+ *
+ * LA SUITE N'EST PAS PERDUE, et c'est ce qui rend la coupe indolore : au-delà de
+ * cinq, la fiche offre « Voir les N enchaînements » vers la liste filtrée par
+ * cette passe. La différence avec les listes de voisinage tient là — ici on
+ * NAVIGUE vers une page qui sait tout montrer, là-bas on déplie sur place.
  */
-export const EXEMPLES_PAR_PASSE = 10
+export const EXEMPLES_PAR_PASSE = 5
 
 /**
  * Les derniers ENCHAÎNEMENTS qui utilisent cette passe (FR-24, Story 5.6).
@@ -193,8 +202,8 @@ export const EXEMPLES_PAR_PASSE = 10
  * le cours de la semaine dernière est un meilleur exemple que celui de 2019,
  * parce que c'est celui qu'on est en train de réviser.
  *
- * LE TOTAL EST RENDU EN PLUS DES DIX, et il compte : afficher dix lignes sans
- * dire qu'il en existe soixante-quatorze laisserait croire à une liste
+ * LE TOTAL EST RENDU EN PLUS DES EXEMPLES, et il compte : afficher cinq lignes
+ * sans dire qu'il en existe soixante-quatorze laisserait croire à une liste
  * complète. `totalDocs` vient de la MÊME requête, donc du même filtre d'accès —
  * un total calculé à part dériverait de ce qui est montré.
  *
@@ -205,7 +214,7 @@ export const EXEMPLES_PAR_PASSE = 10
  *
  * `depth: 0` : la ligne n'affiche que le titre, la date, le rang de la passe et
  * la présence d'une vidéo — tout est sur le document. Résoudre les passes
- * relirait les mêmes trente positions dix fois pour ne rien montrer de plus.
+ * relirait les mêmes trente positions cinq fois pour ne rien montrer de plus.
  */
 export async function enchainementsUtilisant(
   payload: Payload,

@@ -66,6 +66,105 @@
   text-transform: uppercase;
 }
 
+/* --- Le reste de la liste, replie (demande d'Alain, 2026-09-07) --- */
+
+/*
+ * Un `<details>` et pas un bouton : le catalogue se lit sans JavaScript, et le
+ * repli doit s'ouvrir quand meme. Voir `ListePasses`.
+ *
+ * FLEX POUR RENVOYER LE CONTROLE EN BAS (demande d'Alain, 2026-09-08). Un
+ * `<summary>` est forcement le premier enfant de son `<details>` ; `order` le
+ * remet en pied de liste sans toucher au HTML, donc sans rien perdre du repli
+ * natif. Ouverte, la liste se lit alors d'un trait, et « Reduire la liste »
+ * attend au bout.
+ *
+ * LA COUTURE DOIT ETRE INVISIBLE : la suite reprend `.fiche-passes` a
+ * l'identique — meme gap, memes cartes — et la marge du haut du `<details>` vaut
+ * exactement le gap de la liste. La sixieme entree tombe donc a la meme distance
+ * de la cinquieme que les autres entre elles ; rien ne dit qu'elle venait
+ * d'ailleurs. Le `gap` du conteneur, lui, ne sert qu'ouvert : ferme, le
+ * `<summary>` est seul.
+ */
+.fiche-reste {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-2);
+}
+
+/* Explicite alors que c'est la valeur par defaut : tout l'agencement de ce bloc
+   tient a l'ordre, autant qu'il se lise ici en entier. */
+.fiche-passes--suite {
+  order: 0;
+}
+
+/*
+ * GESTE DE SECOND RANG, comme `.action-discrete` : il prolonge la lecture, il ne
+ * declenche rien. Pas l'utilitaire lui-meme — un `<summary>` doit en plus perdre
+ * son triangle natif, et `list-style: none` seul ne suffit pas sur WebKit.
+ */
+.fiche-reste__bascule {
+  order: 1;
+  display: inline-flex;
+  /* Il colle a son texte : etire sur toute la largeur, le soulignement du lien
+     traverserait la page et la cible tactile avalerait le vide a sa droite. */
+  align-self: flex-start;
+  align-items: center;
+  gap: var(--space-2);
+  /* Cible tactile confortable (UX-DR17). */
+  min-height: 44px;
+  font-size: var(--label-caps-size);
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  list-style: none;
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.fiche-reste__bascule::-webkit-details-marker {
+  display: none;
+}
+
+.fiche-reste__bascule:hover {
+  color: var(--accent);
+}
+
+/* « Afficher les 39 autres » ferme, « Reduire la liste » ouvert : les deux sont
+   dans le HTML, la CSS choisit. Permuter le texte demanderait du script. */
+.fiche-reste__fermer {
+  display: none;
+}
+
+.fiche-reste[open] .fiche-reste__ouvrir {
+  display: none;
+}
+
+.fiche-reste[open] .fiche-reste__fermer {
+  display: inline;
+}
+
+/* L'ecart SOUS la derniere entree, ouvert seulement. Un `gap` sur le conteneur
+   l'aurait aussi pose ferme : Chrome donne une boite a `::details-content` meme
+   repliee, et le controle serait descendu de 8 px pour rien. */
+.fiche-reste[open] .fiche-reste__bascule {
+  margin-top: var(--space-2);
+}
+
+.fiche-reste__chevron {
+  flex: 0 0 auto;
+  transition: transform 150ms ease;
+}
+
+.fiche-reste[open] .fiche-reste__chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fiche-reste__chevron {
+    transition: none;
+  }
+}
+
 /* --- Les changements de prise (Story 4.7) --- */
 
 /*
