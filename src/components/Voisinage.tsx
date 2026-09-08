@@ -6,7 +6,7 @@ import { nomDeTransition } from '@/collections/Transition'
 import { positionDe } from '@/enchainements'
 // Payload singularise le slug `passes` en `Pass` dans les types generes.
 import type { Pass, Position, Transition } from '@/payload-types'
-import { IconeTransition } from './Icones'
+import { IconeChevron, IconeTransition } from './Icones'
 import './voisinage.css'
 
 /**
@@ -31,6 +31,39 @@ function extremite(passe: Pass, sens: 'sortante' | 'entrante'): Position | null 
   return typeof cible === 'object' ? cible : null
 }
 
+/** Une passe de la liste : son nom, ou elle mene, sa difficulte. */
+function LignePasse({ passe, sens }: { passe: Pass; sens: 'sortante' | 'entrante' }) {
+  const autre = extremite(passe, sens)
+  const difficulte = libelleDifficulte(passe.difficulte)
+
+  return (
+    <li>
+      <Link className="fiche-passe-lien" href={`/passes/${passe.id}`}>
+        <span className="fiche-passe-nom">{passe.nom}</span>
+        {autre ? (
+          <span className="fiche-passe-cible texte-attenue">
+            {sens === 'sortante' ? '→ ' : '← '}
+            {autre.nom}
+          </span>
+        ) : null}
+        {difficulte ? <span className="fiche-passe-difficulte label-caps">{difficulte}</span> : null}
+      </Link>
+    </li>
+  )
+}
+
+/** Combien de passes une liste montre avant de replier le reste. */
+export const APERCU_VOISINAGE = 5
+
+/**
+ * En dessous de ce total, la liste s'affiche ENTIERE.
+ *
+ * Replier trois lignes derriere un controle qui en occupe une n'economise rien
+ * et ajoute un geste. Le pli ne doit paraitre que quand il cache assez pour
+ * valoir le clic — d'ou un seuil plus haut que l'apercu lui-meme.
+ */
+export const SEUIL_APERCU = 8
+
 /**
  * Liste de passes reliees a une position (FR-23).
  * `sortante` : elles partent de cette position. `entrante` : elles y arrivent.
@@ -40,6 +73,36 @@ function extremite(passe: Pass, sens: 'sortante' | 'entrante'): Position | null 
  * ce qu'on regarde. Sur une fiche passe, la meme liste parle d'une position qui
  * n'est PAS le sujet — sans la nommer, on ne sait pas de quel bout de l'arete
  * on parle.
+ *
+ * CINQ D'ABORD, LE RESTE SE DEPLIE (demande d'Alain, 2026-09-07). Ces listes
+ * atteignent 44 entrees : deux d'entre elles, servies entieres, faisaient une
+ * fiche passe de 24 000 px ou le bas etait hors d'atteinte.
+ *
+ * LE DEPLI EST SUR PLACE, et c'est ce qui rend le choix des cinq tenable. Un
+ * « voir plus » qui NAVIGUE oblige a classer : ce qu'il laisse hors de l'apercu
+ * coute un aller-retour, donc il faut avoir raison sur ce qu'on montre. Ici la
+ * suite s'ouvre sous les yeux, au meme endroit — l'apercu n'est pas un palmares,
+ * c'est le DEBUT de la liste, et l'ordre alphabetique du catalogue suffit. C'est
+ * la question restee ouverte au backlog depuis le 2026-09-02.
+ *
+ * `<details>` ET PAS UN COMPOSANT CLIENT. Le catalogue se lit sans JavaScript
+ * (FR-21) : un repli tenu par React laisserait les 39 autres inatteignables, ou
+ * imposerait de rendre la liste entiere puis de la replier apres hydratation —
+ * 44 lignes qui se referment sous les yeux au chargement. Le clavier, l'etat
+ * d'ouverture annonce et le focus viennent en prime, sans une ligne de script.
+ *
+ * OUVERT, LA LISTE COULE SANS COUTURE et le controle passe EN BAS (demande
+ * d'Alain, 2026-09-08). Un `<summary>` est forcement le premier enfant de son
+ * `<details>` : c'est la CSS qui le renvoie en pied de liste (`order`, voir
+ * voisinage.css), sans quoi il se serait lu comme une entree de plus, plantee
+ * entre la cinquieme et la sixieme. Consequence assumee : replier ramene le
+ * controle sous la cinquieme ligne, donc loin du doigt qui vient de le toucher.
+ * Une liste qu'on parcourt d'un trait vaut ce petit saut au repli.
+ *
+ * « AFFICHER TOUT » SANS COMPTER (meme demande). Le titre porte deja le total et
+ * cinq lignes sont sous les yeux : « afficher les 39 autres » faisait faire une
+ * soustraction pour apprendre ce qui se voit. C'est aussi le vocabulaire de
+ * /recherche, ou « voir tout » ouvre le meme genre d'apercu.
  */
 export function ListePasses({
   titre,
@@ -54,8 +117,14 @@ export function ListePasses({
   passes: Pass[]
   sens: 'sortante' | 'entrante'
 }) {
+  const replier = passes.length > SEUIL_APERCU
+  const apercu = replier ? passes.slice(0, APERCU_VOISINAGE) : passes
+  const reste = replier ? passes.slice(APERCU_VOISINAGE) : []
+
   return (
     <section className="fiche-section">
+      {/* LE COMPTEUR RESTE LE TOTAL, jamais le nombre montre : sinon le pli
+          mentirait sur ce qu'il cache. */}
       <h2 className="fiche-section__titre">
         {titre} <span className="texte-attenue">({passes.length})</span>
       </h2>
@@ -65,29 +134,32 @@ export function ListePasses({
       {passes.length === 0 ? (
         <p className="texte-attenue">{vide}</p>
       ) : (
-        <ul className="fiche-passes">
-          {passes.map((passe) => {
-            const autre = extremite(passe, sens)
-            const difficulte = libelleDifficulte(passe.difficulte)
+        <>
+          <ul className="fiche-passes">
+            {apercu.map((passe) => (
+              <LignePasse key={passe.id} passe={passe} sens={sens} />
+            ))}
+          </ul>
 
-            return (
-              <li key={passe.id}>
-                <Link className="fiche-passe-lien" href={`/passes/${passe.id}`}>
-                  <span className="fiche-passe-nom">{passe.nom}</span>
-                  {autre ? (
-                    <span className="fiche-passe-cible texte-attenue">
-                      {sens === 'sortante' ? '→ ' : '← '}
-                      {autre.nom}
-                    </span>
-                  ) : null}
-                  {difficulte ? (
-                    <span className="fiche-passe-difficulte label-caps">{difficulte}</span>
-                  ) : null}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+          {reste.length > 0 ? (
+            <details className="fiche-reste">
+              {/* LES DEUX LIBELLES SONT DANS LE HTML, la CSS montre le bon.
+                  Permuter le texte demanderait du JavaScript, que ce repli
+                  s'interdit. */}
+              <summary className="fiche-reste__bascule">
+                <span className="fiche-reste__ouvrir">Afficher tout</span>
+                <span className="fiche-reste__fermer">Réduire la liste</span>
+                <IconeChevron taille={16} className="fiche-reste__chevron" />
+              </summary>
+
+              <ul className="fiche-passes fiche-passes--suite">
+                {reste.map((passe) => (
+                  <LignePasse key={passe.id} passe={passe} sens={sens} />
+                ))}
+              </ul>
+            </details>
+          ) : null}
+        </>
       )}
     </section>
   )

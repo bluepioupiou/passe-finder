@@ -1455,7 +1455,7 @@ action_items:
   # listes de PLUS sur la fiche passe, et une regle de TRONCAGE qui vaut pour
   # toutes les listes de fiche, anciennes comprises.
   - id: fiche-passe-voisines-et-troncage-des-listes
-    status: open
+    status: done
     titre: "Fiche passe : ce qui mene ici, ce qui enchaine apres, et troncage des listes a ~5"
     concerne:
       - 5-6-fiche-passe-complete-enchainements-videos-reverse-lookup
@@ -1592,25 +1592,88 @@ action_items:
       les listes elles-memes sont sorties de la fiche position dans un composant
       partage `Voisinage` (+ voisinage.css), les deux fiches le rendent.
       4 tests d integration ajoutes (71 verts), 158 unitaires, 56 e2e, build OK.
+
+      2026-09-07, LE TRONCAGE EST LIVRE et la note est close (branche
+      `feat/fiche-passe-enchainements`). Les deux listes de PASSES montrent 5
+      entrees et replient le reste ; en dessous de 8 au total, elles s affichent
+      entieres — replier trois lignes derriere un controle qui en occupe une
+      n economise rien. Sur la pire fiche (Changement de cote, 44 + 24), la page
+      passe de 9 348 px a 4 162 px sur telephone.
+
+      CE QUI A DEBLOQUE LA DECISION, restee en pause depuis le 2026-09-02 : le
+      depli est SUR PLACE, pas un lien qui navigue. La nuance « CHOISIR 5 PARMI
+      30, C EST CHOISIR » vaut pour un « voir plus » qui coute un aller-retour —
+      il faut alors avoir raison sur ce qu on montre. Ici la suite s ouvre sous
+      les yeux, au meme endroit : l apercu n est pas un palmares, c est le DEBUT
+      de la liste, et l ordre alphabetique du catalogue suffit (choix d Alain).
+      Ni par difficulte, ni par popularite : la seconde aurait coute une
+      agregation par liste pour un classement qui bouge a chaque enchainement
+      compose.
+
+      UN `<details>` NATIF, PAS DE COMPOSANT CLIENT. Le catalogue se lit sans
+      JavaScript (FR-21) : un repli tenu par React laisserait le reste
+      inatteignable, ou imposerait de rendre la liste entiere puis de la replier
+      apres hydratation. Le clavier, l etat d ouverture annonce et le focus
+      viennent en prime.
+
+      2026-09-08, RETOUR D ALAIN SUR LE RENDU. Trois retouches : ouverte, la
+      liste doit couler SANS COUTURE, le controle passe EN BAS, et le libelle se
+      reduit a « Afficher tout ». Un `<summary>` etant force d etre le premier
+      enfant de son `<details>`, c est `order` en flex qui le renvoie au pied de
+      la liste — le repli natif est intact, et plus rien n est plante entre la
+      cinquieme et la sixieme entree. L ecart entre elles vaut exactement le gap
+      de la liste : la couture ne se voit pas. Consequence assumee : replier
+      ramene le controle sous la cinquieme ligne, donc loin du doigt qui vient de
+      le toucher — une liste qu on parcourt d un trait vaut ce petit saut.
+      Le compte disparait du libelle pour la meme raison qu il etait la : il ne
+      disait rien de neuf. Le titre porte le total, cinq lignes sont sous les
+      yeux, « afficher les 39 autres » faisait faire une soustraction.
+
+      `limit: 200` RESTE : la suite doit deja etre chargee puisque le clic
+      n appelle rien. La nuance « ne charger que 5, jamais tout charger pour
+      compter » visait un « voir plus » qui navigue ; le cout servi ne bouge pas.
+
+      LA REGLE VAUT SUR LES DEUX FICHES, comme la note le demandait : elle vit
+      dans `ListePasses` (src/components/Voisinage.tsx), que la fiche passe et la
+      fiche position rendent toutes les deux. La fiche position n a donc pas
+      besoin d une destination a elle — le depliage sur place EST sa reponse.
+
+      5 ET PAS 6 COMME /recherche, et c est assume : la-bas un echantillon avant
+      de NAVIGUER vers une autre page, ici un debut de liste qu on DEPLIE sur
+      place. Une seule constante a changer si on veut aligner
+      (`APERCU_VOISINAGE`).
+
+      LES EXEMPLES D ENCHAINEMENTS PASSENT DE 10 A 5 le 2026-09-08 (« comme on
+      est a 5 max, autant reduire la liste des enchainements a 5 aussi »). Le 10
+      se defendait quand cette liste etait la seule bornee de la fiche ; depuis
+      que les passes voisines s arretent a cinq, deux longueurs d apercu sur la
+      meme page font deux promesses sans jamais dire pourquoi. La coupe est
+      indolore parce que la suite existe : « Voir les N enchainements » mene a la
+      liste filtree par la passe. C est d ailleurs la difference de nature entre
+      les deux aperçus de la fiche — ici on NAVIGUE vers une page qui sait tout
+      montrer, la-bas on deplie sur place.
+
+      2 tests e2e ajoutes (tests/e2e/apercu-listes-voisinage.e2e.spec.ts) : le
+      pli au-dessus du seuil, son absence en dessous.
     reste_a_faire: >
       Le TRONCAGE des listes de PASSES a un apercu (avec compteur juste,
       alignement sur les 6 de /recherche, et une destination « voir plus » qui
       existe) : en pause, peut-etre V2.
       La moitie ENCHAINEMENTS est faite le 2026-09-07 (Story 5-6, branche
-      `feat/fiche-passe-enchainements`) : 10 exemples, tries du plus recent au
-      plus ancien, total compte sous les acces. Elle TRANCHE au passage deux
-      nuances de cette note — le compteur reste le total et pas 10 ; et il n y a
-      PAS de « voir plus », parce qu il n aurait nulle part ou mener (Alain :
-      « je ne suis pas sur que le but soit d etre exhaustif, contrairement aux
-      passes »). La limite est 10 et non 6 comme /recherche, et c est assume :
-      la-bas l apercu precede un « voir tout », ici les 10 SONT la reponse.
+      `feat/fiche-passe-enchainements`) : des exemples tries du plus recent au
+      plus ancien, total compte sous les acces. Elle TRANCHE au passage une
+      nuance de cette note — le compteur reste le total, pas le nombre montre.
+      La limite etait 10 ce jour-la, quand cette liste etait la seule bornee de
+      la fiche ; elle passe a 5 le lendemain pour s aligner sur les listes de
+      voisinage (voir `avancement`).
       Le filtre `?passe=` est livre dans la foulee, et avec lui le « Voir les N
       enchainements » : la nuance « voir plus doit mener quelque part qui
       existe » est donc refermee du cote enchainements, et le libelle est celui
       de /recherche (« Voir les N enchainements ») — plus deux vocabulaires
       voisins pour le meme geste.
-      Ne reste au titre de cette note que le TRONCAGE DES LISTES DE PASSES, en
-      pause. FR-38 (liste des videos) est abandonne, voir la Story 5-6.
+      Plus rien au titre de cette note : le troncage des listes de passes est
+      livre le 2026-09-07 (voir `avancement`). FR-38 (liste des videos) est
+      abandonne, voir la Story 5-6.
 
   # Note deposee par Alain le 2026-09-07, apres la livraison des exemples
   # d utilisation sur la fiche passe (FR-24). Idee POUR LA V2, pas pour le v1 :

@@ -19,7 +19,7 @@ import type { User } from '@/payload-types'
  *    dire « 12 » à qui n'a le droit d'en voir que 2 révèle l'existence de dix
  *    enchaînements privés, sans jamais en montrer un seul (AD-6) ;
  *  - la LIMITE tronque l'affichage sans toucher au compte. Un `totalDocs` qui
- *    tomberait à 10 ferait mentir la phrase « les 10 plus récents sur 12 ».
+ *    tomberait à la limite ferait mentir la phrase « les 5 plus récents sur 12 ».
  *
  * Le jeu d'essai monte un LEURRE : un enchaînement qui n'utilise pas la passe
  * observée, et qui ne doit apparaître ni dans la liste ni dans le total.
@@ -90,8 +90,10 @@ describe('Enchaînements qui utilisent une passe', () => {
     })
     idAutrePasse = autre.id
 
-    // Douze publics datés, du 1er au 12 janvier : deux de plus que la limite,
-    // ce qui est le seul moyen de voir la troncature agir.
+    // Douze publics datés, du 1er au 12 janvier : plus que la limite, ce qui est
+    // le seul moyen de voir la troncature agir. Les assertions se déduisent de
+    // `EXEMPLES_PAR_PASSE` et non de ce douze — la limite a déjà bougé une fois
+    // (10 le 2026-09-07, 5 le lendemain), le jeu d'essai n'a pas à suivre.
     for (let jour = 1; jour <= 12; jour += 1) {
       const numero = String(jour).padStart(2, '0')
       await creer(`Exemples — public du ${numero}`, `2026-01-${numero}`)
@@ -129,11 +131,15 @@ describe('Enchaînements qui utilisent une passe', () => {
     const { exemples } = await enchainementsUtilisant(payload, idPasse, null)
 
     expect(exemples[0].titre).toBe('Exemples — public du 12')
-    expect(exemples[exemples.length - 1].titre).toBe('Exemples — public du 03')
+
+    // Le dernier montré se déduit de la limite : on descend le calendrier depuis
+    // le 12, donc la coupe tombe d'autant plus haut que l'aperçu est court.
+    const dernierJour = String(12 - EXEMPLES_PAR_PASSE + 1).padStart(2, '0')
+    expect(exemples[exemples.length - 1].titre).toBe(`Exemples — public du ${dernierJour}`)
   })
 
   it('tronque la liste sans tronquer le total', async () => {
-    // C'est ce couple qui rend honnête la phrase « les 10 plus récents sur 12 ».
+    // C'est ce couple qui rend honnête la phrase « les 5 plus récents sur 12 ».
     const { exemples, total } = await enchainementsUtilisant(payload, idPasse, null)
 
     expect(exemples).toHaveLength(EXEMPLES_PAR_PASSE)

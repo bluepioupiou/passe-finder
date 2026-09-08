@@ -36,7 +36,7 @@ function MaillonPosition({ position, role }: { position: Position; role: string 
  * de la passe dans la chaîne pour savoir où regarder en arrivant, la date pour
  * situer le cours. La carte de la liste (`CarteEnchainement`) montre en plus le
  * trajet et la description — il faudrait pour cela charger tout le catalogue de
- * référence sur une fiche qui n'en a aucun autre usage, et dix cartes pleines
+ * référence sur une fiche qui n'en a aucun autre usage, et cinq cartes pleines
  * repousseraient les listes de voisinage encore plus bas.
  *
  * L'ICÔNE VIDÉO EST LA SEULE RETENUE, et pas celle de la musique : ici on
@@ -99,8 +99,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * enchaîne, puis les changements de prise — et les trois viennent APRES le
  * déroulé. Le déroulé est le contenu de cours, la raison d'être de la fiche :
  * trois listes qui peuvent compter des dizaines d'entrées (44 au pire) le
- * repousseraient hors de vue sur téléphone. Le troncage à un aperçu reste au
- * backlog, mis en pause par Alain faute d'un classement clair.
+ * repousseraient hors de vue sur téléphone. Les deux listes de passes n'en
+ * montrent donc plus que CINQ et replient le reste sur place (2026-09-07) : la
+ * règle vit dans `ListePasses`, qui la porte aussi sur la fiche position.
  *
  * LES EXEMPLES S'INTERCALENT ENTRE LE DEROULE ET CES TROIS LISTES (FR-24,
  * 2026-09-07), et cette place est le seul endroit tenable. Placés après, ils
@@ -184,8 +185,10 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
       ) : null}
 
       {/* FR-24 — DES EXEMPLES D'UTILISATION, pas l'inventaire. Le compteur du
-          titre est le TOTAL et la précision dit ce qui est montré : dix lignes
-          sans cette phrase se liraient comme une liste complète. */}
+          titre est le TOTAL et la précision dit ce qui est montré : cinq lignes
+          sans cette phrase se liraient comme une liste complète.
+          CINQ COMME LES LISTES DE VOISINAGE plus bas (2026-09-08) : la fiche ne
+          fait qu'une promesse de longueur, pas deux. Voir `EXEMPLES_PAR_PASSE`. */}
       <section className="fiche-section">
         <h2 className="fiche-section__titre">
           Enchaînements qui l&apos;utilisent <span className="texte-attenue">({total})</span>
