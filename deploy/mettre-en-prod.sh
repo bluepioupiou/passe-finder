@@ -157,6 +157,13 @@ sudo docker compose up -d --remove-orphans || retour_arriere
 echo "-> Attente que l'application soit saine..."
 attendre_sante || retour_arriere
 
+echo "-> Rechargement de la configuration de Caddy..."
+# `up -d` ne redemarre pas Caddy quand seul le Caddyfile (monte en volume) a
+# change : sans ce rechargement, une modification du Caddyfile resterait lettre
+# morte jusqu'au prochain redemarrage de la machine. Sans coupure, et sans
+# consequence si rien n'a change.
+sudo docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
+
 echo "-> Retrait de la page de mise a jour..."
 retirer_maintenance
 
