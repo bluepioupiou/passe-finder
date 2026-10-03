@@ -2,7 +2,23 @@
 # des lors que le domaine pointe vers l'IP de la machine. Rien a configurer
 # de plus : pas de certbot, pas de cron de renouvellement.
 
-{$DOMAINE}, www.{$DOMAINE} {
+# --- www -> domaine nu ---------------------------------------------------------
+#
+# UNE SEULE ADRESSE POUR LE SITE, et ce n'est pas qu'une question d'esthetique.
+# Payload n'accepte le cookie de session que si l'en-tete `Origin` de la requete
+# figure dans sa liste `csrf` — qui contient `serverURL`, donc `https://{$DOMAINE}`
+# et rien d'autre. Or toutes les actions serveur (connexion, enregistrer un
+# enchainement, un favori...) envoient `Origin`. Servi aussi sur `www.`, le site
+# affichait la page connectee (une navigation n'envoie pas `Origin`) puis
+# refusait chaque action : « Session expiree : reconnecte-toi ». Et juste apres
+# la connexion, le menu restait celui d'un anonyme jusqu'au rafraichissement.
+#
+# 308 et non 301 : il conserve la methode, une soumission en POST reste un POST.
+www.{$DOMAINE} {
+	redir https://{$DOMAINE}{uri} 308
+}
+
+{$DOMAINE} {
 	encode gzip zstd
 
 	# --- Page de mise a jour ------------------------------------------------
