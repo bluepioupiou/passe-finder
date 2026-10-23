@@ -1944,3 +1944,17 @@ development_status:
   6-3-migrer-les-enchainements-liaisons-ordonnees: review
   6-4-verification-rejouabilite-de-la-migration: backlog
   epic-6-retrospective: optional
+
+  # --- Epic 7: Orientation dans l'espace (ligne de danse & pivot) ---
+  # Ajoute le 2026-10-23. Tranche dans
+  # 7-1-7-2-7-3-tranche-orientation-ligne-de-danse.md. Questions tranchees le
+  # 2026-10-23 : ligne de danse = convention de dessin bas->haut (pas de champ
+  # sur Position), pivot = 4 valeurs de resultat (0/90/180/270, pas de sens),
+  # transitions a pivot nul. Ordre : 7.1, redessin des positions, 7.2, saisie
+  # des pivots, 7.3.
+  epic-7: backlog
+  7-1-convention-ligne-de-danse-et-vignette-orientable: ready-for-dev
+  7-2-pivot-sur-les-passes: ready-for-dev
+  7-3-orientation-cumulee-dans-l-enchainement: ready-for-dev
+  epic-7-retrospective: optional
+

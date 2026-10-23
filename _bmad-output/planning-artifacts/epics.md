@@ -235,6 +235,10 @@ Rapatrier le catalogue accumulé depuis `passe-finder-saveDB.gz` via l'API Local
 **Exigences additionnelles :** ADD-16, ADD-10 (champs archivés)
 **NFR adressés :** NFR-6
 
+### Epic 7: Orientation dans l'espace (ligne de danse & pivot)
+Rendre lisible la rotation du couple : tout dessin de position a la ligne de danse du bas vers le haut (convention), chaque passe déclare son pivot en quarts de tour entre départ et arrivée, et l'enchaînement en déduit l'orientation cumulée à chaque instant. « Non renseigné » n'est jamais « zéro ».
+**Détail & questions ouvertes :** `_bmad-output/implementation-artifacts/7-1-7-2-7-3-tranche-orientation-ligne-de-danse.md`
+
 ---
 
 ## Epic 1: Socle déployable & pipeline continu
@@ -1076,3 +1080,52 @@ So that j'ai la preuve que rien n'est perdu et je peux corriger puis relancer en
 **Given** un écart ou une erreur pendant la migration
 **When** le script s'exécute
 **Then** l'échec est explicite (entité et cause identifiées), permettant correction puis relance sans repartir de zéro
+
+---
+
+## Epic 7: Orientation dans l'espace (ligne de danse & pivot)
+
+Demande d'Alain du 2026-10-23. Modèle, règles et décisions : `_bmad-output/implementation-artifacts/7-1-7-2-7-3-tranche-orientation-ligne-de-danse.md`.
+
+### Story 7.1: Convention de ligne de danse et vignette orientable
+
+As a admin,
+I want que tous les dessins de position aient la ligne de danse du bas vers le haut, et des vignettes qu'on peut tourner à l'affichage,
+So that toutes les vignettes partagent un même repère sans champ à saisir.
+
+**Given** l'atelier de composition
+**When** je dessine une position
+**Then** un guide fixe « ligne de danse ↑ » est visible sur la toile, et il n'apparaît pas dans le PNG exporté
+
+**Given** une vignette à qui on passe un angle (y compris 0)
+**When** elle s'affiche
+**Then** elle est tournée en CSS avec un repère de ligne de danse, sans modifier le PNG ; sans angle, elle reste telle que dessinée
+
+### Story 7.2: Pivot sur les passes
+
+As a élève,
+I want voir la rotation du couple entre le départ et l'arrivée d'une passe,
+So that une passe X → X (changement de côté) ne ressemble plus à « rien ne se passe ».
+
+**Given** une passe avec un `pivot` (même orientation / quart à droite / demi-tour / quart à gauche)
+**When** j'ouvre sa fiche, la liste des passes ou la recherche
+**Then** l'arrivée est tournée de `pivot` par rapport au départ, et le pivot est nommé (« demi-tour »), sans prétendre dire dans quel sens on a tourné
+
+**Given** une passe sans pivot
+**When** elle s'affiche
+**Then** la mention « orientation non renseignée » apparaît et rien n'est déduit
+
+### Story 7.3: Orientation cumulée dans l'enchaînement
+
+As a élève,
+I want savoir à chaque position de l'enchaînement comment le couple est orienté,
+So that je sais où je dois me trouver dans l'espace à cet instant.
+
+**Given** un enchaînement dont toutes les passes ont un pivot
+**When** je le lis ou le compose
+**Then** chaque position est tournée de la somme des pivots précédents modulo 360 (départ = 0, transition = 0), et l'orientation finale est indiquée par rapport au départ
+
+**Given** un maillon au pivot inconnu
+**When** la chaîne est calculée
+**Then** l'orientation devient inconnue à partir de ce maillon, sans être devinée, et aucun champ n'est ajouté à `Enchainement`
+
