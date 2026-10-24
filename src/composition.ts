@@ -12,6 +12,8 @@
  * pourraient diverger (ADD-4).
  */
 
+import type { Ligne, Pivot } from './orientation'
+
 /**
  * Position reduite a ce que le compositeur affiche.
  *
@@ -21,7 +23,13 @@
  * n'affiche rien ; ces vues pesent ~10 Ko. L'image est deja resolue (vraie image
  * ou placeholder), pour que la regle de `imageDePosition` reste au meme endroit.
  */
-export type VuePosition = { id: number; nom: string; src: string }
+export type VuePosition = {
+  id: number
+  nom: string
+  src: string
+  /** Ligne de danse du dessin (Epic 7), deja lue par `ligneDe` ; `null` si inconnue. */
+  ligne: Ligne | null
+}
 
 /** Passe reduite a ce que le compositeur affiche, plus ses deux extremites. */
 export type VuePasse = {
@@ -29,6 +37,11 @@ export type VuePasse = {
   nom: string
   /** Libelle lisible (« Debutant »…), deja resolu ; `null` si non renseignee. */
   difficulte: string | null
+  /**
+   * Rotation du couple entre depart et arrivee (Epic 7), deja lue par
+   * `pivotDe` ; `null` si non renseignee — jamais 0 par defaut.
+   */
+  pivot: Pivot | null
   debut: number
   fin: number
 }
@@ -221,9 +234,7 @@ export type SaisieEnchainement = SaisieMetadonnees & {
  * l'adresse ou le compositeur doit atterrir, et la seule que les URL du site
  * connaissent (action item `identifiant-opaque-et-visibilites`).
  */
-export type ResultatEnregistrement =
-  | { ok: true; idPublic: string }
-  | { ok: false; message: string }
+export type ResultatEnregistrement = { ok: true; idPublic: string } | { ok: false; message: string }
 
 /**
  * Le jour d'aujourd'hui a Paris, au format `AAAA-MM-JJ`.

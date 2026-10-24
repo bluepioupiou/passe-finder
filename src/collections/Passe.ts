@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
+import { PIVOTS } from '../orientation'
 import { adminSeul } from './acces'
 
 /** Libellés de difficulté, décidés avec Alain (2026-08-26). */
@@ -40,7 +41,9 @@ export const Passe: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'nom',
-    defaultColumns: ['nom', 'positionDebut', 'positionFin', 'difficulte'],
+    // `pivot` en colonne : avec le filtre « n'existe pas », c'est la liste de
+    // saisie des passes encore sans orientation (Epic 7).
+    defaultColumns: ['nom', 'positionDebut', 'positionFin', 'difficulte', 'pivot'],
   },
   access: {
     // Catalogue de reference : lecture publique (FR-21).
@@ -170,6 +173,20 @@ export const Passe: CollectionConfig = {
       required: false,
       label: 'Difficulté',
       options: [...DIFFICULTES],
+    },
+    {
+      name: 'pivot',
+      type: 'select',
+      // Epic 7 : facultatif, et une absence n'est JAMAIS lue comme 0 — au
+      // deploiement aucune passe n'en a (voir `pivotDe`, src/orientation.ts).
+      required: false,
+      label: 'Pivot du couple',
+      options: [...PIVOTS],
+      admin: {
+        description:
+          "De combien le couple a tourné par rapport à la ligne de danse entre le départ et l'arrivée. " +
+          'Le résultat, pas le sens dans lequel on tourne. Laisser vide tant que ce n’est pas vérifié.',
+      },
     },
 
     // --- Champs d'archivage legacy (AD-8 / ADD-10) -------------------------

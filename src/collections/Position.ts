@@ -1,6 +1,7 @@
 import type { CollectionConfig, Where } from 'payload'
 import { APIError } from 'payload'
 
+import { LIGNES } from '../orientation'
 import { adminSeul } from './acces'
 import { DANSE_V1 } from './Danse'
 import { nomDeTransition } from './Transition'
@@ -22,7 +23,9 @@ export const Position: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'nom',
-    defaultColumns: ['nom', 'image', 'updatedAt'],
+    // `ligneDeDanse` en colonne : avec le filtre « n'existe pas », c'est la liste
+    // de saisie des positions encore sans direction (Epic 7).
+    defaultColumns: ['nom', 'image', 'ligneDeDanse', 'updatedAt'],
   },
   access: {
     // Catalogue de reference : lecture publique, visiteur anonyme inclus (FR-21).
@@ -119,6 +122,21 @@ export const Position: CollectionConfig = {
       label: 'Image',
       admin: {
         description: 'Optionnelle. A defaut, le placeholder « no_position » est affiche.',
+      },
+    },
+    {
+      name: 'ligneDeDanse',
+      type: 'select',
+      // Epic 7 : facultatif, et une absence n'est JAMAIS lue comme « vers le
+      // haut » (voir `ligneDe`, src/orientation.ts). Elle ne se deduit pas du
+      // schema : selon la position, la ligne separe ou relie les danseurs.
+      required: false,
+      label: 'Ligne de danse dans le dessin',
+      options: [...LIGNES],
+      admin: {
+        description:
+          'Vers où pointe la ligne de danse dans le dessin. Sert à orienter cette position ' +
+          'dans les passes et les enchaînements. Laisser vide tant que ce n’est pas vérifié.',
       },
     },
     {

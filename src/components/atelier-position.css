@@ -343,6 +343,7 @@
 }
 
 .atelier__champ input,
+.atelier__champ select,
 .atelier__champ textarea {
   width: 100%;
   min-height: 44px;

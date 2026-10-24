@@ -38,6 +38,7 @@ import {
   type SaisiePosition,
   type SchemaPosition,
 } from '@/schema-position'
+import { LIGNES } from '@/orientation'
 import { ScenePosition } from './ScenePosition'
 import './atelier-position.css'
 
@@ -68,7 +69,11 @@ import './atelier-position.css'
  *    pieces. C'est ce qui permet d'eprouver les regles sans monter le DOM.
  */
 
-type Informations = { nom: string; description: string }
+/**
+ * `ligneDeDanse` est facultative a l'ouverture : `''` (non renseignee) par
+ * defaut, jamais « vers le haut » — voir `ligneDe`.
+ */
+type Informations = { nom: string; description: string; ligneDeDanse?: string }
 
 // ── Libelles ───────────────────────────────────────────────────────────────
 
@@ -142,7 +147,10 @@ function Mire({ taille }: { taille: number }) {
       <path className="atelier__mire-hors-champ" d={contour} fillRule="evenodd" />
       <circle className="atelier__mire-bord" r={demi - 1} />
       <circle className="atelier__mire-sure" r={demi * 0.92} />
-      <path className="atelier__mire-centre" d={`M ${-demi * 0.05},0 H ${demi * 0.05} M 0,${-demi * 0.05} V ${demi * 0.05}`} />
+      <path
+        className="atelier__mire-centre"
+        d={`M ${-demi * 0.05},0 H ${demi * 0.05} M 0,${-demi * 0.05} V ${demi * 0.05}`}
+      />
     </g>
   )
 }
@@ -176,6 +184,14 @@ export function AtelierPosition({
   const [opaciteCalque, setOpaciteCalque] = useState(35)
 
   const modification = Boolean(initial?.id)
+  // Une position HISTORIQUE (ouverte sans aucune piece) s'enregistre aussi sans
+  // etre retracee : on n'y change alors que les informations, l'image reste.
+  // Une composition existante dont on aurait retire toutes les pieces, elle,
+  // reste bloquee — l'enregistrer ainsi laisserait croire qu'on a efface le
+  // dessin alors qu'il serait conserve.
+  const garderLeDessin =
+    modification && schema.pieces.length === 0 && (initial?.schema.pieces.length ?? 0) === 0
+  const enregistrable = schema.pieces.length > 0 || garderLeDessin
   const pieceSelectionnee = schema.pieces.find((piece) => piece.id === selection) ?? null
   const plein = schema.pieces.length >= PIECES_MAX
 
@@ -218,7 +234,8 @@ export function AtelierPosition({
       if (tete) return tete
     }
     return (
-      [...schema.pieces].reverse().find((piece): piece is PieceTete => piece.type === 'tete') ?? null
+      [...schema.pieces].reverse().find((piece): piece is PieceTete => piece.type === 'tete') ??
+      null
     )
   }
 
@@ -251,11 +268,7 @@ export function AtelierPosition({
   const replacerSurLEpaule = (bras: PieceBras) => {
     const tete = teteDuBras(schema, bras)
     if (!tete || !bras.cote) return
-    const suivant = tourner(
-      schema,
-      bras.id,
-      angleDEpaule(tete, bras.cote) - bras.rotation,
-    )
+    const suivant = tourner(schema, bras.id, angleDEpaule(tete, bras.cote) - bras.rotation)
     appliquer(suivant, `${nomDePiece(bras, schema)} remis sur l’épaule.`)
   }
 
@@ -265,13 +278,19 @@ export function AtelierPosition({
     const pas = (fin ? PAS_ROTATION_FIN : PAS_ROTATION) * sens
     const suivant = tourner(schema, id, pas)
     const piece = suivant.pieces.find((autre) => autre.id === id)!
-    appliquer(suivant, `${nomDePiece(piece, suivant)} tourné à ${Math.round(piece.rotation)} degrés.`)
+    appliquer(
+      suivant,
+      `${nomDePiece(piece, suivant)} tourné à ${Math.round(piece.rotation)} degrés.`,
+    )
   }
 
   const bouger = (id: string, dx: number, dy: number) => {
     const suivant = deplacer(schema, id, dx, dy)
     const piece = suivant.pieces.find((autre) => autre.id === id)!
-    appliquer(suivant, `${nomDePiece(piece, suivant)} déplacé, x ${Math.round(piece.x)}, y ${Math.round(piece.y)}.`)
+    appliquer(
+      suivant,
+      `${nomDePiece(piece, suivant)} déplacé, x ${Math.round(piece.x)}, y ${Math.round(piece.y)}.`,
+    )
   }
 
   const deplacerDansLaPile = (id: string, vers: 1 | -1) => {
@@ -339,7 +358,10 @@ export function AtelierPosition({
       setSchema((actuel) => {
         const suivant = aimanter(actuel, id)
         const piece = suivant.pieces.find((autre) => autre.id === id)
-        if (piece) setAnnonce(`${nomDePiece(piece, schema)} posé, x ${Math.round(piece.x)}, y ${Math.round(piece.y)}.`)
+        if (piece)
+          setAnnonce(
+            `${nomDePiece(piece, schema)} posé, x ${Math.round(piece.x)}, y ${Math.round(piece.y)}.`,
+          )
         return suivant
       })
     },
@@ -376,7 +398,7 @@ export function AtelierPosition({
 
   const soumettre = async (evenement: React.FormEvent) => {
     evenement.preventDefault()
-    if (enCours || schema.pieces.length === 0) return
+    if (enCours || !enregistrable) return
 
     setEnCours(true)
     setErreur(null)
@@ -385,6 +407,7 @@ export function AtelierPosition({
         id: initial?.id ?? null,
         nom: informations.nom,
         description: informations.description,
+        ligneDeDanse: informations.ligneDeDanse ?? '',
         schema,
       })
 
@@ -570,7 +593,12 @@ export function AtelierPosition({
                     >
                       <ScenePosition
                         className="atelier__vignette"
-                        schema={{ version: 1, taille: 900, calque: null, pieces: [{ ...piece, x: 0, y: 0 }] }}
+                        schema={{
+                          version: 1,
+                          taille: 900,
+                          calque: null,
+                          pieces: [{ ...piece, x: 0, y: 0 }],
+                        }}
                       />
                       <span>{descriptionDePiece(piece, schema)}</span>
                     </button>
@@ -623,7 +651,9 @@ export function AtelierPosition({
         {/* ── 3. Régler la pièce choisie ─────────────────────────────── */}
         {pieceSelectionnee ? (
           <section className="atelier__bloc">
-            <h2 className="atelier__titre">3. Régler « {nomDePiece(pieceSelectionnee, schema)} »</h2>
+            <h2 className="atelier__titre">
+              3. Régler « {nomDePiece(pieceSelectionnee, schema)} »
+            </h2>
 
             <div className="atelier__ligne">
               <button
@@ -817,6 +847,27 @@ export function AtelierPosition({
               />
             </div>
 
+            <div className="atelier__champ">
+              <label htmlFor={`${champ}-ligne`}>Ligne de danse dans le dessin</label>
+              <select
+                id={`${champ}-ligne`}
+                value={informations.ligneDeDanse ?? ''}
+                onChange={(evenement) =>
+                  setInformations((actuel) => ({ ...actuel, ligneDeDanse: evenement.target.value }))
+                }
+              >
+                <option value="">Non renseignée</option>
+                {LIGNES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="atelier__note">
+                Sert à orienter cette position dans les passes et les enchaînements.
+              </p>
+            </div>
+
             {schema.calque ? (
               <div className="atelier__reglage">
                 <label htmlFor={`${champ}-calque`}>
@@ -845,7 +896,7 @@ export function AtelierPosition({
               <button
                 type="submit"
                 className="atelier__enregistrer"
-                disabled={enCours || schema.pieces.length === 0}
+                disabled={enCours || !enregistrable}
               >
                 {enCours ? 'Enregistrement…' : modification ? 'Enregistrer' : 'Créer la position'}
               </button>
@@ -854,7 +905,12 @@ export function AtelierPosition({
               </a>
             </div>
 
-            {schema.pieces.length === 0 ? (
+            {garderLeDessin ? (
+              <p className="atelier__note">
+                Sans pièce posée, seules les informations sont enregistrées : l’image actuelle est
+                conservée telle quelle.
+              </p>
+            ) : schema.pieces.length === 0 ? (
               <p className="atelier__note">Ajoute au moins une pièce pour pouvoir enregistrer.</p>
             ) : null}
           </form>

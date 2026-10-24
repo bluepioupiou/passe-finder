@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-09-07 (story 3-3 : recuperation d acces par e-mail)
+# last_updated: 2026-10-24 (epic 7 : ligne de danse sur les positions, pivot, orientation)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-24
-last_updated: 2026-09-07
+last_updated: 2026-10-24
 project: passe-finder
 project_key: NOKEY
 tracking_system: file-system
@@ -1952,9 +1952,12 @@ development_status:
   # sur Position), pivot = 4 valeurs de resultat (0/90/180/270, pas de sens),
   # transitions a pivot nul. Ordre : 7.1, redessin des positions, 7.2, saisie
   # des pivots, 7.3.
-  epic-7: backlog
-  7-1-convention-ligne-de-danse-et-vignette-orientable: ready-for-dev
-  7-2-pivot-sur-les-passes: ready-for-dev
-  7-3-orientation-cumulee-dans-l-enchainement: ready-for-dev
+  # 2026-10-24 : rotation sans indice visuel ni texte ; la convention de
+  # dessin est remplacee par un champ ligneDeDanse sur la position (depart tel
+  # que dessine, suite recalee). Pas de guide dans l'atelier.
+  epic-7: in-progress
+  7-1-direction-de-la-ligne-de-danse-sur-les-positions: review
+  7-2-pivot-sur-les-passes: review
+  7-3-orientation-cumulee-dans-l-enchainement: review
   epic-7-retrospective: optional
 

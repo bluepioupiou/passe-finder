@@ -5,6 +5,7 @@ import React from 'react'
 import { GrilleFiltrable } from '@/components/GrilleFiltrable'
 import { ImagePosition } from '@/components/ImagePosition'
 import { DIFFICULTES, libelleDifficulte } from '@/collections/Passe'
+import { angleAffiche, ligneDe, pivotDe } from '@/orientation'
 import config from '@/payload.config'
 import type { Position } from '@/payload-types'
 import './passes.css'
@@ -53,6 +54,12 @@ export default async function PassesPage({
     const debut = passe.positionDebut as Position | number
     const fin = passe.positionFin as Position | number
     const difficulte = libelleDifficulte(passe.difficulte)
+    // Epic 7 : le départ tel que dessiné, l'arrivée recalée sur lui — sans le
+    // souligner, on retrouve les danseurs là où on les attend.
+    const angleArrivee =
+      typeof debut === 'object' && typeof fin === 'object'
+        ? angleAffiche(pivotDe(passe.pivot), ligneDe(debut.ligneDeDanse), ligneDe(fin.ligneDeDanse))
+        : null
 
     return {
       cle: passe.id,
@@ -80,7 +87,7 @@ export default async function PassesPage({
 
             {typeof fin === 'object' ? (
               <div className="passe-maillon">
-                <ImagePosition position={fin} className="passe-image" />
+                <ImagePosition position={fin} className="passe-image" angle={angleArrivee} />
                 <span className="passe-position-nom texte-attenue">{fin.nom}</span>
               </div>
             ) : null}

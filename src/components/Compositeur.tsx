@@ -16,6 +16,7 @@ import {
   type VuePosition,
   type VueTransition,
 } from '@/composition'
+import { angleAffiche, orientationsCumulees } from '@/orientation'
 import { correspondAuNom } from '@/recherche'
 import { ChampsEnchainement, auMoinsUnLienInvalide } from './ChampsEnchainement'
 import { Bouton } from './Bouton'
@@ -31,12 +32,21 @@ const SEUIL_FILTRE = 8
  * `role` nomme les deux extremites (« Depart », « Arrivee ») : ce sont les deux
  * seules positions qu'on cherche des yeux quand la chaine s'allonge.
  */
-function Etape({ position, role }: { position: VuePosition | undefined; role?: string }) {
+function Etape({
+  position,
+  role,
+  angle = null,
+}: {
+  position: VuePosition | undefined
+  role?: string
+  /** Angle recale sur le depart (Story 7.3) ; `null` : telle que dessinee. */
+  angle?: number | null
+}) {
   if (!position) return null
 
   return (
     <div className="compo-etape">
-      <ImagePosition position={position} className="compo-etape__image" />
+      <ImagePosition position={position} className="compo-etape__image" angle={angle} />
       <span className="compo-etape__nom">{position.nom}</span>
       {role ? <span className="compo-etape__role label-caps texte-attenue">{role}</span> : null}
     </div>
@@ -60,11 +70,14 @@ function Reprise({
   nom,
   position,
   role,
+  angle,
   surRetrait,
 }: {
   nom: string | undefined
   position: VuePosition | undefined
   role?: string
+  /** Un changement de prise ne fait pas pivoter : l'orientation de la position quittee. */
+  angle: number | null
   /** Fourni seulement pour le changement en attente, qui est l'action annulable. */
   surRetrait?: () => void
 }) {
@@ -88,7 +101,7 @@ function Reprise({
         ) : null}
       </div>
 
-      <Etape position={position} role={role} />
+      <Etape position={position} role={role} angle={angle} />
     </>
   )
 }
@@ -205,6 +218,13 @@ export function Compositeur({
     [positions],
   )
 
+  // Story 7.3 : le depart tel que dessine, chaque autre etape recalee sur lui —
+  // meme regle que la vue lecture (`orientationsCumulees`, `angleAffiche`).
+  const etapes = orientationsCumulees(chaine.map((maillon) => maillon.passe.pivot))
+  const ligneDepart = depart === null ? null : (parId.get(depart)?.ligne ?? null)
+  const angle = (position: number, etape: number) =>
+    angleAffiche(etapes[etape], ligneDepart, parId.get(position)?.ligne ?? null)
+
   // Les transitions par TRAJET, comme la lecture les retrouve : la chaine ne
   // retient que la position vers laquelle on a change de prise, jamais quelle
   // transition on a cliquee. Une seule facon de renommer une reprise, ici comme
@@ -226,7 +246,9 @@ export function Compositeur({
   // rouvrir un enchainement pour changer son titre donnerait l'impression
   // d'avoir perdu son point de depart.
   const departs = useMemo(() => {
-    const utiles = positions.filter((position) => passes.some((passe) => passe.debut === position.id))
+    const utiles = positions.filter((position) =>
+      passes.some((passe) => passe.debut === position.id),
+    )
     if (depart === null || utiles.some((position) => position.id === depart)) return utiles
 
     const actuelle = positions.find((position) => position.id === depart)
@@ -414,6 +436,7 @@ export function Compositeur({
                       <Reprise
                         nom={parTrajet.get(`${precedente}>${maillon.transitionAvant}`)?.nom}
                         position={parId.get(maillon.transitionAvant)}
+                        angle={angle(maillon.transitionAvant, index)}
                       />
                     ) : null}
 
@@ -443,6 +466,7 @@ export function Compositeur({
                     <Etape
                       position={parId.get(passe.fin)}
                       role={dernier && transitionEnAttente === null ? 'Arrivée' : undefined}
+                      angle={angle(passe.fin, index + 1)}
                     />
                   </li>
                 )
@@ -458,6 +482,7 @@ export function Compositeur({
                     nom={parTrajet.get(`${arrivee}>${transitionEnAttente}`)?.nom}
                     position={parId.get(transitionEnAttente)}
                     role="Arrivée"
+                    angle={angle(transitionEnAttente, chaine.length)}
                     surRetrait={annulerDernier}
                   />
                 </li>

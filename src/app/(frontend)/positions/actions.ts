@@ -3,10 +3,16 @@
 import { getPayload, type Payload } from 'payload'
 
 import { DANSE_V1 } from '@/collections/Danse'
+import { LIGNES, ligneDe } from '@/orientation'
 import config from '@/payload.config'
 import { sessionCourante } from '@/porte'
 import { nomDeFichier, pngDeSchema } from '@/rendu-position-png'
-import { PIECES_MAX, schemaSur, type ResultatPosition, type SaisiePosition } from '@/schema-position'
+import {
+  PIECES_MAX,
+  schemaSur,
+  type ResultatPosition,
+  type SaisiePosition,
+} from '@/schema-position'
 
 /**
  * Enregistrer un schema de position : le PNG et la position, en un geste.
@@ -39,9 +45,7 @@ async function danseDeReference(payload: Payload): Promise<number> {
   return danse.id as number
 }
 
-export async function enregistrerSchemaPosition(
-  saisie: SaisiePosition,
-): Promise<ResultatPosition> {
+export async function enregistrerSchemaPosition(saisie: SaisiePosition): Promise<ResultatPosition> {
   // ── Validation pure, hors du `try` ───────────────────────────────────────
   const nom = saisie.nom.trim()
   if (nom === '') return { ok: false, message: 'Il manque un nom à cette position.' }
@@ -52,8 +56,11 @@ export async function enregistrerSchemaPosition(
   }
 
   // Le filet contre le scenario destructeur : un schema vide qui ecraserait
-  // une composition existante et son image.
-  if (schema.pieces.length === 0) {
+  // une composition existante et son image. A la CREATION, un schema vide n'a
+  // aucun sens ; a la MODIFICATION, il veut dire « je ne touche pas au dessin »
+  // (plus bas) — et ne remplace donc jamais rien.
+  const garderLeDessin = schema.pieces.length === 0
+  if (garderLeDessin && !saisie.id) {
     return { ok: false, message: 'Un schéma contient au moins une pièce.' }
   }
   if (schema.pieces.length > PIECES_MAX) {
@@ -61,6 +68,10 @@ export async function enregistrerSchemaPosition(
   }
 
   const description = saisie.description.trim()
+  // Epic 7 : une valeur inattendue est lue comme « non renseignee », jamais
+  // devinee — meme regle que l'affichage (`ligneDe`).
+  const ligne = ligneDe(saisie.ligneDeDanse)
+  const ligneDeDanse = LIGNES.find((option) => Number(option.value) === ligne)?.value ?? null
 
   try {
     const payload = await getPayload({ config: await config })
@@ -72,6 +83,21 @@ export async function enregistrerSchemaPosition(
         ok: false,
         message: 'Session expirée : reconnecte-toi, puis relance l’enregistrement.',
       }
+    }
+
+    // INFORMATIONS SEULES (Epic 7) : une vignette historique, jamais retracee,
+    // doit pouvoir recevoir sa ligne de danse sans etre redessinee. Ni PNG ni
+    // `schemaCompose` : l'image actuelle reste exactement celle qu'elle etait.
+    if (garderLeDessin && saisie.id) {
+      const position = await payload.update({
+        collection: 'positions',
+        id: saisie.id,
+        overrideAccess: false,
+        user: utilisateur,
+        data: { nom, description: description || null, ligneDeDanse },
+      })
+
+      return { ok: true, id: position.id as number }
     }
 
     const png = await pngDeSchema(schema)
@@ -102,6 +128,7 @@ export async function enregistrerSchemaPosition(
             data: {
               nom,
               description: description || null,
+              ligneDeDanse,
               image: media.id,
               schemaCompose: schema,
             },
@@ -113,6 +140,7 @@ export async function enregistrerSchemaPosition(
             data: {
               nom,
               description: description || null,
+              ligneDeDanse,
               image: media.id,
               schemaCompose: schema,
               // `danse` est requis par le type, et le `beforeValidate` de la

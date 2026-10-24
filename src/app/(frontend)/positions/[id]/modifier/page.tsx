@@ -78,7 +78,8 @@ export default async function ModifierPosition({ params }: { params: Promise<{ i
   return (
     <div className="contenu-page">
       <p className="fiche-fil">
-        <Link href="/positions">Positions</Link> · <Link href={`/positions/${id}`}>{position.nom}</Link>
+        <Link href="/positions">Positions</Link> ·{' '}
+        <Link href={`/positions/${id}`}>{position.nom}</Link>
       </p>
 
       <header className="atelier-entete">
@@ -116,7 +117,11 @@ export default async function ModifierPosition({ params }: { params: Promise<{ i
           initial={{
             id: position.id as number,
             schema,
-            informations: { nom: position.nom, description: position.description ?? '' },
+            informations: {
+              nom: position.nom,
+              description: position.description ?? '',
+              ligneDeDanse: position.ligneDeDanse ?? '',
+            },
           }}
           enregistrer={enregistrerSchemaPosition}
           retour={`/positions/${id}`}

@@ -22,7 +22,7 @@ import {
  */
 
 function passe(id: number, nom: string, debut: number, fin: number): VuePasse {
-  return { id, nom, difficulte: null, debut, fin }
+  return { id, nom, difficulte: null, pivot: null, debut, fin }
 }
 
 /** Une passe posee dans la chaine, sans changement de prise avant elle. */
