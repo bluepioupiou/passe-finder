@@ -4,6 +4,7 @@ import { libelleDifficulte } from './collections/Passe'
 import { nomDeTransition } from './collections/Transition'
 import type { VuePasse, VuePosition, VueTransition } from './composition'
 import { cleDeTransition, identifiant } from './enchainements'
+import { ligneDe, pivotDe } from './orientation'
 import type { Enchainement, Pass, Position, Transition, User } from './payload-types'
 import { imageDePosition } from './positions'
 
@@ -259,6 +260,7 @@ export function vuesDuCatalogue(catalogue: Catalogue): {
     id: position.id,
     nom: position.nom,
     src: imageDePosition(position).src,
+    ligne: ligneDe(position.ligneDeDanse),
   }))
 
   // Une passe dont une extremite manque n'est pas composable : elle ne peut ni
@@ -274,6 +276,7 @@ export function vuesDuCatalogue(catalogue: Catalogue): {
         id: passe.id,
         nom: passe.nom,
         difficulte: libelleDifficulte(passe.difficulte),
+        pivot: pivotDe(passe.pivot),
         debut,
         fin,
       },

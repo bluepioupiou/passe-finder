@@ -211,6 +211,10 @@ export interface Position {
    */
   image?: (number | null) | Media;
   /**
+   * Vers où pointe la ligne de danse dans le dessin. Sert à orienter cette position dans les passes et les enchaînements. Laisser vide tant que ce n’est pas vérifié.
+   */
+  ligneDeDanse?: ('0' | '90' | '180' | '270') | null;
+  /**
    * Composition de l'atelier de schema. Rempli automatiquement.
    */
   schemaCompose?:
@@ -251,6 +255,10 @@ export interface Pass {
    */
   deroule?: string | null;
   difficulte?: ('1' | '2' | '3' | '4') | null;
+  /**
+   * De combien le couple a tourné par rapport à la ligne de danse entre le départ et l'arrivée. Le résultat, pas le sens dans lequel on tourne. Laisser vide tant que ce n’est pas vérifié.
+   */
+  pivot?: ('0' | '90' | '180' | '270') | null;
   legacyYoutubeUrl?: string | null;
   legacyPersonnalisations?:
     | {
@@ -544,6 +552,7 @@ export interface PositionsSelect<T extends boolean = true> {
   nom?: T;
   description?: T;
   image?: T;
+  ligneDeDanse?: T;
   schemaCompose?: T;
   legacyId?: T;
   danse?: T;
@@ -561,6 +570,7 @@ export interface PassesSelect<T extends boolean = true> {
   description?: T;
   deroule?: T;
   difficulte?: T;
+  pivot?: T;
   legacyYoutubeUrl?: T;
   legacyPersonnalisations?: T;
   legacyId?: T;

@@ -344,3 +344,84 @@ describe('enregistrement', () => {
     expect(screen.getByLabelText(/Ancienne image en calque/)).toBeTruthy()
   })
 })
+
+describe('ligne de danse (Epic 7)', () => {
+  it('part non renseignée par défaut, jamais « vers le haut »', async () => {
+    const enregistrer = monter()
+    expect(screen.getByLabelText('Ligne de danse dans le dessin')).toHaveProperty('value', '')
+
+    fireEvent.change(screen.getByLabelText('Nom de la position'), { target: { value: 'X' } })
+    fireEvent.submit(screen.getByRole('button', { name: /Créer la position/ }).closest('form')!)
+    await vi.waitFor(() => expect(enregistrer).toHaveBeenCalledTimes(1))
+
+    expect(enregistrer.mock.calls[0][0].ligneDeDanse).toBe('')
+  })
+
+  it('envoie la direction choisie, et la relit à la modification', async () => {
+    const enregistrer = vi.fn<Action>(succes)
+    render(
+      <AtelierPosition
+        enregistrer={enregistrer}
+        retour="/positions/7"
+        initial={{
+          id: 7,
+          schema: {
+            version: 1,
+            taille: 640,
+            calque: null,
+            pieces: [{ id: 'a', type: 'tete', genre: 'cavaliere', x: 0, y: 0, rotation: 90 }],
+          },
+          informations: { nom: 'Berceau', description: '', ligneDeDanse: '90' },
+        }}
+      />,
+    )
+
+    const ligne = screen.getByLabelText('Ligne de danse dans le dessin')
+    expect(ligne).toHaveProperty('value', '90')
+
+    fireEvent.change(ligne, { target: { value: '180' } })
+    fireEvent.submit(screen.getByRole('button', { name: 'Enregistrer' }).closest('form')!)
+    await vi.waitFor(() => expect(enregistrer).toHaveBeenCalledTimes(1))
+
+    expect(enregistrer.mock.calls[0][0].ligneDeDanse).toBe('180')
+  })
+
+  it('une vignette historique s’enregistre sans être retracée', async () => {
+    // Le cas qui bloquait Alain : la position s'ouvre avec son ancienne image
+    // en calque et AUCUNE piece. Changer sa ligne de danse ne doit pas exiger
+    // de la redessiner.
+    const enregistrer = vi.fn<Action>(succes)
+    render(
+      <AtelierPosition
+        enregistrer={enregistrer}
+        retour="/positions/7"
+        initial={{
+          id: 7,
+          schema: {
+            version: 1,
+            taille: 640,
+            calque: { src: '/api/media/file/vieille.jpg' },
+            pieces: [],
+          },
+          informations: { nom: 'Berceau', description: '' },
+        }}
+      />,
+    )
+
+    const bouton = screen.getByRole('button', { name: 'Enregistrer' })
+    expect(bouton).toHaveProperty('disabled', false)
+    expect(screen.getByText(/l’image actuelle est conservée/)).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Ligne de danse dans le dessin'), {
+      target: { value: '270' },
+    })
+    fireEvent.submit(bouton.closest('form')!)
+    await vi.waitFor(() => expect(enregistrer).toHaveBeenCalledTimes(1))
+
+    const saisie = enregistrer.mock.calls[0][0]
+    expect(saisie.id).toBe(7)
+    expect(saisie.ligneDeDanse).toBe('270')
+    // Schema vide : c'est le signal « ne touche pas au dessin » pour l'action.
+    expect(saisie.schema.pieces).toHaveLength(0)
+  })
+})

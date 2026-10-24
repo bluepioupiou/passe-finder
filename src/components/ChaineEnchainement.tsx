@@ -2,7 +2,8 @@ import Link from 'next/link'
 import React from 'react'
 
 import { libelleDifficulte } from '@/collections/Passe'
-import { typologie, type Maillon } from '@/enchainements'
+import { orientations, typologie, type Maillon } from '@/enchainements'
+import { angleAffiche, ligneDe } from '@/orientation'
 import type { Position } from '@/payload-types'
 import { ImagePosition } from './ImagePosition'
 import './chaine-enchainement.css'
@@ -11,11 +12,11 @@ import './chaine-enchainement.css'
 const COLONNES = [1, 2, 3] as const
 
 /** Bulle : une position réduite à son rôle d'articulation, nommée au survol. */
-function Bulle({ position }: { position: Position }) {
+function Bulle({ position, angle = null }: { position: Position; angle?: number | null }) {
   return (
     <span className="bulle">
       <Link className="bulle__lien" href={`/positions/${position.id}`} aria-label={position.nom}>
-        <ImagePosition position={position} className="bulle__image" />
+        <ImagePosition position={position} className="bulle__image" angle={angle} />
       </Link>
       <span className="bulle__info" role="tooltip">
         {position.nom}
@@ -47,16 +48,26 @@ function PileReprise({
   arrivait,
   reprend,
   transition,
+  angleArrivait,
+  angleReprend,
 }: {
   arrivait: Position | null
   reprend: Position | null
   transition: { nom: string; description: string | null } | null
+  /**
+   * Un changement de prise ne fait pas pivoter le couple, mais les deux dessins
+   * n'ont pas forcement la meme ligne de danse : chacun a son angle.
+   */
+  angleArrivait: number | null
+  angleReprend: number | null
 }) {
   if (!reprend) return null
 
   return (
     <span className={transition ? 'bulle pile pile--nommee' : 'bulle pile'}>
-      {arrivait ? <ImagePosition position={arrivait} className="pile__dessous" /> : null}
+      {arrivait ? (
+        <ImagePosition position={arrivait} className="pile__dessous" angle={angleArrivait} />
+      ) : null}
 
       <Link
         className="pile__dessus"
@@ -65,7 +76,7 @@ function PileReprise({
           transition ? `${transition.nom} — reprise en ${reprend.nom}` : `Reprise en ${reprend.nom}`
         }
       >
-        <ImagePosition position={reprend} className="bulle__image" />
+        <ImagePosition position={reprend} className="bulle__image" angle={angleReprend} />
       </Link>
 
       <span className="pile__marque" aria-hidden="true">
@@ -120,6 +131,14 @@ function PileReprise({
  * circule dans le graphe depuis la révision.
  */
 export function ChaineEnchainement({ maillons }: { maillons: Maillon[] }) {
+  // Story 7.3 : le départ tel que dessiné, chaque autre bulle recalée sur lui
+  // (orientation cumulée du couple + alignement des lignes de danse). Toute
+  // inconnue laisse la bulle telle que dessinée.
+  const etapes = orientations(maillons)
+  const ligneDepart = ligneDe(maillons[0]?.debut?.ligneDeDanse)
+  const angle = (position: Position | null, etape: number) =>
+    angleAffiche(etapes[etape], ligneDepart, ligneDe(position?.ligneDeDanse))
+
   return (
     <ol className="chaine">
       {maillons.map((maillon, index) => {
@@ -140,12 +159,17 @@ export function ChaineEnchainement({ maillons }: { maillons: Maillon[] }) {
               arrivait={maillon.rupture.arrivait}
               reprend={maillon.rupture.reprend}
               transition={maillon.rupture.transition}
+              angleArrivait={angle(maillon.rupture.arrivait, index)}
+              angleReprend={angle(maillon.rupture.reprend, index)}
             />
           ) : null
 
         // Juste avant une reprise, l'arrivée n'est pas dessinée ici : c'est la
         // pile de la carte suivante qui la montre, écrasée par la nouvelle.
-        const sortie = maillon.fin && !suivant?.rupture ? <Bulle position={maillon.fin} /> : null
+        const sortie =
+          maillon.fin && !suivant?.rupture ? (
+            <Bulle position={maillon.fin} angle={angle(maillon.fin, index + 1)} />
+          ) : null
 
         return (
           // L'index EST l'ordre (ADD-18) et une même passe peut revenir dans la

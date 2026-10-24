@@ -10,6 +10,7 @@ import { enchainementsUtilisant, EXEMPLES_PAR_PASSE, voisinesDePasse } from '@/c
 import { libelleDifficulte } from '@/collections/Passe'
 import { formaterDate, placeDansLaChaine, rangsDeLaPasse } from '@/enchainements'
 import { lienListe } from '@/enchainements-liste'
+import { angleAffiche, ligneDe, pivotDe } from '@/orientation'
 import config from '@/payload.config'
 import type { Enchainement, Position } from '@/payload-types'
 import { sessionCourante } from '@/porte'
@@ -19,10 +20,18 @@ import './fiche-passe.css'
 export const dynamic = 'force-dynamic'
 
 /** Position cliquable vers sa fiche (FR-22). */
-function MaillonPosition({ position, role }: { position: Position; role: string }) {
+function MaillonPosition({
+  position,
+  role,
+  angle = null,
+}: {
+  position: Position
+  role: string
+  angle?: number | null
+}) {
   return (
     <Link className="fiche-maillon" href={`/positions/${position.id}`}>
-      <ImagePosition position={position} className="fiche-maillon__image" />
+      <ImagePosition position={position} className="fiche-maillon__image" angle={angle} />
       <span className="fiche-maillon__role label-caps texte-attenue">{role}</span>
       <span className="fiche-maillon__nom">{position.nom}</span>
     </Link>
@@ -132,6 +141,10 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
   const debut = passe.positionDebut as Position | number
   const fin = passe.positionFin as Position | number
   const difficulte = libelleDifficulte(passe.difficulte)
+  const angleArrivee =
+    typeof debut === 'object' && typeof fin === 'object'
+      ? angleAffiche(pivotDe(passe.pivot), ligneDe(debut.ligneDeDanse), ligneDe(fin.ligneDeDanse))
+      : null
 
   // LA SESSION EST LUE POUR LES SEULS EXEMPLES. La fiche reste publique
   // (FR-21) : elle n'exige rien, mais un élève connecté doit y retrouver SES
@@ -160,13 +173,17 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
         {difficulte ? <span className="fiche-passe-badge label-caps">{difficulte}</span> : null}
       </header>
 
-      {/* FR-22 : les deux positions sont cliquables vers leur fiche. */}
+      {/* FR-22 : les deux positions sont cliquables vers leur fiche. Epic 7 : le
+          départ tel que dessiné, l'arrivée recalée sur lui, sans le souligner.
+          Pivot ou ligne de danse inconnu : telle que dessinée. */}
       <section className="fiche-chaine">
         {typeof debut === 'object' ? <MaillonPosition position={debut} role="Départ" /> : null}
         <span className="fiche-chaine__fleche" aria-hidden="true">
           →
         </span>
-        {typeof fin === 'object' ? <MaillonPosition position={fin} role="Arrivée" /> : null}
+        {typeof fin === 'object' ? (
+          <MaillonPosition position={fin} role="Arrivée" angle={angleArrivee} />
+        ) : null}
       </section>
 
       {passe.description ? (

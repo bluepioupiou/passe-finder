@@ -36,11 +36,11 @@ const pousser = vi.fn()
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: pousser }) }))
 
 function position(id: number, nom: string): VuePosition {
-  return { id, nom, src: '/no_position.jpg' }
+  return { id, nom, src: '/no_position.jpg', ligne: null }
 }
 
 function passe(id: number, nom: string, debut: number, fin: number): VuePasse {
-  return { id, nom, difficulte: null, debut, fin }
+  return { id, nom, difficulte: null, pivot: null, debut, fin }
 }
 
 const FERMEE = 1

@@ -1,4 +1,5 @@
 import { nomDeTransition } from './collections/Transition'
+import { orientationsCumulees, pivotDe } from './orientation'
 import type { Enchainement, Pass, Position, Transition, User } from './payload-types'
 
 /**
@@ -149,6 +150,21 @@ export function construireChaine(
 }
 
 /**
+ * Orientation du couple à chaque position de la chaîne (Story 7.3).
+ *
+ * Case 0 : la position de départ ; case `i + 1` : l'arrivée du maillon `i`. Une
+ * reprise (changement de prise) ne fait pas pivoter : la position reprise a
+ * l'orientation de celle sur laquelle on arrivait, soit la case `i`.
+ *
+ * Calculée à la lecture, rien n'est stocké sur l'enchaînement ; la règle
+ * « inconnu dès le premier maillon non renseigné » vit dans
+ * `orientationsCumulees`, partagée avec le compositeur.
+ */
+export function orientations(maillons: Maillon[]): (number | null)[] {
+  return orientationsCumulees(maillons.map((maillon) => pivotDe(maillon.passe.pivot)))
+}
+
+/**
  * Passe dont les positions sont remplacées par les objets du catalogue.
  *
  * Permet de charger passes et positions en deux requêtes (voir `catalogue.ts`)
@@ -244,10 +260,7 @@ export function chaineDe(
  * deux comptent donc sur la garde de suppression (FR-8), qui rend le cas
  * impossible tant qu'un enchaînement utilise la passe.
  */
-export function rangsDeLaPasse(
-  maillons: { passe: number | Pass }[],
-  passe: number,
-): number[] {
+export function rangsDeLaPasse(maillons: { passe: number | Pass }[], passe: number): number[] {
   return maillons.flatMap((maillon, index) =>
     identifiant(maillon.passe) === passe ? [index + 1] : [],
   )

@@ -6,6 +6,7 @@ import {
   construireChaine,
   extremites,
   formaterDate,
+  orientations,
   peutModifier,
   placeDansLaChaine,
   rangsDeLaPasse,
@@ -317,5 +318,41 @@ describe('Place d une passe dans une chaine', () => {
     // passe — mais une ligne muette vaut mieux qu'une ligne fausse.
     expect(placeDansLaChaine([], 8)).toBeNull()
     expect(placeDansLaChaine([1], 0)).toBeNull()
+  })
+})
+
+describe('orientations (Story 7.3)', () => {
+  function pivotee(pivot: Pass['pivot'], ...args: Parameters<typeof passe>): Pass {
+    return { ...passe(...args), pivot }
+  }
+
+  it('cumule les pivots de la chaine, case 0 pour le depart', () => {
+    const maillons = construireChaine([
+      pivotee('180', 1, 'Changement de cote', fermee, fermee),
+      pivotee('90', 2, 'Sortie', fermee, ouverte),
+    ])
+
+    expect(orientations(maillons)).toEqual([0, 180, 270])
+  })
+
+  it('une reprise ne fait pas pivoter : la chaine continue au meme angle', () => {
+    const maillons = construireChaine([
+      pivotee('180', 1, 'Changement de cote', fermee, ouverte),
+      // Rupture : on arrivait en « ouverte », on repart de « main droite ».
+      pivotee('0', 2, 'Caresse', mainDroite, fermee),
+    ])
+
+    expect(maillons[1].rupture).not.toBeNull()
+    expect(orientations(maillons)).toEqual([0, 180, 180])
+  })
+
+  it('un maillon sans pivot rend inconnue toute la suite', () => {
+    const maillons = construireChaine([
+      pivotee('90', 1, 'Sortie', fermee, ouverte),
+      pivotee(null, 2, 'Retour', ouverte, fermee),
+      pivotee('180', 3, 'Changement de cote', fermee, fermee),
+    ])
+
+    expect(orientations(maillons)).toEqual([0, 90, null, null])
   })
 })

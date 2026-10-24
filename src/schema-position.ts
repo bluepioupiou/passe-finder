@@ -93,6 +93,11 @@ export type SaisiePosition = {
   id: number | null
   nom: string
   description: string
+  /**
+   * Vers ou pointe la ligne de danse dans le dessin (Epic 7) : la valeur du
+   * select, `''` si non renseignee. Lue par `ligneDe` a l'enregistrement.
+   */
+  ligneDeDanse: string
   schema: SchemaPosition
 }
 
@@ -304,7 +309,11 @@ export function sceneDunDanseur(
     taille,
     // Les bras AVANT la tete, comme dans `scenePardefaut` : elle masque leur
     // depart au lieu de laisser voir le trait sortir du centre.
-    pieces: [brasPour(tete, 'gauche', identifiants()), brasPour(tete, 'droite', identifiants()), tete],
+    pieces: [
+      brasPour(tete, 'gauche', identifiants()),
+      brasPour(tete, 'droite', identifiants()),
+      tete,
+    ],
     calque: null,
   }
 }
@@ -575,8 +584,18 @@ export function ajusterBras(
     if (piece.type !== 'bras') return piece
     return {
       ...piece,
-      longueur: nombreSur(champs.longueur ?? piece.longueur, piece.longueur, LONGUEUR_MIN, LONGUEUR_MAX),
-      courbure: nombreSur(champs.courbure ?? piece.courbure, piece.courbure, -COURBURE_MAX, COURBURE_MAX),
+      longueur: nombreSur(
+        champs.longueur ?? piece.longueur,
+        piece.longueur,
+        LONGUEUR_MIN,
+        LONGUEUR_MAX,
+      ),
+      courbure: nombreSur(
+        champs.courbure ?? piece.courbure,
+        piece.courbure,
+        -COURBURE_MAX,
+        COURBURE_MAX,
+      ),
       aplatissement: nombreSur(
         champs.aplatissement ?? piece.aplatissement,
         piece.aplatissement,

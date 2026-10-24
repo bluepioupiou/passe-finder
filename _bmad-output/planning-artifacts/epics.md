@@ -236,8 +236,8 @@ Rapatrier le catalogue accumulé depuis `passe-finder-saveDB.gz` via l'API Local
 **NFR adressés :** NFR-6
 
 ### Epic 7: Orientation dans l'espace (ligne de danse & pivot)
-Rendre lisible la rotation du couple : tout dessin de position a la ligne de danse du bas vers le haut (convention), chaque passe déclare son pivot en quarts de tour entre départ et arrivée, et l'enchaînement en déduit l'orientation cumulée à chaque instant. « Non renseigné » n'est jamais « zéro ».
-**Détail & questions ouvertes :** `_bmad-output/implementation-artifacts/7-1-7-2-7-3-tranche-orientation-ligne-de-danse.md`
+Retrouver les danseurs là où on les attend, sans le souligner : chaque position déclare la direction de la ligne de danse dans son dessin, chaque passe déclare son pivot en quarts de tour, et les vignettes qui suivent le départ (tel que dessiné) sont recalées sur lui. « Non renseigné » n'est jamais « zéro ».
+**Détail & décisions :** `_bmad-output/implementation-artifacts/7-1-7-2-7-3-tranche-orientation-ligne-de-danse.md`
 
 ---
 
@@ -1087,33 +1087,33 @@ So that j'ai la preuve que rien n'est perdu et je peux corriger puis relancer en
 
 Demande d'Alain du 2026-10-23. Modèle, règles et décisions : `_bmad-output/implementation-artifacts/7-1-7-2-7-3-tranche-orientation-ligne-de-danse.md`.
 
-### Story 7.1: Convention de ligne de danse et vignette orientable
+### Story 7.1: Direction de la ligne de danse sur les positions
 
 As a admin,
-I want que tous les dessins de position aient la ligne de danse du bas vers le haut, et des vignettes qu'on peut tourner à l'affichage,
-So that toutes les vignettes partagent un même repère sans champ à saisir.
+I want déclarer vers où pointe la ligne de danse dans le dessin de chaque position,
+So that les positions s'orientent correctement dans les passes sans redessiner aucun schéma.
 
-**Given** l'atelier de composition
-**When** je dessine une position
-**Then** un guide fixe « ligne de danse ↑ » est visible sur la toile, et il n'apparaît pas dans le PNG exporté
+**Given** une position, dans l'admin ou l'atelier
+**When** je choisis `ligneDeDanse` (haut / droite / bas / gauche), facultatif
+**Then** la valeur est enregistrée, et une position seule s'affiche toujours telle que dessinée
 
-**Given** une vignette à qui on passe un angle (y compris 0)
+**Given** une vignette à qui on passe un angle
 **When** elle s'affiche
-**Then** elle est tournée en CSS avec un repère de ligne de danse, sans modifier le PNG ; sans angle, elle reste telle que dessinée
+**Then** elle est tournée en CSS, sans repère ni animation, sans modifier le PNG ; sans angle, elle reste telle que dessinée
 
 ### Story 7.2: Pivot sur les passes
 
 As a élève,
-I want voir la rotation du couple entre le départ et l'arrivée d'une passe,
+I want voir les danseurs de l'arrivée là où je les attends après la passe,
 So that une passe X → X (changement de côté) ne ressemble plus à « rien ne se passe ».
 
-**Given** une passe avec un `pivot` (même orientation / quart à droite / demi-tour / quart à gauche)
-**When** j'ouvre sa fiche, la liste des passes ou la recherche
-**Then** l'arrivée est tournée de `pivot` par rapport au départ, et le pivot est nommé (« demi-tour »), sans prétendre dire dans quel sens on a tourné
+**Given** une passe avec un `pivot` et des positions dont la ligne de danse est renseignée
+**When** j'ouvre sa fiche ou la liste des passes
+**Then** le départ est tel que dessiné et l'arrivée est tournée de `pivot + ligne(départ) − ligne(arrivée)`, sans aucun texte ni repère
 
-**Given** une passe sans pivot
+**Given** une passe dont le pivot ou une ligne de danse est inconnu
 **When** elle s'affiche
-**Then** la mention « orientation non renseignée » apparaît et rien n'est déduit
+**Then** les deux vignettes restent telles que dessinées et rien n'est déduit
 
 ### Story 7.3: Orientation cumulée dans l'enchaînement
 
@@ -1123,7 +1123,7 @@ So that je sais où je dois me trouver dans l'espace à cet instant.
 
 **Given** un enchaînement dont toutes les passes ont un pivot
 **When** je le lis ou le compose
-**Then** chaque position est tournée de la somme des pivots précédents modulo 360 (départ = 0, transition = 0), et l'orientation finale est indiquée par rapport au départ
+**Then** le départ est tel que dessiné et chaque autre position est recalée sur lui (somme des pivots précédents + alignement des lignes de danse, transition = 0), sans texte ni repère
 
 **Given** un maillon au pivot inconnu
 **When** la chaîne est calculée
