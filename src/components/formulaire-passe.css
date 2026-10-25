@@ -1,0 +1,89 @@
+/* Modifier une passe depuis sa fiche. L'apercu reprend `.fiche-chaine` et
+   `.fiche-maillon` de la fiche passe : la page les charge, et l'apercu doit
+   ressembler trait pour trait a ce que la fiche affichera. */
+
+.formulaire-passe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 68ch;
+}
+
+.formulaire-passe__apercu {
+  margin-top: 0;
+}
+
+/* Ici le maillon n'est pas un lien : ni survol, ni marges de `figure`. */
+.formulaire-passe__apercu .fiche-maillon {
+  margin: 0;
+}
+
+.formulaire-passe__apercu .fiche-maillon:hover {
+  background: none;
+  border-color: transparent;
+}
+
+.formulaire-passe__apercu figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Les quatre reglages qui changent l'apercu, cote a cote sur grand ecran. */
+.formulaire-passe__grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-4);
+}
+
+.formulaire-passe__champ label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--data-size);
+  font-weight: 600;
+}
+
+.formulaire-passe__champ input,
+.formulaire-passe__champ select,
+.formulaire-passe__champ textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-sm);
+  color: var(--ink);
+  font: inherit;
+}
+
+.formulaire-passe__champ textarea {
+  resize: vertical;
+}
+
+.formulaire-passe__note {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: var(--data-size);
+  line-height: var(--data-line);
+}
+
+.formulaire-passe__alerte,
+.formulaire-passe__erreur {
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--surface-container);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--rounded-sm);
+  color: var(--ink);
+}
+
+.formulaire-passe__erreur {
+  color: var(--danger);
+}
+
+.formulaire-passe__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
