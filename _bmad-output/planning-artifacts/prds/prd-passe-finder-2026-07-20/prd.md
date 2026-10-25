@@ -176,6 +176,13 @@ Le succès du v1 se mesure à l'**usage réel**, pas à l'adoption multi-écoles
 - **FR-45.** Le compositeur **propose** les transitions qui partent de la position d'arrivée de la dernière passe, **et seulement celles qui mènent vers une position d'où une passe repart**. En choisir une déplace la position courante et rouvre la liste des passes possibles — y compris depuis une position sans passe sortante. Aucun changement de position **libre** n'est possible : toute discontinuité composée s'appuie sur une transition déclarée.
 - **FR-46.** La vue lecture **nomme** la reprise quand la transition existe (geste, déroulé, position de reprise), et l'**affiche sans la nommer** quand elle n'existe pas — une reprise non déclarée n'est pas une erreur, c'est un geste dont le texte reste à écrire.
 
+**Positions intermédiaires** _(ajoutés le 2026-10-25 — demande d'Alain : le déroulé écrit ne suffit pas pour certaines passes, ex. « Trou de souris » ; voir Epic 8)_
+
+- **FR-47.** Une passe a une **durée** : **6 temps** (valeur par défaut, y compris quand elle n'est pas renseignée) ou **10 temps**. Chaque demi-temps est un **instant** du comptage : 6 temps → `1 . 2 . 3 et 4 . 5 et 6 .` (12 instants) ; 10 temps → `1 . 2 . 3 et 4 . 5 et 6 . 7 et 8 . 9 et 10 .` (20 instants).
+- **FR-48.** L'admin peut ajouter à une passe des **positions intermédiaires**, au plus **une par instant**, dessinées dans l'atelier par-dessus la position de départ en calque, donc dans son repère. Elles n'ont **ni nom, ni description, ni fiche** ; elles n'apparaissent **nulle part ailleurs** que sur la fiche de leur passe et ne sont jamais réutilisées.
+- **FR-49.** La fiche passe s'affiche **comme aujourd'hui par défaut**. Si la passe a au moins une position intermédiaire, une **bascule** ouvre l'**affichage avancé** : le comptage de la passe, avec le départ, chaque position intermédiaire à son instant, et l'arrivée (orientée comme en Epic 7). Sans position intermédiaire, la bascule n'apparaît pas.
+- **FR-50.** Réduire la durée d'une passe est **refusé** tant qu'une position intermédiaire occupe un instant qui disparaîtrait ; rien n'est supprimé en silence.
+
 ## 8. Hors scope v1 & Vision
 
 ### Explicitement hors v1

@@ -8,7 +8,7 @@ scope: Passe Finder v2 — application web complète (catalogue, moteur d'encha�
 status: final
 created: 2026-07-21
 updated: 2026-07-21
-binds: [FR-1..FR-43, NFR-1..NFR-7]
+binds: [FR-1..FR-50, NFR-1..NFR-7]
 sources: [_bmad-output/planning-artifacts/prds/prd-passe-finder-2026-07-20/prd.md]
 companions: []
 ---
@@ -117,6 +117,17 @@ graph TD
 - **Prevents:** un tableau de bord de stats à construire/maintenir in-app ; une bannière cookies inutile
 - **Rule:** mesure d'audience par Cloudflare Web Analytics (script léger, sans cookie, console externe). La distinction connectés vs anonymes se dérive **côté app** (état de session), pas via l'outil de stats. Aucun écran de stats in-app en v1.
 
+### AD-16 — Positions intermédiaires : embarquées dans la Passe, rendues sans image
+- **Binds:** FR-47, FR-48, FR-49, FR-50 _(ajouté le 2026-10-25, Epic 8)_
+- **Prevents:** une collection fantôme de positions sans nom qui fuiraient dans le catalogue, la recherche ou le graphe ; des PNG orphelins dans les médias ; un comptage recodé différemment par chaque écran
+- **Rule:**
+  - `Passe.duree` : select facultatif (`6` | `10`) ; vide = 6 temps. La lecture texte → nombre et le comptage (`1 . 2 . 3 et 4 …`) vivent dans un seul module pur `src/rythme.ts` (sans Payload ni React, comme `orientation.ts`).
+  - `Passe.positionsIntermediaires` : champ tableau Payload `{ instant, schema }`. `instant` = index du demi-temps (0 = « 1 ») ; `schema` = le JSON de l'atelier (`SchemaPosition`). **L'ordre d'affichage est celui des instants**, pas l'index du tableau.
+  - Un hook `beforeValidate` refuse : un instant hors de la durée, deux positions sur le même instant, un schéma invalide (FR-50 inclus : réduire la durée est refusé si un instant disparaîtrait).
+  - **Jamais de PNG ni de Media** : le schéma est dessiné à l'affichage par `ScenePosition` (SVG). Aucune orientation Epic 7 ne s'y applique : il est déjà dans le repère du départ.
+  - Le moteur de composition, la recherche, les listes et les fiches position **ignorent** ce champ. L'écriture passe par une action serveur qui appelle l'API Local de Payload **avec l'utilisateur** (AD-1, AD-3 : admin seul).
+  - L'admin Payload montre `duree` ; `positionsIntermediaires` y est masqué (inéditable sans l'atelier) et se gère depuis la page « Modifier » de la fiche passe.
+
 ## Consistency Conventions
 
 | Concern | Convention |
@@ -205,6 +216,7 @@ passe-finder/  (branche v2)
 | F6 Lien vidéo | `collections/Enchainement` + fiches passe | AD-4, AD-8 |
 | Déploiement & CI/CD | `Dockerfile`, `.github/workflows/` | AD-12, AD-13 |
 | Instrumentation | script Cloudflare dans `app/` | AD-15 |
+| Positions intermédiaires (Epic 8) | `collections/Passe` + `src/rythme.ts` + fiche passe & atelier | AD-16, AD-1, AD-3 |
 | Persistance & sauvegarde | volume + side-car backup | AD-10 |
 
 ## Deferred
