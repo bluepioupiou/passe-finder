@@ -83,6 +83,10 @@ Ce document fournit le découpage complet en epics et stories de Passe Finder v2
 - FR-41 : Un pipeline CI/CD assure le passage commit → production sans geste technique manuel.
 - FR-42 : Le choix des services AWS, de l'IaC et du pipeline est délégué à l'Architecture (résolu — AD-12/AD-13).
 - FR-43 : Le site est instrumenté pour la mesure d'audience (visiteurs/jour, distinction connectés vs anonymes). Consultation via interface externe ; aucun écran de stats in-app en v1.
+- FR-47 : Une passe dure 6 temps (défaut, y compris non renseigné) ou 10 temps ; chaque demi-temps est un instant du comptage (`1 . 2 . 3 et 4 . 5 et 6 .`, 10 temps répète `3 et 4 . 5 et 6 .`). _(ajouté le 2026-10-25)_
+- FR-48 : L'admin pose sur une passe des positions intermédiaires, au plus une par instant, dessinées dans l'atelier par-dessus le départ en calque ; ni nom, ni description, ni fiche, jamais réutilisées ni montrées ailleurs. _(ajouté le 2026-10-25)_
+- FR-49 : Fiche passe inchangée par défaut ; si elle a des positions intermédiaires, une bascule ouvre l'affichage avancé (départ, positions à leur instant, arrivée). _(ajouté le 2026-10-25)_
+- FR-50 : Réduire la durée d'une passe est refusé tant qu'une position intermédiaire occupe un instant qui disparaîtrait. _(ajouté le 2026-10-25)_
 
 ### NonFunctional Requirements
 
@@ -196,6 +200,10 @@ _Issues du contrat UX (DESIGN « Lin & Sauge » + EXPERIENCE). Chaque UX-DR est 
 - FR-41 : Epic 1 — Pipeline CI/CD commit → prod
 - FR-42 : Epic 1 — Choix services AWS (résolu AD-12/13)
 - FR-43 : Epic 1 — Instrumentation d'audience
+- FR-47 : Epic 8 — Durée et comptage d'une passe
+- FR-48 : Epic 8 — Positions intermédiaires dessinées dans l'atelier
+- FR-49 : Epic 8 — Bascule « Simple | Rythme » sur la fiche passe
+- FR-50 : Epic 8 — Réduction de durée refusée si un instant occupé disparaît
 
 ## Epic List
 
@@ -238,6 +246,11 @@ Rapatrier le catalogue accumulé depuis `passe-finder-saveDB.gz` via l'API Local
 ### Epic 7: Orientation dans l'espace (ligne de danse & pivot)
 Retrouver les danseurs là où on les attend, sans le souligner : chaque position déclare la direction de la ligne de danse dans son dessin, chaque passe déclare son pivot en quarts de tour, et les vignettes qui suivent le départ (tel que dessiné) sont recalées sur lui. « Non renseigné » n'est jamais « zéro ».
 **Détail & décisions :** `_bmad-output/implementation-artifacts/7-1-7-2-7-3-tranche-orientation-ligne-de-danse.md`
+
+### Epic 8: Positions intermédiaires dans le rythme
+Montrer ce que le texte dit mal : poser, sur les instants du comptage d'une passe (6 ou 10 temps), des positions dessinées dans l'atelier par-dessus le départ. Sans nom ni fiche, elles ne vivent que sur la fiche de leur passe, derrière une bascule « Simple | Rythme ».
+**FRs couverts :** FR-47, FR-48, FR-49, FR-50
+**Détail & décisions :** `_bmad-output/implementation-artifacts/8-1-8-2-8-3-tranche-positions-intermediaires.md`
 
 ---
 
@@ -1129,3 +1142,69 @@ So that je sais où je dois me trouver dans l'espace à cet instant.
 **When** la chaîne est calculée
 **Then** l'orientation devient inconnue à partir de ce maillon, sans être devinée, et aucun champ n'est ajouté à `Enchainement`
 
+
+---
+
+## Epic 8: Positions intermédiaires dans le rythme
+
+Demande d'Alain du 2026-10-25, cadrée par correct-course (`_bmad-output/planning-artifacts/sprint-change-proposal-2026-10-25.md`). Modèle, règles et décisions : `_bmad-output/implementation-artifacts/8-1-8-2-8-3-tranche-positions-intermediaires.md`.
+
+### Story 8.1: Durée et comptage d'une passe
+
+As a admin,
+I want indiquer qu'une passe dure 6 ou 10 temps,
+So that ses instants suivent mon vrai comptage.
+
+**Given** le module `src/rythme.ts`
+**When** je demande le comptage de 6 temps, puis de 10 temps
+**Then** j'obtiens `1 . 2 . 3 et 4 . 5 et 6 .` (12 instants), puis `1 . 2 . 3 et 4 . 5 et 6 . 7 et 8 . 9 et 10 .` (20 instants) ; une valeur vide ou inattendue vaut 6 temps (FR-47)
+
+**Given** une passe, dans l'admin ou sur sa page « Modifier »
+**When** je choisis sa durée
+**Then** elle est enregistrée ; la migration n'invente aucune valeur pour l'existant et la liste admin montre la colonne `duree`
+
+### Story 8.2: Dessiner les positions intermédiaires
+
+As a admin,
+I want poser une position dessinée sur un instant de la passe,
+So that le déroulé se voit, pas seulement se lit.
+
+**Given** la page « Modifier » d'une passe
+**When** je clique « + » sur un instant libre de la frise
+**Then** l'atelier s'ouvre en mode « position intermédiaire », le départ en calque, sans nom, sans ligne de danse et sans export PNG ; « Enregistrer » ramène à la page « Modifier » (FR-48)
+
+**Given** une position intermédiaire existante
+**When** je la rouvre
+**Then** je peux la corriger ou la retirer (avec confirmation)
+
+**Given** le hook de la Passe
+**When** un instant sort de la durée, est occupé deux fois, ou que le schéma est invalide — y compris en réduisant la durée
+**Then** l'enregistrement est refusé avec un message lisible et rien n'est supprimé (FR-50)
+
+**Given** un utilisateur qui n'est pas admin
+**When** il tente d'écrire des positions intermédiaires
+**Then** l'écriture est refusée (AD-3)
+
+**And** le champ est ignoré par la recherche, les listes, le compositeur et les fiches position, et masqué dans l'admin (AD-16)
+
+### Story 8.3: Affichage « Rythme » sur la fiche passe
+
+As a élève,
+I want basculer la fiche d'une passe sur son rythme,
+So that je vois à quel instant le couple passe par quelle position.
+
+**Given** une passe sans position intermédiaire
+**When** j'ouvre sa fiche
+**Then** aucune bascule n'apparaît et la fiche est inchangée
+
+**Given** une passe avec des positions intermédiaires
+**When** j'ouvre sa fiche
+**Then** « Simple » est actif ; en choisissant « Rythme », la frise s'affiche — PC : tous les instants ; mobile : les instants occupés et la ligne de comptage (FR-49)
+
+**And** les vignettes intermédiaires sont dessinées en SVG, non cliquables, avec « Position à l'instant … » en texte alternatif ; l'arrivée garde son orientation Epic 7
+
+**Given** le cas témoin « Trou de souris » avec des positions sur « 3 et », « 4 » et « 5 et »
+**When** je l'affiche en « Rythme »
+**Then** elles apparaissent dans cet ordre, chacune à son instant (e2e)
+
+**Hors périmètre :** réutiliser ou copier des positions intermédiaires entre passes ; les afficher dans un enchaînement ; une note par position ; une durée de 8 temps.

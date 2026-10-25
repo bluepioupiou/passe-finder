@@ -1,5 +1,5 @@
 # generated: 2026-08-24
-# last_updated: 2026-10-24 (epic 7 : ligne de danse sur les positions, pivot, orientation)
+# last_updated: 2026-10-25 (epic 8 : positions intermediaires dans le rythme, ajoute par correct-course)
 # project: passe-finder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -1961,3 +1961,16 @@ development_status:
   7-3-orientation-cumulee-dans-l-enchainement: review
   epic-7-retrospective: optional
 
+
+  # --- Epic 8: Positions intermédiaires dans le rythme ---
+  # Ajoute le 2026-10-25 (correct-course, sprint-change-proposal-2026-10-25.md).
+  # Tranche dans 8-1-8-2-8-3-tranche-positions-intermediaires.md. Decisions
+  # d Alain du 2026-10-25 : duree 6 ou 10 temps (vide = 6, pas de 8), un
+  # instant = un demi-temps, schema d atelier stocke dans la passe (sans nom ni
+  # note, sans PNG), une position par instant, affichage « Rythme » sur la
+  # fiche passe seulement. Ordre : 8.1, 8.2, 8.3.
+  epic-8: in-progress
+  8-1-duree-et-comptage-d-une-passe: ready-for-dev
+  8-2-dessiner-les-positions-intermediaires: ready-for-dev
+  8-3-affichage-rythme-sur-la-fiche-passe: ready-for-dev
+  epic-8-retrospective: optional

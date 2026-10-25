@@ -115,6 +115,23 @@ _Protagoniste : Léa, élève, mobile, via le lien WhatsApp._
 - **Rôle :** comprendre une passe et retrouver où elle est utilisée.
 - **Éléments :** **nom**, description (comment faire), **difficulté** ; images **position début → fin** cliquables (→ E3, FR-22) ; **liste des enchaînements** qui l'utilisent (FR-24) ; **liste des vidéos** des enchaînements-avec-vidéo qui l'utilisent (FR-38) — deux listes distinctes.
 - **Actions :** naviguer vers une position, un enchaînement, ou une vidéo (YouTube).
+- **Bascule d'affichage** _(Epic 8, FR-49, ajouté le 2026-10-25)_ — visible seulement si la passe a au moins une position intermédiaire. Contrôle segmenté **« Simple | Rythme »** au-dessus des images, « Simple » par défaut, non mémorisé.
+  - **Simple** : inchangé (départ → arrivée).
+  - **Rythme** : la frise du comptage de la passe.
+    - **PC** : frise horizontale. Le départ à gauche, l'arrivée à droite, entre les deux **tous les instants** du comptage (`1 . 2 . 3 et 4 …`) ; une vignette au-dessus de chaque instant occupé, un instant vide n'affiche que son libellé.
+    - **Mobile** : colonne verticale, **seulement les instants occupés** (libellé + vignette), entre le départ en haut et l'arrivée en bas ; le comptage complet en une ligne en tête, instants occupés en accent.
+  - Vignettes intermédiaires **non cliquables** (elles n'ont pas de fiche) ; départ et arrivée restent cliquables (FR-22). Texte alternatif : « Position à l'instant 3 et » (pas de nom à donner).
+
+### E4b — Modifier une passe : positions intermédiaires (admin) _(Epic 8, FR-47, FR-48, FR-50)_
+- **Rôle :** poser les positions clés d'une passe sur son comptage.
+- **Éléments :** choix de la **durée** (6 temps / 10 temps) ; la même frise que l'affichage « Rythme », en édition.
+- **Actions :** un **« + »** sur chaque instant libre ouvre l'atelier en mode « position intermédiaire » ; une vignette existante se **rouvre** pour être corrigée ou **retirée** (avec confirmation).
+- **États :** réduire la durée alors qu'un instant au-delà est occupé → message « Retire d'abord les positions après le 6 . » (FR-50).
+
+**Atelier, mode « position intermédiaire » :**
+- Le **départ de la passe en calque** (son schéma s'il en a un, sinon son image) ; on dessine par-dessus.
+- Ni nom, ni description, ni ligne de danse ; pas d'export PNG.
+- En-tête : « Trou de souris — instant 3 et », bouton « Enregistrer » qui ramène à la page Modifier.
 
 ### E5 — Vue lecture d'un enchaînement (public)
 - **Rôle :** réviser (le cœur du besoin élève).
