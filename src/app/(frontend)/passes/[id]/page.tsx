@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { estAdmin } from '@/collections/acces'
 import { IconeVideo } from '@/components/Icones'
 import { ImagePosition } from '@/components/ImagePosition'
 import { ListePasses, Transitions } from '@/components/Voisinage'
@@ -172,6 +173,11 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
         <h1>{passe.nom}</h1>
         {difficulte ? <span className="fiche-passe-badge label-caps">{difficulte}</span> : null}
       </header>
+      {estAdmin(utilisateur) ? (
+        <p className="fiche-passe-modifier">
+          <Link href={`/passes/${passe.id}/modifier`}>Modifier la passe</Link>
+        </p>
+      ) : null}
 
       {/* FR-22 : les deux positions sont cliquables vers leur fiche. Epic 7 : le
           départ tel que dessiné, l'arrivée recalée sur lui, sans le souligner.

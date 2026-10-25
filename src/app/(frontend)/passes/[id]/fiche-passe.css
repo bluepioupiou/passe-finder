@@ -38,6 +38,13 @@
   text-transform: uppercase;
 }
 
+/* Meme discretion que « Modifier le schéma » sur la fiche position : c'est un
+   outil de l'admin, pas le sujet de la fiche. */
+.fiche-passe-modifier {
+  margin: var(--space-2) 0 0;
+  font-size: var(--data-size);
+}
+
 /* --- L'arete : depart -> arrivee, les deux cliquables (FR-22) --- */
 
 .fiche-chaine {
