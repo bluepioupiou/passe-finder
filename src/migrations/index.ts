@@ -13,6 +13,7 @@ import * as migration_20260901_155620_pseudo from './20260901_155620_pseudo';
 import * as migration_20260901_200844_identifiant_public_et_visibilites from './20260901_200844_identifiant_public_et_visibilites';
 import * as migration_20260902_211457_schema_position from './20260902_211457_schema_position';
 import * as migration_20261024_084828_orientation from './20261024_084828_orientation';
+import * as migration_20261025_221808_duree from './20261025_221808_duree';
 
 export const migrations = [
   {
@@ -88,6 +89,11 @@ export const migrations = [
   {
     up: migration_20261024_084828_orientation.up,
     down: migration_20261024_084828_orientation.down,
-    name: '20261024_084828_orientation'
+    name: '20261024_084828_orientation',
+  },
+  {
+    up: migration_20261025_221808_duree.up,
+    down: migration_20261025_221808_duree.down,
+    name: '20261025_221808_duree'
   },
 ];

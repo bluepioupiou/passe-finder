@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
 import { PIVOTS } from '../orientation'
+import { DUREES } from '../rythme'
 import { adminSeul } from './acces'
 
 /** Libellés de difficulté, décidés avec Alain (2026-08-26). */
@@ -43,7 +44,9 @@ export const Passe: CollectionConfig = {
     useAsTitle: 'nom',
     // `pivot` en colonne : avec le filtre « n'existe pas », c'est la liste de
     // saisie des passes encore sans orientation (Epic 7).
-    defaultColumns: ['nom', 'positionDebut', 'positionFin', 'difficulte', 'pivot'],
+    // `duree` en colonne : les rares passes de 10 temps se reperent d'un coup
+    // d'oeil (Epic 8) ; vide = 6 temps.
+    defaultColumns: ['nom', 'positionDebut', 'positionFin', 'difficulte', 'pivot', 'duree'],
   },
   access: {
     // Catalogue de reference : lecture publique (FR-21).
@@ -186,6 +189,19 @@ export const Passe: CollectionConfig = {
         description:
           "De combien le couple a tourné par rapport à la ligne de danse entre le départ et l'arrivée. " +
           'Le résultat, pas le sens dans lequel on tourne. Laisser vide tant que ce n’est pas vérifié.',
+      },
+    },
+    {
+      name: 'duree',
+      type: 'select',
+      // Epic 8 : facultatif, et ici l'absence VAUT 6 temps (voir `dureeDe`,
+      // src/rythme.ts) — c'est la duree de la tres grande majorite des passes.
+      required: false,
+      label: 'Durée',
+      options: [...DUREES],
+      admin: {
+        description:
+          'Vide = 6 temps. 10 temps répète « 3 et 4 . 5 et 6 . » pour une passe ralentie.',
       },
     },
 

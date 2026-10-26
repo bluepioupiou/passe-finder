@@ -18,6 +18,7 @@ const saisie = (surcharge: Partial<SaisiePasse> = {}): SaisiePasse => ({
   deroule: '',
   difficulte: '',
   pivot: '',
+  duree: '6',
   ...surcharge,
 })
 
@@ -38,6 +39,7 @@ describe('donneesDePasse', () => {
         deroule: null,
         difficulte: null,
         pivot: null,
+        duree: '6',
       },
     })
   })
@@ -52,6 +54,18 @@ describe('donneesDePasse', () => {
     const resultat = donneesDePasse(saisie({ pivot: '45', difficulte: '9' }))
     expect(resultat.ok && resultat.donnees.pivot).toBeNull()
     expect(resultat.ok && resultat.donnees.difficulte).toBeNull()
+  })
+
+  it('garde une duree de 10 temps', () => {
+    const resultat = donneesDePasse(saisie({ duree: '10' }))
+    expect(resultat.ok && resultat.donnees.duree).toBe('10')
+  })
+
+  it('ecrit 6 temps pour une duree vide ou inattendue, jamais 8', () => {
+    for (const duree of ['', '8', 'dix']) {
+      const resultat = donneesDePasse(saisie({ duree }))
+      expect(resultat.ok && resultat.donnees.duree).toBe('6')
+    }
   })
 
   it('refuse une position absente', () => {

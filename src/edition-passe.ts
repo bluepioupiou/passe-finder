@@ -1,5 +1,6 @@
 import { DIFFICULTES } from './collections/Passe'
 import { PIVOTS } from './orientation'
+import { DUREES, dureeDe } from './rythme'
 
 /**
  * Modifier une passe depuis le site, sans passer par /admin.
@@ -18,6 +19,7 @@ export type SaisiePasse = {
   deroule: string
   difficulte: string
   pivot: string
+  duree: string
 }
 
 /** Ce que rend l'enregistrement : jamais une exception, toujours un message. */
@@ -32,13 +34,16 @@ export type DonneesPasse = {
   deroule: string | null
   difficulte: (typeof DIFFICULTES)[number]['value'] | null
   pivot: (typeof PIVOTS)[number]['value'] | null
+  /** Jamais `null` : le formulaire montre toujours une duree, celle qu'on enregistre. */
+  duree: (typeof DUREES)[number]['value']
 }
 
 /**
  * Valide la saisie et la ramene a ce qui s'ecrit.
  *
  * Une difficulte ou un pivot inattendu devient « non renseigne », jamais une
- * valeur devinee — meme regle que `pivotDe` a l'affichage. `null` et non
+ * valeur devinee — meme regle que `pivotDe` a l'affichage. La duree, elle,
+ * vaut 6 temps quand elle est vide ou inattendue, comme `dureeDe`. `null` et non
  * `undefined` pour les champs vides : un texte efface doit EFFACER la valeur.
  */
 export function donneesDePasse(
@@ -61,6 +66,7 @@ export function donneesDePasse(
       deroule: saisie.deroule.trim() || null,
       difficulte: DIFFICULTES.find((option) => option.value === saisie.difficulte)?.value ?? null,
       pivot: PIVOTS.find((option) => option.value === saisie.pivot)?.value ?? null,
+      duree: dureeDe(saisie.duree) === 10 ? '10' : '6',
     },
   }
 }

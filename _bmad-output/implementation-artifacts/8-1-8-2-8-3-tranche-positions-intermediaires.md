@@ -4,7 +4,7 @@ baseline_commit: 0142a8c0
 
 # Epic 8 — tranche : positions intermédiaires dans le rythme
 
-Status: ready-for-dev
+Status: in-progress (8.1 en review ; 8.2 et 8.3 prêtes pour le dev)
 
 > **Nature de ce document.** Demande d'Alain du 2026-10-25 : « parfois le texte
 > ne suffit pas à décrire, ou pas très bien. J'aimerais pouvoir ajouter des
@@ -203,7 +203,61 @@ lieu de tout redessiner. Ce n'est pas validé par Alain. On livre le calque
 Tant qu'une passe n'a pas de position intermédiaire, elle s'affiche exactement
 comme aujourd'hui.
 
+## Dev Agent Record
+
+### Implementation Plan
+
+- **8.1** — Module pur `src/rythme.ts` (`Duree`, `DUREES`, `dureeDe`,
+  `comptage`, `libelleInstant`), sur le modèle de `src/orientation.ts`. Champ
+  `Passe.duree` (select facultatif, options lues dans `DUREES`), en colonne par
+  défaut de la liste admin. Durée ajoutée à `SaisiePasse` / `donneesDePasse`
+  et au `FormulairePasse` de la page « Modifier ».
+
+### Completion Notes
+
+- 2026-10-25 — **Story 8.1 terminée.**
+  - `comptage` génère `1 . 2 .` puis des paires `n et n+1 .` : 12 instants en
+    6 temps, 20 en 10 temps. `libelleInstant` nomme un temps par son chiffre
+    (« 4 ») et un demi-temps avec le temps qui le précède (« 3 et », « 6 . »),
+    sinon tous les « . » se ressembleraient ; `null` hors durée ou pour un
+    instant non entier.
+  - `dureeDe` lit vide, `'8'` ou toute valeur inattendue comme 6 temps.
+  - Migration `20261025_221808_duree` : une colonne `duree` nullable, **aucune
+    valeur écrite** pour l'existant.
+  - **Choix de la page « Modifier »** : le menu montre toujours une durée
+    (« 6 temps » pour une durée vide, puisque c'est ce qu'elle vaut), et
+    l'enregistrement écrit donc `'6'` ou `'10'`, jamais `null`. Une passe
+    enregistrée depuis la fiche passe de « vide » à `'6'` : même valeur lue,
+    rien ne change à l'écran. L'admin, lui, laisse le champ vide si on n'y
+    touche pas.
+  - Vérifié dans le navigateur (serveur de dev local, compte admin de test
+    créé puis supprimé) : « Trou de souris » → page « Modifier » montre
+    « Durée : 6 temps » à côté du pivot ; la liste admin des passes montre la
+    colonne « Durée » ; aucune erreur console.
+  - Tests : unitaires 296/296 (dont 8 nouveaux dans `rythme.spec.ts` et 2 dans
+    `edition-passe.spec.ts`), intégration 96/96, e2e `modifier-passe` 3/3 (dont
+    le nouveau « propose 6 temps pour une durée vide, puis enregistre 10
+    temps »). `tsc` sans erreur, lint sans erreur sur les fichiers touchés. La
+    suite e2e complète n'a pas été lancée.
+
+### File List
+
+- `src/rythme.ts` (nouveau)
+- `src/collections/Passe.ts`
+- `src/edition-passe.ts`
+- `src/components/FormulairePasse.tsx`
+- `src/app/(frontend)/passes/[id]/modifier/page.tsx`
+- `src/migrations/20261025_221808_duree.ts` (nouveau)
+- `src/migrations/20261025_221808_duree.json` (nouveau)
+- `src/migrations/index.ts`
+- `src/payload-types.ts`
+- `tests/unit/rythme.spec.ts` (nouveau)
+- `tests/unit/edition-passe.spec.ts`
+- `tests/e2e/modifier-passe.e2e.spec.ts`
+
 ## Change Log
 
 - 2026-10-25 : cadrage par correct-course ; modèle et décisions validés par
   Alain ; prêt pour le dev.
+- 2026-10-25 : Story 8.1 — durée et comptage d'une passe (`src/rythme.ts`,
+  champ `duree`, migration, page « Modifier »).

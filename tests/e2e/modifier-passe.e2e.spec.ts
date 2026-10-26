@@ -115,4 +115,26 @@ test.describe('Modifier une passe', () => {
     expect(passe.pivot).toBe('90')
     await contexte.close()
   })
+
+  test('propose 6 temps pour une durée vide, puis enregistre 10 temps', async ({ browser }) => {
+    await seedTestUser(admin)
+    const contexte = await browser.newContext()
+    const page = await contexte.newPage()
+
+    await login({ page, user: admin })
+    await page.goto(`/passes/${passeId}/modifier`)
+
+    // Epic 8 : une duree non renseignee VAUT 6 temps, et s'affiche ainsi.
+    const duree = page.getByLabel('Durée')
+    await expect(duree).toHaveValue('6')
+
+    await duree.selectOption('10')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await expect(page).toHaveURL(new RegExp(`/passes/${passeId}$`))
+
+    const payload = await getPayload({ config })
+    const passe = await payload.findByID({ collection: 'passes', id: passeId, depth: 0 })
+    expect(passe.duree).toBe('10')
+    await contexte.close()
+  })
 })
