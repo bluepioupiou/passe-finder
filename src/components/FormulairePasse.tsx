@@ -8,6 +8,7 @@ import { ImagePosition } from '@/components/ImagePosition'
 import type { VuePosition } from '@/composition'
 import type { ResultatPasse, SaisiePasse } from '@/edition-passe'
 import { angleAffiche, PIVOTS, pivotDe } from '@/orientation'
+import { DUREES } from '@/rythme'
 import './formulaire-passe.css'
 
 type Option = { label: string; value: string }
@@ -167,6 +168,24 @@ export function FormulairePasse({
           <p className="formulaire-passe__note">
             De combien le couple a tourné par rapport à la ligne de danse : le résultat, pas le sens
             dans lequel on tourne.
+          </p>
+        </div>
+
+        <div className="formulaire-passe__champ">
+          <label htmlFor={`${champ}-duree`}>Durée</label>
+          <select
+            id={`${champ}-duree`}
+            value={saisie.duree}
+            onChange={(evenement) => modifier('duree', evenement.target.value)}
+          >
+            {DUREES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <p className="formulaire-passe__note">
+            10 temps répète « 3 et 4 . 5 et 6 . » pour une passe ralentie.
           </p>
         </div>
 

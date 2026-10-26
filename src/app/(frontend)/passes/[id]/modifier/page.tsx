@@ -12,6 +12,7 @@ import config from '@/payload.config'
 import type { Position } from '@/payload-types'
 import { exigerSession } from '@/porte'
 import { imageDePosition } from '@/positions'
+import { dureeDe } from '@/rythme'
 import { modifierPasse } from '../../actions'
 import '../fiche-passe.css'
 
@@ -95,6 +96,8 @@ export default async function ModifierPasse({ params }: { params: Promise<{ id: 
             deroule: passe.deroule ?? '',
             difficulte: passe.difficulte ?? '',
             pivot: passe.pivot ?? '',
+            // Une duree vide s'affiche « 6 temps » : c'est ce qu'elle vaut.
+            duree: String(dureeDe(passe.duree)),
           }}
           positions={vues}
           difficultes={DIFFICULTES}

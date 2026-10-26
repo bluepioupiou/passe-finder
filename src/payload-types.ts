@@ -259,6 +259,10 @@ export interface Pass {
    * De combien le couple a tourné par rapport à la ligne de danse entre le départ et l'arrivée. Le résultat, pas le sens dans lequel on tourne. Laisser vide tant que ce n’est pas vérifié.
    */
   pivot?: ('0' | '90' | '180' | '270') | null;
+  /**
+   * Vide = 6 temps. 10 temps répète « 3 et 4 . 5 et 6 . » pour une passe ralentie.
+   */
+  duree?: ('6' | '10') | null;
   legacyYoutubeUrl?: string | null;
   legacyPersonnalisations?:
     | {
@@ -571,6 +575,7 @@ export interface PassesSelect<T extends boolean = true> {
   deroule?: T;
   difficulte?: T;
   pivot?: T;
+  duree?: T;
   legacyYoutubeUrl?: T;
   legacyPersonnalisations?: T;
   legacyId?: T;
