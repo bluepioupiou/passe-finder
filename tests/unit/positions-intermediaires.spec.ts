@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   erreurPositionsIntermediaires,
+  frise,
   poserPosition,
   positionsIntermediairesDe,
   retirerPosition,
@@ -97,5 +98,27 @@ describe('poserPosition / retirerPosition', () => {
       { instant: 6, schema: schema() },
     ]
     expect(retirerPosition(posees, 5).map((position) => position.instant)).toEqual([6])
+  })
+})
+
+describe('frise', () => {
+  it('donne chaque instant du comptage, avec son temps et son nom', () => {
+    const instants = frise(6, [])
+    expect(instants).toHaveLength(12)
+    expect(instants.map((instant) => instant.temps).join(' ')).toBe('1 . 2 . 3 et 4 . 5 et 6 .')
+    expect(instants[5]).toMatchObject({ instant: 5, temps: 'et', nom: '3 et', schema: null })
+  })
+
+  it('pose chaque position sur son instant (cas temoin « Trou de souris »)', () => {
+    const posees = [5, 6, 9].map((instant) => ({ instant, schema: schema() }))
+    const occupes = frise(6, posees).filter((instant) => instant.schema !== null)
+    expect(occupes.map((instant) => instant.nom)).toEqual(['3 et', '4', '5 et'])
+  })
+
+  it('ignore une position hors de la duree au lieu de l inventer ailleurs', () => {
+    const occupes = frise(6, [{ instant: 13, schema: schema() }]).filter(
+      (instant) => instant.schema !== null,
+    )
+    expect(occupes).toEqual([])
   })
 })

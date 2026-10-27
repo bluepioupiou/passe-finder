@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 
 import type { ResultatPasse } from '@/edition-passe'
-import type { PositionIntermediaire } from '@/positions-intermediaires'
-import { comptage, libelleInstant, type Duree } from '@/rythme'
+import { frise, type PositionIntermediaire } from '@/positions-intermediaires'
+import type { Duree } from '@/rythme'
 import { ScenePosition } from './ScenePosition'
 import './edition-positions-intermediaires.css'
 
@@ -38,11 +38,9 @@ export function EditionPositionsIntermediaires({
   const [enCours, setEnCours] = useState<number | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
 
-  const nom = (instant: number) => libelleInstant(duree, instant) ?? String(instant)
-
-  const retirerInstant = async (instant: number) => {
+  const retirerInstant = async (instant: number, nom: string) => {
     if (enCours !== null) return
-    if (!window.confirm(`Retirer la position posée sur « ${nom(instant)} » ?`)) return
+    if (!window.confirm(`Retirer la position posée sur « ${nom} » ?`)) return
 
     setEnCours(instant)
     setErreur(null)
@@ -68,37 +66,33 @@ export function EditionPositionsIntermediaires({
       </p>
 
       <ol className="edition-intermediaires__instants">
-        {comptage(duree).map((temps, instant) => {
-          const position = positions.find((autre) => autre.instant === instant)
+        {frise(duree, positions).map(({ instant, temps, nom, schema }) => {
           const atelier = `/passes/${passeId}/intermediaires/${instant}`
 
           return (
             <li
               key={instant}
-              className={`edition-intermediaires__instant${position ? ' edition-intermediaires__instant--occupe' : ''}`}
+              className={`edition-intermediaires__instant${schema ? ' edition-intermediaires__instant--occupe' : ''}`}
             >
               <span className="edition-intermediaires__temps" aria-hidden="true">
                 {temps}
               </span>
 
-              {position ? (
+              {schema ? (
                 <>
-                  <Link
-                    href={atelier}
-                    aria-label={`Modifier la position posée sur « ${nom(instant)} »`}
-                  >
+                  <Link href={atelier} aria-label={`Modifier la position posée sur « ${nom} »`}>
                     <ScenePosition
                       className="edition-intermediaires__vignette"
-                      schema={position.schema}
-                      titre={`Position à l’instant ${nom(instant)}`}
+                      schema={schema}
+                      titre={`Position à l’instant ${nom}`}
                     />
                   </Link>
                   <button
                     type="button"
                     className="edition-intermediaires__retirer"
-                    onClick={() => retirerInstant(instant)}
+                    onClick={() => retirerInstant(instant, nom)}
                     disabled={enCours !== null}
-                    aria-label={`Retirer la position posée sur « ${nom(instant)} »`}
+                    aria-label={`Retirer la position posée sur « ${nom} »`}
                     title="Retirer"
                   >
                     ✕
@@ -108,7 +102,7 @@ export function EditionPositionsIntermediaires({
                 <Link
                   href={atelier}
                   className="edition-intermediaires__ajouter"
-                  aria-label={`Ajouter une position sur « ${nom(instant)} »`}
+                  aria-label={`Ajouter une position sur « ${nom} »`}
                   title="Ajouter une position"
                 >
                   +

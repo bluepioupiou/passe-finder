@@ -4,6 +4,8 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import { estAdmin } from '@/collections/acces'
+import { AffichagePasse } from '@/components/AffichagePasse'
+import { FriseRythme } from '@/components/FriseRythme'
 import { IconeVideo } from '@/components/Icones'
 import { ImagePosition } from '@/components/ImagePosition'
 import { ListePasses, Transitions } from '@/components/Voisinage'
@@ -15,6 +17,8 @@ import { angleAffiche, ligneDe, pivotDe } from '@/orientation'
 import config from '@/payload.config'
 import type { Enchainement, Position } from '@/payload-types'
 import { sessionCourante } from '@/porte'
+import { frise, positionsIntermediairesDe } from '@/positions-intermediaires'
+import { dureeDe } from '@/rythme'
 import { presenterVideo } from '@/video'
 import './fiche-passe.css'
 
@@ -160,6 +164,16 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
     enchainementsUtilisant(payload, passe.id, utilisateur),
   ])
 
+  // Story 8.3 : la frise n'existe que si la passe a au moins une position
+  // intermediaire. Sans elle, la fiche est exactement celle d'avant.
+  const positions = positionsIntermediairesDe(passe.positionsIntermediaires)
+  const depart =
+    typeof debut === 'object' ? <MaillonPosition position={debut} role="Départ" /> : null
+  const arrivee =
+    typeof fin === 'object' ? (
+      <MaillonPosition position={fin} role="Arrivée" angle={angleArrivee} />
+    ) : null
+
   const nomDebut = typeof debut === 'object' ? debut.nom : null
   const nomFin = typeof fin === 'object' ? fin.nom : null
 
@@ -181,16 +195,28 @@ export default async function FichePasse({ params }: { params: Promise<{ id: str
 
       {/* FR-22 : les deux positions sont cliquables vers leur fiche. Epic 7 : le
           départ tel que dessiné, l'arrivée recalée sur lui, sans le souligner.
-          Pivot ou ligne de danse inconnu : telle que dessinée. */}
-      <section className="fiche-chaine">
-        {typeof debut === 'object' ? <MaillonPosition position={debut} role="Départ" /> : null}
-        <span className="fiche-chaine__fleche" aria-hidden="true">
-          →
-        </span>
-        {typeof fin === 'object' ? (
-          <MaillonPosition position={fin} role="Arrivée" angle={angleArrivee} />
-        ) : null}
-      </section>
+          Pivot ou ligne de danse inconnu : telle que dessinée. Epic 8 : la
+          bascule vers la frise du rythme, seulement s'il y a de quoi la remplir. */}
+      <AffichagePasse
+        simple={
+          <section className="fiche-chaine">
+            {depart}
+            <span className="fiche-chaine__fleche" aria-hidden="true">
+              →
+            </span>
+            {arrivee}
+          </section>
+        }
+        rythme={
+          positions.length > 0 ? (
+            <FriseRythme
+              depart={depart}
+              arrivee={arrivee}
+              instants={frise(dureeDe(passe.duree), positions)}
+            />
+          ) : null
+        }
+      />
 
       {passe.description ? (
         <section className="fiche-section">

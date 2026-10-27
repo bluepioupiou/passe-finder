@@ -4,7 +4,7 @@ baseline_commit: 0142a8c0
 
 # Epic 8 — tranche : positions intermédiaires dans le rythme
 
-Status: in-progress (8.1 et 8.2 en review ; 8.3 prête pour le dev)
+Status: review (8.1, 8.2 et 8.3 en review)
 
 > **Nature de ce document.** Demande d'Alain du 2026-10-25 : « parfois le texte
 > ne suffit pas à décrire, ou pas très bien. J'aimerais pouvoir ajouter des
@@ -222,6 +222,12 @@ comme aujourd'hui.
   `intermediaire` et `destination`. Nouvelle route
   `/passes/[id]/intermediaires/[instant]` et frise
   `EditionPositionsIntermediaires` sur la page « Modifier ».
+- **8.3** — `frise(duree, positions)` dans `src/positions-intermediaires.ts`
+  (un instant par mot du comptage, avec son schéma ou `null`), partagée par la
+  frise d'édition et la frise de lecture. `AffichagePasse` (client) ne fait
+  que choisir entre deux vues rendues côté serveur ; `FriseRythme` (serveur)
+  porte un seul balisage, que la CSS lit en frise sur PC et en colonne sur
+  téléphone.
 
 ### Completion Notes
 
@@ -290,6 +296,33 @@ comme aujourd'hui.
     générées par Payload dans la migration, comme pour les autres). La suite
     e2e complète n'a pas été lancée.
 
+- 2026-10-27 — **Story 8.3 terminée.**
+  - Sans position intermédiaire, `AffichagePasse` rend la fiche « Simple »
+    telle quelle, **sans bascule** : la fiche d'avant reste identique.
+  - La bascule est un groupe de deux boutons `aria-pressed` (« Simple »,
+    « Rythme ») : clavier natif, focus visible à l'accent, aucune animation.
+    « Simple » est actif à chaque ouverture, rien n'est mémorisé.
+  - **Un seul balisage pour PC et téléphone.** Sur PC, tous les instants
+    gardent leur place et leur mot (le rythme se voit aux trous) ; la piste
+    défile en largeur pour 10 temps. Sous 640 px, la piste devient une
+    colonne qui masque les instants vides, chaque vignette porte son nom
+    complet (« 3 et », pas « et » seul), et la ligne du comptage en tête
+    garde le repère, instants occupés à l'accent.
+  - Vignettes intermédiaires en `ScenePosition`, sans lien, titre « Position
+    à l'instant <nom> ». Le départ et l'arrivée sont les mêmes maillons que
+    la vue « Simple » : cliquables, arrivée orientée comme en Epic 7.
+  - La frise d'édition de la 8.2 passe par la même fonction `frise`.
+  - Vérifié dans le navigateur (serveur de dev local, trois positions
+    temporaires posées par script sur « Trou de souris » puis retirées : la
+    passe est revenue à 0 position) : sur PC, départ, vignettes sous « 3 et »,
+    « 4 », « 5 et », arrivée ; en 375 × 812, colonne avec le comptage en
+    tête et les trois seules positions occupées ; aucune erreur console.
+  - Tests : unitaires 314/314 (2 nouveaux dans `affichage-passe`, 3 sur
+    `frise`), intégration 102/102, e2e `positions-intermediaires` 4/4 (dont
+    les 3 nouveaux : pas de bascule sans position, ordre « 3 et / 4 / 5 et »
+    sur 12 instants, colonne mobile). Lint 0 erreur. La suite e2e complète
+    n'a pas été lancée.
+
 ### File List
 
 - `src/rythme.ts` (nouveau)
@@ -320,7 +353,13 @@ comme aujourd'hui.
 - `tests/unit/positions-intermediaires.spec.ts` (nouveau, 8.2)
 - `tests/unit/atelier-position.spec.tsx`
 - `tests/int/positions-intermediaires.int.spec.ts` (nouveau, 8.2)
-- `tests/e2e/positions-intermediaires.e2e.spec.ts` (nouveau, 8.2)
+- `tests/e2e/positions-intermediaires.e2e.spec.ts` (nouveau, 8.2 ; étendu en 8.3)
+- `src/components/AffichagePasse.tsx` (nouveau, 8.3)
+- `src/components/affichage-passe.css` (nouveau, 8.3)
+- `src/components/FriseRythme.tsx` (nouveau, 8.3)
+- `src/components/frise-rythme.css` (nouveau, 8.3)
+- `src/app/(frontend)/passes/[id]/page.tsx`
+- `tests/unit/affichage-passe.spec.tsx` (nouveau, 8.3)
 
 ## Change Log
 
@@ -330,3 +369,5 @@ comme aujourd'hui.
   champ `duree`, migration, page « Modifier »).
 - 2026-10-26 : Story 8.2 — dessiner les positions intermédiaires (champ
   tableau, hook, actions, mode de l'atelier, frise d'édition).
+- 2026-10-27 : Story 8.3 — affichage « Rythme » sur la fiche passe (bascule
+  « Simple | Rythme », frise PC, colonne mobile).
