@@ -425,3 +425,46 @@ describe('ligne de danse (Epic 7)', () => {
     expect(saisie.schema.pieces).toHaveLength(0)
   })
 })
+
+describe('position intermédiaire (Epic 8)', () => {
+  // Une position intermediaire n'a ni nom, ni description, ni ligne de danse,
+  // et l'atelier rend la main a la page « Modifier » de la passe, pas a une
+  // fiche position qui n'existe pas.
+  function monterIntermediaire(enregistrer = vi.fn<Action>(async () => ({ ok: true, id: 7 }))) {
+    render(
+      <AtelierPosition
+        initial={{
+          id: null,
+          schema: {
+            version: 1,
+            taille: 640,
+            calque: { src: '/api/media/file/depart.png' },
+            pieces: [{ id: 't', type: 'tete', genre: 'cavalier', x: 0, y: 0, rotation: 0 }],
+          },
+          informations: { nom: '', description: '' },
+        }}
+        intermediaire
+        destination="/passes/7/modifier"
+        enregistrer={enregistrer}
+        retour="/passes/7/modifier"
+      />,
+    )
+    return enregistrer
+  }
+
+  it('ne demande ni nom, ni description, ni ligne de danse', () => {
+    monterIntermediaire()
+    expect(screen.queryByLabelText('Nom de la position')).toBeNull()
+    expect(screen.queryByLabelText('Description')).toBeNull()
+    expect(screen.queryByLabelText('Ligne de danse dans le dessin')).toBeNull()
+    expect(screen.getByLabelText(/Départ en calque/)).toBeTruthy()
+  })
+
+  it('enregistre le schéma, puis revient à la page « Modifier » de la passe', async () => {
+    const enregistrer = monterIntermediaire()
+    fireEvent.submit(screen.getByRole('button', { name: 'Enregistrer' }).closest('form')!)
+
+    await vi.waitFor(() => expect(pousser).toHaveBeenCalledWith('/passes/7/modifier'))
+    expect(enregistrer.mock.calls[0][0].schema.pieces).toHaveLength(1)
+  })
+})

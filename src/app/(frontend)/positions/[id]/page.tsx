@@ -8,6 +8,7 @@ import { ImagePosition } from '@/components/ImagePosition'
 import { ListePasses, Transitions } from '@/components/Voisinage'
 import config from '@/payload.config'
 import { sessionCourante } from '@/porte'
+import { SANS_POSITIONS_INTERMEDIAIRES } from '@/positions-intermediaires'
 import './fiche-position.css'
 
 export const dynamic = 'force-dynamic'
@@ -56,6 +57,7 @@ export default async function FichePosition({ params }: { params: Promise<{ id: 
       limit: 200,
       depth: 1,
       sort: 'nom',
+      select: SANS_POSITIONS_INTERMEDIAIRES,
     }),
     payload.find({
       collection: 'passes',
@@ -63,6 +65,7 @@ export default async function FichePosition({ params }: { params: Promise<{ id: 
       limit: 200,
       depth: 1,
       sort: 'nom',
+      select: SANS_POSITIONS_INTERMEDIAIRES,
     }),
     // Les deux lectures inverses de l'AUTRE arete du graphe (Story 4.7) : celle
     // qui ne coute pas de temps musical. Meme forme de requete que les passes —

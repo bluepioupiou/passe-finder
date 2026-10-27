@@ -8,6 +8,7 @@ import { DIFFICULTES, libelleDifficulte } from '@/collections/Passe'
 import { angleAffiche, ligneDe, pivotDe } from '@/orientation'
 import config from '@/payload.config'
 import type { Position } from '@/payload-types'
+import { SANS_POSITIONS_INTERMEDIAIRES } from '@/positions-intermediaires'
 import './passes.css'
 
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,7 @@ export default async function PassesPage({
     // l'affichage bascule à tort sur le placeholder.
     depth: 2,
     sort: 'nom',
+    select: SANS_POSITIONS_INTERMEDIAIRES,
   })
 
   // Les cartes sont rendues ici (côté serveur) ; la grille cliente ne fait que

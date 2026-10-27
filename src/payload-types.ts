@@ -263,6 +263,24 @@ export interface Pass {
    * Vide = 6 temps. 10 temps répète « 3 et 4 . 5 et 6 . » pour une passe ralentie.
    */
   duree?: ('6' | '10') | null;
+  positionsIntermediaires?:
+    | {
+        /**
+         * Index du demi-temps dans le comptage (0 = « 1 »).
+         */
+        instant: number;
+        schema:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
   legacyYoutubeUrl?: string | null;
   legacyPersonnalisations?:
     | {
@@ -576,6 +594,13 @@ export interface PassesSelect<T extends boolean = true> {
   difficulte?: T;
   pivot?: T;
   duree?: T;
+  positionsIntermediaires?:
+    | T
+    | {
+        instant?: T;
+        schema?: T;
+        id?: T;
+      };
   legacyYoutubeUrl?: T;
   legacyPersonnalisations?: T;
   legacyId?: T;

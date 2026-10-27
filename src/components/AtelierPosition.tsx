@@ -51,6 +51,11 @@ import './atelier-position.css'
  * MODIFIER — `initial` change les libelles, rien d'autre (meme parti que
  * `Compositeur`, pour les enchainements).
  *
+ * IL DESSINE AUSSI LES POSITIONS INTERMEDIAIRES D'UNE PASSE (Epic 8) :
+ * `intermediaire` retire le nom, la description et la ligne de danse — une
+ * position intermediaire n'en a pas — et `destination` dit ou revenir apres
+ * l'enregistrement. Le calque est alors le depart de la passe.
+ *
  * TROIS PARTIS PRIS D'INTERFACE, ET LEURS RAISONS.
  *
  * 1. LE CANEVAS EST UNE VUE, LA PILE EST LA COMMANDE. Un bras fait 13 unites
@@ -161,10 +166,18 @@ export function AtelierPosition({
   initial,
   enregistrer,
   retour,
+  intermediaire = false,
+  destination,
 }: {
   initial?: { id: number | null; schema: SchemaPosition; informations: Informations }
   enregistrer: (saisie: SaisiePosition) => Promise<ResultatPosition>
   retour: string
+  /** Position intermediaire d'une passe (Epic 8) : ni nom, ni description, ni ligne de danse. */
+  intermediaire?: boolean
+  /** Ou aller une fois enregistre ; par defaut, la fiche de la position. Un
+   *  chemin et non une fonction : la page qui monte l'atelier est un composant
+   *  serveur, et une fonction ne traverse pas la frontiere. */
+  destination?: string
 }) {
   const router = useRouter()
   const champ = useId()
@@ -418,7 +431,7 @@ export function AtelierPosition({
         return
       }
 
-      router.push(`/positions/${resultat.id}`)
+      router.push(destination ?? `/positions/${resultat.id}`)
       router.refresh()
     } catch {
       setErreur("L'enregistrement n'a pas abouti. Réessaie dans un instant.")
@@ -818,60 +831,74 @@ export function AtelierPosition({
         {/* ── 4. Enregistrer ─────────────────────────────────────────── */}
         <section className="atelier__bloc">
           <h2 className="atelier__titre">
-            {modification ? '4. Enregistrer les modifications' : '4. Nommer et enregistrer'}
+            {intermediaire
+              ? '4. Enregistrer'
+              : modification
+                ? '4. Enregistrer les modifications'
+                : '4. Nommer et enregistrer'}
           </h2>
 
           <form className="atelier__formulaire" onSubmit={soumettre}>
-            <div className="atelier__champ">
-              <label htmlFor={`${champ}-nom`}>Nom de la position</label>
-              <input
-                id={`${champ}-nom`}
-                type="text"
-                value={informations.nom}
-                onChange={(evenement) =>
-                  setInformations((actuel) => ({ ...actuel, nom: evenement.target.value }))
-                }
-                required
-              />
-            </div>
+            {intermediaire ? null : (
+              <>
+                <div className="atelier__champ">
+                  <label htmlFor={`${champ}-nom`}>Nom de la position</label>
+                  <input
+                    id={`${champ}-nom`}
+                    type="text"
+                    value={informations.nom}
+                    onChange={(evenement) =>
+                      setInformations((actuel) => ({ ...actuel, nom: evenement.target.value }))
+                    }
+                    required
+                  />
+                </div>
 
-            <div className="atelier__champ">
-              <label htmlFor={`${champ}-description`}>Description</label>
-              <textarea
-                id={`${champ}-description`}
-                rows={3}
-                value={informations.description}
-                onChange={(evenement) =>
-                  setInformations((actuel) => ({ ...actuel, description: evenement.target.value }))
-                }
-              />
-            </div>
+                <div className="atelier__champ">
+                  <label htmlFor={`${champ}-description`}>Description</label>
+                  <textarea
+                    id={`${champ}-description`}
+                    rows={3}
+                    value={informations.description}
+                    onChange={(evenement) =>
+                      setInformations((actuel) => ({
+                        ...actuel,
+                        description: evenement.target.value,
+                      }))
+                    }
+                  />
+                </div>
 
-            <div className="atelier__champ">
-              <label htmlFor={`${champ}-ligne`}>Ligne de danse dans le dessin</label>
-              <select
-                id={`${champ}-ligne`}
-                value={informations.ligneDeDanse ?? ''}
-                onChange={(evenement) =>
-                  setInformations((actuel) => ({ ...actuel, ligneDeDanse: evenement.target.value }))
-                }
-              >
-                <option value="">Non renseignée</option>
-                {LIGNES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <p className="atelier__note">
-                Sert à orienter cette position dans les passes et les enchaînements.
-              </p>
-            </div>
+                <div className="atelier__champ">
+                  <label htmlFor={`${champ}-ligne`}>Ligne de danse dans le dessin</label>
+                  <select
+                    id={`${champ}-ligne`}
+                    value={informations.ligneDeDanse ?? ''}
+                    onChange={(evenement) =>
+                      setInformations((actuel) => ({
+                        ...actuel,
+                        ligneDeDanse: evenement.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Non renseignée</option>
+                    {LIGNES.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="atelier__note">
+                    Sert à orienter cette position dans les passes et les enchaînements.
+                  </p>
+                </div>
+              </>
+            )}
 
             {schema.calque ? (
               <div className="atelier__reglage">
                 <label htmlFor={`${champ}-calque`}>
-                  Ancienne image en calque{' '}
+                  {intermediaire ? 'Départ en calque' : 'Ancienne image en calque'}{' '}
                   <span className="atelier__valeur">{opaciteCalque} %</span>
                 </label>
                 <input
@@ -898,7 +925,11 @@ export function AtelierPosition({
                 className="atelier__enregistrer"
                 disabled={enCours || !enregistrable}
               >
-                {enCours ? 'Enregistrement…' : modification ? 'Enregistrer' : 'Créer la position'}
+                {enCours
+                  ? 'Enregistrement…'
+                  : modification || intermediaire
+                    ? 'Enregistrer'
+                    : 'Créer la position'}
               </button>
               <a className="atelier__annuler" href={retour}>
                 Annuler

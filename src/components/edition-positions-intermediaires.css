@@ -1,0 +1,91 @@
+/* La frise du comptage d'une passe, en edition (Story 8.2). Une colonne par
+   instant : le temps en tete, puis la vignette posee ou le « + ». */
+
+.edition-intermediaires__note {
+  max-width: 68ch;
+  margin: 0 0 var(--space-4);
+  color: var(--muted);
+  font-size: var(--data-size);
+  line-height: var(--data-line);
+}
+
+.edition-intermediaires__instants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.edition-intermediaires__instant {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  width: 4.5rem;
+}
+
+.edition-intermediaires__temps {
+  font-size: var(--data-size);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Un instant occupe se lit d'un coup d'oeil : son temps passe a l'accent. */
+.edition-intermediaires__instant--occupe .edition-intermediaires__temps {
+  color: var(--accent);
+}
+
+/* Meme forme que les vignettes du site (`image-position.css`) : un disque. */
+.edition-intermediaires__vignette {
+  display: block;
+  width: 4rem;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--rounded-full);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.edition-intermediaires__ajouter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  aspect-ratio: 1 / 1;
+  border: 1px dashed var(--line);
+  border-radius: var(--rounded-full);
+  color: var(--muted);
+  font-size: 1.5rem;
+  text-decoration: none;
+}
+
+.edition-intermediaires__ajouter:hover,
+.edition-intermediaires__ajouter:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.edition-intermediaires__retirer {
+  min-width: 44px;
+  min-height: 32px;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-sm);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.edition-intermediaires__retirer:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.edition-intermediaires__erreur {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3);
+  background: var(--surface-container);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--rounded-sm);
+  color: var(--danger);
+}

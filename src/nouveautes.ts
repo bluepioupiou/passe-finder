@@ -1,6 +1,7 @@
 import type { Payload } from 'payload'
 
 import type { Enchainement, Pass, Position } from './payload-types'
+import { SANS_POSITIONS_INTERMEDIAIRES } from './positions-intermediaires'
 
 /**
  * Le fil des nouveautés de l'accueil (Story 5.3, E1).
@@ -99,7 +100,13 @@ export async function chargerNouveautes(
 ): Promise<Nouveaute[]> {
   const [positions, passes, enchainements] = await Promise.all([
     payload.find({ collection: 'positions', limit: combien, depth: 0, sort: '-createdAt' }),
-    payload.find({ collection: 'passes', limit: combien, depth: 0, sort: '-createdAt' }),
+    payload.find({
+      collection: 'passes',
+      limit: combien,
+      depth: 0,
+      sort: '-createdAt',
+      select: SANS_POSITIONS_INTERMEDIAIRES,
+    }),
     payload.find({
       collection: 'enchainements',
       where: { visibilite: { equals: 'public' } },

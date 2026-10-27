@@ -8,6 +8,7 @@ import { libelleDifficulte } from '@/collections/Passe'
 import { formaterDate } from '@/enchainements'
 import config from '@/payload.config'
 import type { Pass, Position } from '@/payload-types'
+import { SANS_POSITIONS_INTERMEDIAIRES } from '@/positions-intermediaires'
 import { correspondAuNom } from '@/recherche'
 import './recherche.css'
 
@@ -72,7 +73,13 @@ export default async function RecherchePage({
   const [{ docs: positions }, { docs: passes }, { docs: enchainements }] = await Promise.all([
     payload.find({ collection: 'positions', limit: 200, depth: 1, sort: 'nom' }),
     // depth 1 : suffit a resoudre les positions de debut/fin pour leur nom.
-    payload.find({ collection: 'passes', limit: 300, depth: 1, sort: 'nom' }),
+    payload.find({
+      collection: 'passes',
+      limit: 300,
+      depth: 1,
+      sort: 'nom',
+      select: SANS_POSITIONS_INTERMEDIAIRES,
+    }),
     // depth 0 : le resultat n'affiche que titre, date et longueur de la chaine.
     payload.find({
       collection: 'enchainements',
