@@ -186,12 +186,14 @@ historique.
 - Une durée de **8 temps**, ou toute autre durée.
 - Une animation ou un « lecteur » qui ferait défiler les instants.
 
-## Point à trancher au dev de la 8.2
+## Point tranché après la 8.3 (Alain, 2026-10-27)
 
-Quand le départ **a** un schéma d'atelier, l'atelier pourrait partir d'une
-**copie de ses pièces** plutôt que d'un simple calque : on déplace les bras au
-lieu de tout redessiner. Ce n'est pas validé par Alain. On livre le calque
-(décision 1), et on lui pose la question devant l'atelier.
+Une nouvelle position s'ouvre sur une **copie de la position juste avant** :
+la dernière intermédiaire qui précède l'instant, ou, à défaut, le départ s'il
+a été composé dans l'atelier. On déplace les bras au lieu de tout redessiner.
+Le calque (image du départ) reste dessous. Sans rien à copier (départ dessiné
+dans Paint, aucune position avant), l'atelier part du couple par défaut,
+comme avant.
 
 ## Coût réel : la saisie, pas le code
 
@@ -323,6 +325,16 @@ comme aujourd'hui.
     sur 12 instants, colonne mobile). Lint 0 erreur. La suite e2e complète
     n'a pas été lancée.
 
+- 2026-10-27 — **Ouverture de l'atelier sur la position d'avant** (décision
+  d'Alain, voir plus haut). `schemaDOuverture(positions, instant, schemaDuDepart)`
+  dans `src/positions-intermediaires.ts` : la position déjà posée à l'instant,
+  sinon la dernière avant lui, sinon le `schemaCompose` du départ, sinon
+  `null` ; jamais de calque copié. Tests : unitaires 319/319 (5 nouveaux),
+  e2e `positions-intermediaires` 5/5 (nouveau : « 4 . » s'ouvre sur la copie
+  de « 4 », « 2 » sur le couple par défaut). `tsc` et lint sans erreur. Pas de
+  contrôle à l'œil : sur la base locale, le départ de « Trou de souris » n'a
+  pas de schéma d'atelier, et le test e2e parcourt déjà la vraie page.
+
 ### File List
 
 - `src/rythme.ts` (nouveau)
@@ -339,7 +351,7 @@ comme aujourd'hui.
 - `tests/e2e/modifier-passe.e2e.spec.ts`
 - `src/positions-intermediaires.ts` (nouveau, 8.2)
 - `src/app/(frontend)/passes/actions.ts`
-- `src/app/(frontend)/passes/[id]/intermediaires/[instant]/page.tsx` (nouveau, 8.2)
+- `src/app/(frontend)/passes/[id]/intermediaires/[instant]/page.tsx` (nouveau, 8.2 ; ouverture sur la position d'avant)
 - `src/components/AtelierPosition.tsx`
 - `src/components/EditionPositionsIntermediaires.tsx` (nouveau, 8.2)
 - `src/components/edition-positions-intermediaires.css` (nouveau, 8.2)
@@ -371,3 +383,5 @@ comme aujourd'hui.
   tableau, hook, actions, mode de l'atelier, frise d'édition).
 - 2026-10-27 : Story 8.3 — affichage « Rythme » sur la fiche passe (bascule
   « Simple | Rythme », frise PC, colonne mobile).
+- 2026-10-27 : l'atelier d'un instant s'ouvre sur une copie de la position
+  précédente (intermédiaire ou départ), décision d'Alain.

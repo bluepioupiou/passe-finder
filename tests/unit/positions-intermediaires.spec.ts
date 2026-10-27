@@ -6,6 +6,7 @@ import {
   poserPosition,
   positionsIntermediairesDe,
   retirerPosition,
+  schemaDOuverture,
 } from '@/positions-intermediaires'
 import { scenePardefaut, type SchemaPosition } from '@/schema-position'
 
@@ -120,5 +121,37 @@ describe('frise', () => {
       (instant) => instant.schema !== null,
     )
     expect(occupes).toEqual([])
+  })
+})
+
+describe('schemaDOuverture', () => {
+  // Une taille differente par schema, pour savoir lequel a ete copie.
+  const marque = (taille: number): SchemaPosition => ({ ...scenePardefaut(), taille })
+  const depart = marque(520)
+  const posees = [
+    { instant: 5, schema: marque(640) },
+    { instant: 9, schema: marque(760) },
+  ]
+
+  it('rouvre la position deja posee sur l instant', () => {
+    expect(schemaDOuverture(posees, 9, depart)?.taille).toBe(760)
+  })
+
+  it('copie la derniere position intermediaire avant l instant', () => {
+    expect(schemaDOuverture(posees, 6, depart)?.taille).toBe(640)
+    expect(schemaDOuverture(posees, 11, depart)?.taille).toBe(760)
+  })
+
+  it('copie le depart quand aucune position ne precede l instant', () => {
+    expect(schemaDOuverture(posees, 3, depart)?.taille).toBe(520)
+  })
+
+  it('ne rend rien a copier quand le depart n a pas de schema', () => {
+    expect(schemaDOuverture([], 3, null)).toBeNull()
+  })
+
+  it('ne garde jamais le calque de la position copiee', () => {
+    const avecCalque = { ...depart, calque: { src: '/media/depart.png' } }
+    expect(schemaDOuverture([], 3, avecCalque)?.calque).toBeNull()
   })
 })
