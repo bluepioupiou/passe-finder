@@ -130,6 +130,29 @@ export function retirerPosition(
   return positions.filter((position) => position.instant !== instant)
 }
 
+/**
+ * Le schema sur lequel s'ouvre l'atelier d'un instant (decision d'Alain,
+ * 2026-10-27) : la position deja posee a cet instant ; sinon une COPIE de la
+ * position juste avant — la derniere intermediaire qui le precede, ou a defaut
+ * le depart, s'il a ete compose dans l'atelier. Alain deplace alors les bras au
+ * lieu de tout redessiner. `null` : rien a copier, l'atelier part du couple
+ * par defaut.
+ *
+ * Sans calque : c'est a la page de le remettre.
+ */
+export function schemaDOuverture(
+  positions: PositionIntermediaire[],
+  instant: number,
+  schemaDuDepart: SchemaPosition | null,
+): SchemaPosition | null {
+  const precedente = positions
+    .filter((position) => position.instant <= instant)
+    .sort(parInstant)
+    .at(-1)
+  const schema = precedente?.schema ?? schemaDuDepart
+  return schema ? sansCalque(schema) : null
+}
+
 /** Un instant de la frise : son temps tel qu'on le dit, et sa position s'il en a une. */
 export type InstantDeFrise = {
   instant: number

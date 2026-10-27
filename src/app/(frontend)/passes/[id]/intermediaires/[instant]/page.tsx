@@ -9,9 +9,9 @@ import { identifiant } from '@/enchainements'
 import config from '@/payload.config'
 import { exigerSession } from '@/porte'
 import { imageDePosition, NO_POSITION_IMAGE } from '@/positions'
-import { positionsIntermediairesDe } from '@/positions-intermediaires'
+import { positionsIntermediairesDe, schemaDOuverture } from '@/positions-intermediaires'
 import { dureeDe, libelleInstant } from '@/rythme'
-import { scenePardefaut } from '@/schema-position'
+import { scenePardefaut, schemaSur } from '@/schema-position'
 import { enregistrerPositionIntermediaire } from '../../../actions'
 import '@/app/(frontend)/positions/atelier-page.css'
 
@@ -25,6 +25,10 @@ export const metadata = { title: 'Position intermédiaire — Passe Finder' }
  * LE DEPART EN CALQUE. Alain dessine par-dessus la position de depart : la
  * position intermediaire est donc d'emblee dans le repere du depart, et la
  * fiche l'affichera telle quelle, sans aucun angle de l'Epic 7.
+ *
+ * UNE COPIE DE LA POSITION D'AVANT. Une nouvelle position s'ouvre sur les
+ * pieces de l'intermediaire precedente, ou du depart (`schemaDOuverture`) :
+ * d'un instant a l'autre, on deplace des bras, on ne redessine pas le couple.
  *
  * RESERVE A L'ADMIN, comme la page « Modifier » de la passe. Cette garde soigne
  * le parcours ; l'action revérifie et `Passe.access` tranche en dernier ressort.
@@ -64,8 +68,11 @@ export default async function PositionIntermediaire({
   const image = depart ? imageDePosition(depart).src : NO_POSITION_IMAGE
   const calque = image === NO_POSITION_IMAGE ? null : { src: image }
 
-  const existante = positionsIntermediairesDe(passe.positionsIntermediaires).find(
-    (position) => position.instant === instant,
+  // Une position historique (dessinee dans Paint) n'a pas de schema a copier.
+  const ouverture = schemaDOuverture(
+    positionsIntermediairesDe(passe.positionsIntermediaires),
+    instant,
+    depart ? schemaSur(depart.schemaCompose) : null,
   )
 
   return (
@@ -90,7 +97,7 @@ export default async function PositionIntermediaire({
         initial={{
           id: null,
           // Le calque n'est jamais stocke : on le remet a chaque ouverture.
-          schema: { ...(existante?.schema ?? scenePardefaut()), calque },
+          schema: { ...(ouverture ?? scenePardefaut()), calque },
           informations: { nom: '', description: '' },
         }}
         intermediaire

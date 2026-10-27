@@ -4,7 +4,7 @@ import { getPayload } from 'payload'
 import { DANSE_V1 } from '../../src/collections/Danse.js'
 import config from '../../src/payload.config.js'
 import { login } from '../helpers/login'
-import { scenePardefaut } from '../../src/schema-position.js'
+import { scenePardefaut, TAILLES } from '../../src/schema-position.js'
 import { cleanupTestUser, seedTestUser, type Identifiants } from '../helpers/seedUser'
 
 /**
@@ -55,7 +55,8 @@ test.describe('Positions intermédiaires', () => {
     passeId = passe.id
 
     // En 6 temps, « 3 et » = 5, « 4 » = 6, « 5 et » = 9. Ecrites dans le
-    // desordre : la fiche doit suivre le rythme, pas le tableau.
+    // desordre : la fiche doit suivre le rythme, pas le tableau. Celle de
+    // « 4 » est en petite taille, pour reconnaitre ou l'atelier la recopie.
     const temoin = await payload.create({
       collection: 'passes',
       data: {
@@ -64,7 +65,7 @@ test.describe('Positions intermédiaires', () => {
         positionFin: fin.id,
         positionsIntermediaires: [9, 5, 6].map((instant) => ({
           instant,
-          schema: scenePardefaut(),
+          schema: instant === 6 ? { ...scenePardefaut(), taille: TAILLES.petit } : scenePardefaut(),
         })),
       },
     })
@@ -113,6 +114,29 @@ test.describe('Positions intermédiaires', () => {
     await expect(page.getByRole('img', { name: 'Position à l’instant 3 et' })).toHaveCount(0)
     const retiree = await payload.findByID({ collection: 'passes', id: passeId, depth: 0 })
     expect(retiree.positionsIntermediaires ?? []).toEqual([])
+    await contexte.close()
+  })
+
+  test('une nouvelle position s’ouvre sur une copie de celle d’avant', async ({ browser }) => {
+    await seedTestUser(admin)
+    const contexte = await browser.newContext()
+    const page = await contexte.newPage()
+    await login({ page, user: admin })
+
+    // « 4 . » (7) suit « 4 » (6), posee en petite taille : l'atelier la recopie.
+    await page.goto(`/passes/${temoinId}/intermediaires/7`)
+    await expect(page.getByRole('button', { name: 'petit' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    // « 2 » (2) ne suit aucune position, et le depart n'a pas de schema :
+    // l'atelier part du couple par defaut.
+    await page.goto(`/passes/${temoinId}/intermediaires/2`)
+    await expect(page.getByRole('button', { name: 'moyen' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
     await contexte.close()
   })
 
