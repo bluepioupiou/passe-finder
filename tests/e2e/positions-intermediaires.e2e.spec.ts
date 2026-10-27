@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import { DANSE_V1 } from '../../src/collections/Danse.js'
 import config from '../../src/payload.config.js'
 import { login } from '../helpers/login'
+import { scenePardefaut } from '../../src/schema-position.js'
 import { cleanupTestUser, seedTestUser, type Identifiants } from '../helpers/seedUser'
 
 /**
@@ -11,7 +12,9 @@ import { cleanupTestUser, seedTestUser, type Identifiants } from '../helpers/see
  *
  * CE QUI NE SE VERIFIE QU'ICI : le parcours complet entre trois ecrans — la
  * frise de la page « Modifier », l'atelier ouvert sur un instant, puis le
- * retour a la frise avec la vignette posee, et son retrait.
+ * retour a la frise avec la vignette posee, et son retrait. Puis, sur la fiche
+ * publique (Story 8.3), la bascule « Simple | Rythme » et la frise, sur grand
+ * ecran comme sur telephone.
  *
  * Le scenario cree SES positions et SA passe, et les supprime ensuite : il ne
  * touche jamais au catalogue de la cible.
@@ -26,6 +29,8 @@ const admin: Identifiants = {
 }
 
 let passeId: number
+/** Le cas temoin « Trou de souris » : des positions sur « 3 et », « 4 » et « 5 et ». */
+let temoinId: number
 
 test.describe('Positions intermédiaires', () => {
   test.beforeAll(async () => {
@@ -48,11 +53,28 @@ test.describe('Positions intermédiaires', () => {
       data: { nom: MARQUE, positionDebut: debut.id, positionFin: fin.id },
     })
     passeId = passe.id
+
+    // En 6 temps, « 3 et » = 5, « 4 » = 6, « 5 et » = 9. Ecrites dans le
+    // desordre : la fiche doit suivre le rythme, pas le tableau.
+    const temoin = await payload.create({
+      collection: 'passes',
+      data: {
+        nom: `${MARQUE} témoin`,
+        positionDebut: debut.id,
+        positionFin: fin.id,
+        positionsIntermediaires: [9, 5, 6].map((instant) => ({
+          instant,
+          schema: scenePardefaut(),
+        })),
+      },
+    })
+    temoinId = temoin.id
   })
 
   test.afterAll(async () => {
     const payload = await getPayload({ config })
     await payload.delete({ collection: 'passes', id: passeId }).catch(() => {})
+    await payload.delete({ collection: 'passes', id: temoinId }).catch(() => {})
     await payload
       .delete({ collection: 'positions', where: { nom: { contains: MARQUE } } })
       .catch(() => {})
@@ -92,5 +114,50 @@ test.describe('Positions intermédiaires', () => {
     const retiree = await payload.findByID({ collection: 'passes', id: passeId, depth: 0 })
     expect(retiree.positionsIntermediaires ?? []).toEqual([])
     await contexte.close()
+  })
+
+  test('fiche sans position intermédiaire : aucune bascule', async ({ page }) => {
+    await page.goto(`/passes/${passeId}`)
+    await expect(page.getByRole('img', { name: `${MARQUE} départ` })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Rythme' })).toHaveCount(0)
+  })
+
+  test('fiche témoin : « Simple » par défaut, puis la frise dans l’ordre du rythme', async ({
+    page,
+  }) => {
+    await page.goto(`/passes/${temoinId}`)
+
+    const simple = page.getByRole('button', { name: 'Simple' })
+    await expect(simple).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByRole('img', { name: /^Position à l’instant/ })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Rythme' }).click()
+    const vignettes = page.getByRole('img', { name: /^Position à l’instant/ })
+    await expect(vignettes).toHaveCount(3)
+    await expect(vignettes.nth(0)).toHaveAccessibleName('Position à l’instant 3 et')
+    await expect(vignettes.nth(1)).toHaveAccessibleName('Position à l’instant 4')
+    await expect(vignettes.nth(2)).toHaveAccessibleName('Position à l’instant 5 et')
+
+    // Sur grand ecran, les douze instants gardent leur place, vides compris.
+    await expect(page.locator('.frise-rythme__instant')).toHaveCount(12)
+    await expect(page.locator('.frise-rythme__instant').first()).toBeVisible()
+
+    // Le depart reste cliquable vers sa fiche.
+    await expect(page.getByRole('link', { name: new RegExp(`${MARQUE} départ`) })).toBeVisible()
+
+    await simple.click()
+    await expect(vignettes).toHaveCount(0)
+  })
+
+  test('fiche témoin sur téléphone : seulement les instants occupés', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto(`/passes/${temoinId}`)
+    await page.getByRole('button', { name: 'Rythme' }).click()
+
+    await expect(page.locator('.frise-rythme__comptage')).toBeVisible()
+    await expect(page.locator('.frise-rythme__instant--occupe')).toHaveCount(3)
+    // Le premier instant, « 1 », est vide : il disparait de la colonne.
+    await expect(page.locator('.frise-rythme__instant').first()).toBeHidden()
+    await expect(page.locator('.frise-rythme__nom').first()).toHaveText('3 et')
   })
 })

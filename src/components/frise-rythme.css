@@ -1,0 +1,125 @@
+/* La passe sur son rythme (Story 8.3). Meme cadre que `.fiche-chaine` : c'est
+   la meme passe, montree autrement. */
+
+.frise-rythme {
+  margin-top: var(--space-8);
+  padding: var(--space-6) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-lg);
+}
+
+/* La ligne du comptage ne sert que sur telephone, ou la piste perd ses
+   instants vides. */
+.frise-rythme__comptage {
+  display: none;
+}
+
+.frise-rythme__piste {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* 10 temps = 20 instants : sur un ecran moyen, la frise defile plutot que
+     d'ecraser les vignettes. */
+  overflow-x: auto;
+}
+
+.frise-rythme__extremite {
+  flex: 0 0 auto;
+  width: 8.5rem;
+}
+
+.frise-rythme__extremite .fiche-maillon {
+  max-width: none;
+}
+
+.frise-rythme .fiche-maillon__image {
+  --image-position-taille: min(100%, 96px);
+}
+
+.frise-rythme__instant {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 1.75rem;
+  /* Aligne les mots du comptage sur le bas des vignettes de depart et
+     d'arrivee, sous lesquelles viennent leur role et leur nom. */
+  padding-bottom: var(--space-8);
+}
+
+.frise-rythme__instant--occupe {
+  min-width: 4.5rem;
+}
+
+/* Meme forme que les vignettes du site (`image-position.css`) : un disque. */
+.frise-rythme__vignette {
+  display: block;
+  width: 4rem;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--line);
+  border-radius: var(--rounded-full);
+  overflow: hidden;
+}
+
+.frise-rythme__temps {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.frise-rythme__instant--occupe .frise-rythme__temps {
+  color: var(--accent);
+}
+
+.frise-rythme__nom {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .frise-rythme__comptage {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-4);
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .frise-rythme__mot--occupe {
+    color: var(--accent);
+  }
+
+  .frise-rythme__piste {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    overflow: visible;
+  }
+
+  .frise-rythme__instant {
+    flex-direction: row;
+    gap: var(--space-3);
+    padding-bottom: 0;
+  }
+
+  .frise-rythme__instant:not(.frise-rythme__instant--occupe) {
+    display: none;
+  }
+
+  .frise-rythme__temps {
+    display: none;
+  }
+
+  .frise-rythme__nom {
+    display: inline;
+    min-width: 3rem;
+    color: var(--accent);
+    font-weight: 600;
+    text-align: right;
+  }
+}

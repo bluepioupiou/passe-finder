@@ -129,3 +129,30 @@ export function retirerPosition(
 ): PositionIntermediaire[] {
   return positions.filter((position) => position.instant !== instant)
 }
+
+/** Un instant de la frise : son temps tel qu'on le dit, et sa position s'il en a une. */
+export type InstantDeFrise = {
+  instant: number
+  /** Le mot du comptage : « 3 », « et » ou « . ». */
+  temps: string
+  /** Le nom complet de l'instant : « 3 et », « 6 . » (`libelleInstant`). */
+  nom: string
+  schema: SchemaPosition | null
+}
+
+/**
+ * La frise d'une passe : chaque instant de son comptage, avec la position qui
+ * y est posee. C'est la meme lecture pour la fiche (Story 8.3) et pour sa page
+ * « Modifier ».
+ *
+ * Une position hors de la duree n'a pas d'instant ou se montrer : elle est
+ * ignoree, jamais deplacee. Le hook empeche ce cas a l'ecriture.
+ */
+export function frise(duree: Duree, positions: PositionIntermediaire[]): InstantDeFrise[] {
+  return comptage(duree).map((temps, instant) => ({
+    instant,
+    temps,
+    nom: nomInstant(instant),
+    schema: positions.find((position) => position.instant === instant)?.schema ?? null,
+  }))
+}
