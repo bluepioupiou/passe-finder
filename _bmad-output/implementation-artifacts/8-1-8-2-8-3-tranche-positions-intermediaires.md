@@ -4,7 +4,7 @@ baseline_commit: 0142a8c0
 
 # Epic 8 — tranche : positions intermédiaires dans le rythme
 
-Status: in-progress (8.1 en review ; 8.2 et 8.3 prêtes pour le dev)
+Status: in-progress (8.1 et 8.2 en review ; 8.3 prête pour le dev)
 
 > **Nature de ce document.** Demande d'Alain du 2026-10-25 : « parfois le texte
 > ne suffit pas à décrire, ou pas très bien. J'aimerais pouvoir ajouter des
@@ -212,6 +212,16 @@ comme aujourd'hui.
   `Passe.duree` (select facultatif, options lues dans `DUREES`), en colonne par
   défaut de la liste admin. Durée ajoutée à `SaisiePasse` / `donneesDePasse`
   et au `FormulairePasse` de la page « Modifier ».
+- **8.2** — Module pur `src/positions-intermediaires.ts` (lecture, validation,
+  pose, retrait, `SANS_POSITIONS_INTERMEDIAIRES`). Champ tableau
+  `Passe.positionsIntermediaires` (`admin.hidden`), second `beforeValidate`
+  qui juge les données reçues ou, à défaut, celles déjà enregistrées, et
+  `defaultPopulate` qui l'exclut des passes peuplées. Actions serveur
+  `enregistrerPositionIntermediaire` / `retirerPositionIntermediaire`, qui
+  relisent toujours la passe avant de réécrire. `AtelierPosition` gagne
+  `intermediaire` et `destination`. Nouvelle route
+  `/passes/[id]/intermediaires/[instant]` et frise
+  `EditionPositionsIntermediaires` sur la page « Modifier ».
 
 ### Completion Notes
 
@@ -240,6 +250,46 @@ comme aujourd'hui.
     temps »). `tsc` sans erreur, lint sans erreur sur les fichiers touchés. La
     suite e2e complète n'a pas été lancée.
 
+- 2026-10-26 — **Story 8.2 terminée.**
+  - **Le calque est toujours l'IMAGE du départ.** Le calque de l'atelier ne
+    sait afficher qu'une image (`calque.src`), et toute position composée
+    dans l'atelier a aussi son PNG : on ne perd rien. Sans vraie image (le
+    placeholder), pas de calque. Une nouvelle position part du couple par
+    défaut, par-dessus le calque. Le point « copier les pièces du départ »
+    reste à poser à Alain (voir plus haut).
+  - Le calque n'est **jamais stocké** (`poserPosition` le remet à `null`) et
+    se remet à chaque ouverture de l'atelier.
+  - `destination` est un **chemin**, pas une fonction : la page qui monte
+    l'atelier est un composant serveur, et une fonction ne traverse pas la
+    frontière serveur → client.
+  - Le hook juge une mise à jour partielle (la durée seule, depuis le
+    formulaire) sur les positions **déjà enregistrées** : c'est ce qui bloque
+    une réduction de durée, avec le message « En 6 temps, la passe s'arrête à
+    « 6 . » : retire d'abord la position posée sur « 7 et ». »
+  - La frise d'édition suit la durée **enregistrée**, pas celle du menu du
+    formulaire, et le dit : passer à 10 temps, c'est enregistrer d'abord.
+  - Les 8 requêtes de listes de passes (liste, fiche position ×2, recherche,
+    catalogue ×3, nouveautés) passent `select: SANS_POSITIONS_INTERMEDIAIRES`.
+    Les passes peuplées (enchaînements…) en sont privées par `defaultPopulate`.
+  - Migration `20261026_225154_positions_intermediaires` : une nouvelle table
+    `passes_positions_intermediaires`, rien de modifié dans l'existant.
+  - Vérifié dans le navigateur (serveur de dev local, compte admin de test
+    créé puis supprimé, rien d'enregistré sur les vraies passes) : la page
+    « Modifier » de « Trou de souris » montre la frise `1 . 2 . 3 et 4 . 5 et
+    6 .` avec ses 12 « + » ; l'atelier sur « 3 et » s'ouvre avec le titre
+    « Trou de souris — instant « 3 et » », le départ « Espagnol garçon » en
+    calque à 35 %, sans nom, description ni ligne de danse ; aucune erreur
+    console. Capture d'écran impossible sur la frise (panneau du navigateur
+    masqué) : contrôle par lecture de la page.
+  - Tests : unitaires 309/309 (11 nouveaux dans `positions-intermediaires`,
+    2 dans `atelier-position`), intégration 102/102 (6 nouveaux : ordre,
+    doublon, hors durée, réduction de durée, accès non-admin, exclusion des
+    listes), e2e 8/8 sur l'atelier, la page « Modifier » et le nouveau
+    parcours « pose une position sur « 3 et », puis la retire ». `tsc` sans
+    erreur, lint 0 erreur (les 4 avertissements nouveaux sont les signatures
+    générées par Payload dans la migration, comme pour les autres). La suite
+    e2e complète n'a pas été lancée.
+
 ### File List
 
 - `src/rythme.ts` (nouveau)
@@ -254,6 +304,23 @@ comme aujourd'hui.
 - `tests/unit/rythme.spec.ts` (nouveau)
 - `tests/unit/edition-passe.spec.ts`
 - `tests/e2e/modifier-passe.e2e.spec.ts`
+- `src/positions-intermediaires.ts` (nouveau, 8.2)
+- `src/app/(frontend)/passes/actions.ts`
+- `src/app/(frontend)/passes/[id]/intermediaires/[instant]/page.tsx` (nouveau, 8.2)
+- `src/components/AtelierPosition.tsx`
+- `src/components/EditionPositionsIntermediaires.tsx` (nouveau, 8.2)
+- `src/components/edition-positions-intermediaires.css` (nouveau, 8.2)
+- `src/migrations/20261026_225154_positions_intermediaires.ts` (nouveau, 8.2)
+- `src/migrations/20261026_225154_positions_intermediaires.json` (nouveau, 8.2)
+- `src/app/(frontend)/passes/page.tsx`
+- `src/app/(frontend)/positions/[id]/page.tsx`
+- `src/app/(frontend)/recherche/page.tsx`
+- `src/catalogue.ts`
+- `src/nouveautes.ts`
+- `tests/unit/positions-intermediaires.spec.ts` (nouveau, 8.2)
+- `tests/unit/atelier-position.spec.tsx`
+- `tests/int/positions-intermediaires.int.spec.ts` (nouveau, 8.2)
+- `tests/e2e/positions-intermediaires.e2e.spec.ts` (nouveau, 8.2)
 
 ## Change Log
 
@@ -261,3 +328,5 @@ comme aujourd'hui.
   Alain ; prêt pour le dev.
 - 2026-10-25 : Story 8.1 — durée et comptage d'une passe (`src/rythme.ts`,
   champ `duree`, migration, page « Modifier »).
+- 2026-10-26 : Story 8.2 — dessiner les positions intermédiaires (champ
+  tableau, hook, actions, mode de l'atelier, frise d'édition).

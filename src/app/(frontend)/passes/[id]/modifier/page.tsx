@@ -5,6 +5,7 @@ import React from 'react'
 
 import { estAdmin } from '@/collections/acces'
 import { DIFFICULTES } from '@/collections/Passe'
+import { EditionPositionsIntermediaires } from '@/components/EditionPositionsIntermediaires'
 import { FormulairePasse } from '@/components/FormulairePasse'
 import { identifiant } from '@/enchainements'
 import { ligneDe } from '@/orientation'
@@ -12,8 +13,9 @@ import config from '@/payload.config'
 import type { Position } from '@/payload-types'
 import { exigerSession } from '@/porte'
 import { imageDePosition } from '@/positions'
+import { positionsIntermediairesDe } from '@/positions-intermediaires'
 import { dureeDe } from '@/rythme'
-import { modifierPasse } from '../../actions'
+import { modifierPasse, retirerPositionIntermediaire } from '../../actions'
 import '../fiche-passe.css'
 
 export const dynamic = 'force-dynamic'
@@ -104,6 +106,16 @@ export default async function ModifierPasse({ params }: { params: Promise<{ id: 
           utilisations={utilisations}
           enregistrer={modifierPasse}
           retour={`/passes/${id}`}
+        />
+      </div>
+
+      {/* Epic 8 : la frise lit la duree ENREGISTREE, pas celle du menu. */}
+      <div className="fiche-section">
+        <EditionPositionsIntermediaires
+          passeId={passe.id}
+          duree={dureeDe(passe.duree)}
+          positions={positionsIntermediairesDe(passe.positionsIntermediaires)}
+          retirer={retirerPositionIntermediaire.bind(null, passe.id)}
         />
       </div>
     </div>

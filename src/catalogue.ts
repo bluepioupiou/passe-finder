@@ -7,6 +7,7 @@ import { cleDeTransition, identifiant } from './enchainements'
 import { ligneDe, pivotDe } from './orientation'
 import type { Enchainement, Pass, Position, Transition, User } from './payload-types'
 import { imageDePosition } from './positions'
+import { SANS_POSITIONS_INTERMEDIAIRES } from './positions-intermediaires'
 
 /**
  * Les tables de référence, indexées par ce qui sert à les retrouver.
@@ -39,7 +40,13 @@ export type Catalogue = {
 export async function chargerCatalogue(payload: Payload): Promise<Catalogue> {
   const [{ docs: positions }, { docs: passes }, { docs: transitions }] = await Promise.all([
     payload.find({ collection: 'positions', limit: 500, depth: 1, sort: 'nom' }),
-    payload.find({ collection: 'passes', limit: 500, depth: 0, sort: 'nom' }),
+    payload.find({
+      collection: 'passes',
+      limit: 500,
+      depth: 0,
+      sort: 'nom',
+      select: SANS_POSITIONS_INTERMEDIAIRES,
+    }),
     // Une vingtaine de documents : la troisième requête est du même ordre que
     // les deux autres, et elle évite de rouvrir la base à chaque reprise
     // rencontrée dans une chaîne.
@@ -139,6 +146,7 @@ export async function voisinesDePasse(
           limit: 200,
           depth: 1,
           sort: 'nom',
+          select: SANS_POSITIONS_INTERMEDIAIRES,
         }),
     fin === null
       ? null
@@ -148,6 +156,7 @@ export async function voisinesDePasse(
           limit: 200,
           depth: 1,
           sort: 'nom',
+          select: SANS_POSITIONS_INTERMEDIAIRES,
         }),
     fin === null
       ? null

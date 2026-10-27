@@ -2,7 +2,8 @@ import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
 import { PIVOTS } from '../orientation'
-import { DUREES } from '../rythme'
+import { erreurPositionsIntermediaires } from '../positions-intermediaires'
+import { DUREES, dureeDe } from '../rythme'
 import { adminSeul } from './acces'
 
 /** Libellés de difficulté, décidés avec Alain (2026-08-26). */
@@ -40,6 +41,9 @@ export const Passe: CollectionConfig = {
     singular: 'Passe',
     plural: 'Passes',
   },
+  // Une passe PEUPLEE (dans un enchainement, une transition…) n'emporte pas
+  // ses positions intermediaires : elles ne servent que sur sa fiche (AD-16).
+  defaultPopulate: { positionsIntermediaires: false },
   admin: {
     useAsTitle: 'nom',
     // `pivot` en colonne : avec le filtre « n'existe pas », c'est la liste de
@@ -124,6 +128,21 @@ export const Passe: CollectionConfig = {
 
         return data
       },
+      ({ data, originalDoc }) => {
+        // AD-16 / FR-50 : les positions intermediaires tiennent dans la duree,
+        // une par instant. Une mise a jour PARTIELLE (la duree seule, depuis
+        // le formulaire de la fiche) se juge sur ce qui est deja enregistre :
+        // c'est le cas qui protege un dessin d'une duree reduite.
+        const recues = data && 'positionsIntermediaires' in data
+        const lignes =
+          (recues ? data.positionsIntermediaires : originalDoc?.positionsIntermediaires) ?? []
+        const duree = dureeDe(data && 'duree' in data ? data.duree : originalDoc?.duree)
+
+        const erreur = erreurPositionsIntermediaires(lignes, duree)
+        if (erreur) throw new APIError(erreur, 400)
+
+        return data
+      },
     ],
   },
   fields: [
@@ -203,6 +222,29 @@ export const Passe: CollectionConfig = {
         description:
           'Vide = 6 temps. 10 temps répète « 3 et 4 . 5 et 6 . » pour une passe ralentie.',
       },
+    },
+    {
+      name: 'positionsIntermediaires',
+      type: 'array',
+      label: 'Positions intermédiaires',
+      // Epic 8 (AD-16) : des schemas d'atelier poses sur les instants du
+      // comptage, sans nom ni fiche. `admin.hidden` et NON `hidden: true` : la
+      // fiche publique doit les lire, mais l'admin ne sait pas afficher
+      // l'atelier — ils se gerent depuis la page « Modifier » de la fiche.
+      admin: { hidden: true },
+      fields: [
+        {
+          name: 'instant',
+          type: 'number',
+          required: true,
+          admin: { description: 'Index du demi-temps dans le comptage (0 = « 1 »).' },
+        },
+        {
+          name: 'schema',
+          type: 'json',
+          required: true,
+        },
+      ],
     },
 
     // --- Champs d'archivage legacy (AD-8 / ADD-10) -------------------------
